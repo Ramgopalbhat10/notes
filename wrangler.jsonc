@@ -1,0 +1,18 @@
+{
+  "main": ".open-next/worker.js",
+  "name": "notes-app",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "routes": [
+    {
+      "pattern": "notes.mrgb.in/*",
+      "custom_domain": true
+    }
+  ]
+}
