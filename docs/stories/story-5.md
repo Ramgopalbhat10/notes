@@ -25,9 +25,9 @@ Goal: Build a ChatGPT‑like right sidebar powered by Vercel AI SDK with the cur
   - Compose a system prompt stating role and context policy; stream response.
 
 Sub‑tasks
-- [ ] Implement route with Vercel AI SDK streaming helpers.
-- [ ] Token/size guard for context; basic redaction (no secrets) and sanitization.
-- [ ] Return SSE/streaming response compatible with client hook.
+- [x] Implement route with Vercel AI SDK streaming helpers.
+- [x] Token/size guard for context; basic redaction (no secrets) and sanitization.
+- [x] Return SSE/streaming response compatible with client hook.
 
 Test Plan
 - Long documents are truncated with a note; responses stream.
@@ -41,10 +41,10 @@ Test Plan
   - Per‑message actions: Copy, Insert into editor.
 
 Sub‑tasks
-- [ ] Install and set up Vercel AI SDK UI (AI Elements) or `useChat` from `ai/react`.
-- [ ] Implement chat container within the existing right sidebar area.
-- [ ] Wire insert action to editor (append or replace selection if in Edit mode).
-- [ ] Show tokenizing/loading indicators; allow cancel.
+- [x] Install and set up Vercel AI SDK UI (AI Elements) or `useChat` from `ai/react`.
+- [x] Implement chat container within the existing right sidebar area.
+- [x] Wire insert action to editor (append or replace selection if in Edit mode).
+- [x] Show tokenizing/loading indicators; allow cancel.
 
 Test Plan
 - Sending prompts streams; inserting content modifies the editor as expected.
