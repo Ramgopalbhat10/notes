@@ -1,1 +1,215 @@
-{"etag":"0ecda60a36c3d76b3a4f614f9900e5a9","body":"{\"metadata\":{\"version\":1,\"generatedAt\":\"2025-10-13T16:19:05.584Z\",\"checksum\":\"e465972652550c939ed65ea0e8e6ec34\",\"nodeCount\":18},\"nodes\":[{\"id\":\"_Weekly/\",\"type\":\"folder\",\"name\":\"_Weekly\",\"path\":\"_Weekly/\",\"parentId\":null,\"childrenIds\":[]},{\"id\":\"0. Inbox/\",\"type\":\"folder\",\"name\":\"0. Inbox\",\"path\":\"0. Inbox/\",\"parentId\":null,\"childrenIds\":[]},{\"id\":\"1. Projects/\",\"type\":\"folder\",\"name\":\"1. Projects\",\"path\":\"1. Projects/\",\"parentId\":null,\"childrenIds\":[]},{\"id\":\"2. Areas/\",\"type\":\"folder\",\"name\":\"2. Areas\",\"path\":\"2. Areas/\",\"parentId\":null,\"childrenIds\":[]},{\"id\":\"3. Resources/\",\"type\":\"folder\",\"name\":\"3. Resources\",\"path\":\"3. Resources/\",\"parentId\":null,\"childrenIds\":[\"3. Resources/Articles, Books/\",\"3. Resources/Guides/\",\"3. Resources/Snippets/\",\"3. Resources/Tools/\"]},{\"id\":\"3. Resources/Articles, Books/\",\"type\":\"folder\",\"name\":\"Articles, Books\",\"path\":\"3. Resources/Articles, Books/\",\"parentId\":\"3. Resources/\",\"childrenIds\":[\"3. Resources/Articles, Books/Must Read Blogs.md\"]},{\"id\":\"3. Resources/Articles, Books/Must Read Blogs.md\",\"type\":\"file\",\"name\":\"Must Read Blogs.md\",\"path\":\"3. Resources/Articles, Books/Must Read Blogs.md\",\"parentId\":\"3. Resources/Articles, Books/\",\"lastModified\":\"2025-10-13T16:19:00.000Z\",\"etag\":\"d41d8cd98f00b204e9800998ecf8427e\",\"size\":0},{\"id\":\"3. Resources/Guides/\",\"type\":\"folder\",\"name\":\"Guides\",\"path\":\"3. Resources/Guides/\",\"parentId\":\"3. Resources/\",\"childrenIds\":[\"3. Resources/Guides/Setup/\"]},{\"id\":\"3. Resources/Guides/Setup/\",\"type\":\"folder\",\"name\":\"Setup\",\"path\":\"3. Resources/Guides/Setup/\",\"parentId\":\"3. Resources/Guides/\",\"childrenIds\":[\"3. Resources/Guides/Setup/Gemini CLI.md\",\"3. Resources/Guides/Setup/Obsidian Sync.md\",\"3. Resources/Guides/Setup/OpenAI Codex.md\"]},{\"id\":\"3. Resources/Guides/Setup/Gemini CLI.md\",\"type\":\"file\",\"name\":\"Gemini CLI.md\",\"path\":\"3. Resources/Guides/Setup/Gemini CLI.md\",\"parentId\":\"3. Resources/Guides/Setup/\",\"lastModified\":\"2025-09-27T06:00:09.000Z\",\"etag\":\"baa697b17686e53fb70b1d5ffd1e9f7d\",\"size\":9793},{\"id\":\"3. Resources/Guides/Setup/Obsidian Sync.md\",\"type\":\"file\",\"name\":\"Obsidian Sync.md\",\"path\":\"3. Resources/Guides/Setup/Obsidian Sync.md\",\"parentId\":\"3. Resources/Guides/Setup/\",\"lastModified\":\"2025-09-03T15:45:02.000Z\",\"etag\":\"316fd159b4226b31be7d0bf4d395b4a0\",\"size\":840},{\"id\":\"3. Resources/Guides/Setup/OpenAI Codex.md\",\"type\":\"file\",\"name\":\"OpenAI Codex.md\",\"path\":\"3. Resources/Guides/Setup/OpenAI Codex.md\",\"parentId\":\"3. Resources/Guides/Setup/\",\"lastModified\":\"2025-09-03T15:45:02.000Z\",\"etag\":\"d765ab25ab0004f4bd18e33b66d38e34\",\"size\":296},{\"id\":\"3. Resources/Snippets/\",\"type\":\"folder\",\"name\":\"Snippets\",\"path\":\"3. Resources/Snippets/\",\"parentId\":\"3. Resources/\",\"childrenIds\":[]},{\"id\":\"3. Resources/Tools/\",\"type\":\"folder\",\"name\":\"Tools\",\"path\":\"3. Resources/Tools/\",\"parentId\":\"3. Resources/\",\"childrenIds\":[\"3. Resources/Tools/API Keys.md\",\"3. Resources/Tools/Subscriptions.md\"]},{\"id\":\"3. Resources/Tools/API Keys.md\",\"type\":\"file\",\"name\":\"API Keys.md\",\"path\":\"3. Resources/Tools/API Keys.md\",\"parentId\":\"3. Resources/Tools/\",\"lastModified\":\"2025-09-23T14:02:46.000Z\",\"etag\":\"bdae132ad6f8e50bf85b36c58e71d2a9\",\"size\":474},{\"id\":\"3. Resources/Tools/Subscriptions.md\",\"type\":\"file\",\"name\":\"Subscriptions.md\",\"path\":\"3. Resources/Tools/Subscriptions.md\",\"parentId\":\"3. Resources/Tools/\",\"lastModified\":\"2025-09-23T14:02:46.000Z\",\"etag\":\"aef14226d5b20629d52edcac7ecbb3ac\",\"size\":115},{\"id\":\"4. Archive/\",\"type\":\"folder\",\"name\":\"4. Archive\",\"path\":\"4. Archive/\",\"parentId\":null,\"childrenIds\":[]},{\"id\":\"Welcome.md\",\"type\":\"file\",\"name\":\"Welcome.md\",\"path\":\"Welcome.md\",\"parentId\":null,\"lastModified\":\"2025-09-30T09:34:59.000Z\",\"etag\":\"aa9ffd4e122c4b5caa8a488c15333b54\",\"size\":309}],\"rootIds\":[\"_Weekly/\",\"0. Inbox/\",\"1. Projects/\",\"2. Areas/\",\"3. Resources/\",\"4. Archive/\",\"Welcome.md\"]}"}
+{
+  "metadata": {
+    "version": 1,
+    "generatedAt": "2025-10-15T08:19:19.268Z",
+    "checksum": "eb05dcdce1fe43e1ed15868b867094e2",
+    "nodeCount": 20
+  },
+  "nodes": [
+    {
+      "id": "_Weekly/",
+      "type": "folder",
+      "name": "_Weekly",
+      "path": "_Weekly/",
+      "parentId": null,
+      "childrenIds": []
+    },
+    {
+      "id": "0. Inbox/",
+      "type": "folder",
+      "name": "0. Inbox",
+      "path": "0. Inbox/",
+      "parentId": null,
+      "childrenIds": []
+    },
+    {
+      "id": "1. Projects/",
+      "type": "folder",
+      "name": "1. Projects",
+      "path": "1. Projects/",
+      "parentId": null,
+      "childrenIds": [
+        "1. Projects/MRGB-Notes/"
+      ]
+    },
+    {
+      "id": "1. Projects/MRGB-Notes/",
+      "type": "folder",
+      "name": "MRGB-Notes",
+      "path": "1. Projects/MRGB-Notes/",
+      "parentId": "1. Projects/",
+      "childrenIds": [
+        "1. Projects/MRGB-Notes/About.md"
+      ]
+    },
+    {
+      "id": "1. Projects/MRGB-Notes/About.md",
+      "type": "file",
+      "name": "About.md",
+      "path": "1. Projects/MRGB-Notes/About.md",
+      "parentId": "1. Projects/MRGB-Notes/",
+      "lastModified": "2025-10-15T07:00:31.000Z",
+      "etag": "1385aee0d94101e5f016305879ebe39c",
+      "size": 269
+    },
+    {
+      "id": "2. Areas/",
+      "type": "folder",
+      "name": "2. Areas",
+      "path": "2. Areas/",
+      "parentId": null,
+      "childrenIds": []
+    },
+    {
+      "id": "3. Resources/",
+      "type": "folder",
+      "name": "3. Resources",
+      "path": "3. Resources/",
+      "parentId": null,
+      "childrenIds": [
+        "3. Resources/Articles, Books/",
+        "3. Resources/Guides/",
+        "3. Resources/Snippets/",
+        "3. Resources/Tools/"
+      ]
+    },
+    {
+      "id": "3. Resources/Articles, Books/",
+      "type": "folder",
+      "name": "Articles, Books",
+      "path": "3. Resources/Articles, Books/",
+      "parentId": "3. Resources/",
+      "childrenIds": [
+        "3. Resources/Articles, Books/Must Read Blogs.md"
+      ]
+    },
+    {
+      "id": "3. Resources/Articles, Books/Must Read Blogs.md",
+      "type": "file",
+      "name": "Must Read Blogs.md",
+      "path": "3. Resources/Articles, Books/Must Read Blogs.md",
+      "parentId": "3. Resources/Articles, Books/",
+      "lastModified": "2025-10-13T16:20:09.000Z",
+      "etag": "074bb8b296c65e7ae53b5509cd2980e5",
+      "size": 86
+    },
+    {
+      "id": "3. Resources/Guides/",
+      "type": "folder",
+      "name": "Guides",
+      "path": "3. Resources/Guides/",
+      "parentId": "3. Resources/",
+      "childrenIds": [
+        "3. Resources/Guides/Setup/"
+      ]
+    },
+    {
+      "id": "3. Resources/Guides/Setup/",
+      "type": "folder",
+      "name": "Setup",
+      "path": "3. Resources/Guides/Setup/",
+      "parentId": "3. Resources/Guides/",
+      "childrenIds": [
+        "3. Resources/Guides/Setup/Gemini CLI.md",
+        "3. Resources/Guides/Setup/Obsidian Sync.md",
+        "3. Resources/Guides/Setup/OpenAI Codex.md"
+      ]
+    },
+    {
+      "id": "3. Resources/Guides/Setup/Gemini CLI.md",
+      "type": "file",
+      "name": "Gemini CLI.md",
+      "path": "3. Resources/Guides/Setup/Gemini CLI.md",
+      "parentId": "3. Resources/Guides/Setup/",
+      "lastModified": "2025-09-27T06:00:09.000Z",
+      "etag": "baa697b17686e53fb70b1d5ffd1e9f7d",
+      "size": 9793
+    },
+    {
+      "id": "3. Resources/Guides/Setup/Obsidian Sync.md",
+      "type": "file",
+      "name": "Obsidian Sync.md",
+      "path": "3. Resources/Guides/Setup/Obsidian Sync.md",
+      "parentId": "3. Resources/Guides/Setup/",
+      "lastModified": "2025-10-15T06:57:43.000Z",
+      "etag": "316fd159b4226b31be7d0bf4d395b4a0",
+      "size": 840
+    },
+    {
+      "id": "3. Resources/Guides/Setup/OpenAI Codex.md",
+      "type": "file",
+      "name": "OpenAI Codex.md",
+      "path": "3. Resources/Guides/Setup/OpenAI Codex.md",
+      "parentId": "3. Resources/Guides/Setup/",
+      "lastModified": "2025-09-03T15:45:02.000Z",
+      "etag": "d765ab25ab0004f4bd18e33b66d38e34",
+      "size": 296
+    },
+    {
+      "id": "3. Resources/Snippets/",
+      "type": "folder",
+      "name": "Snippets",
+      "path": "3. Resources/Snippets/",
+      "parentId": "3. Resources/",
+      "childrenIds": []
+    },
+    {
+      "id": "3. Resources/Tools/",
+      "type": "folder",
+      "name": "Tools",
+      "path": "3. Resources/Tools/",
+      "parentId": "3. Resources/",
+      "childrenIds": [
+        "3. Resources/Tools/API Keys.md",
+        "3. Resources/Tools/Subscriptions.md"
+      ]
+    },
+    {
+      "id": "3. Resources/Tools/API Keys.md",
+      "type": "file",
+      "name": "API Keys.md",
+      "path": "3. Resources/Tools/API Keys.md",
+      "parentId": "3. Resources/Tools/",
+      "lastModified": "2025-09-23T14:02:46.000Z",
+      "etag": "bdae132ad6f8e50bf85b36c58e71d2a9",
+      "size": 474
+    },
+    {
+      "id": "3. Resources/Tools/Subscriptions.md",
+      "type": "file",
+      "name": "Subscriptions.md",
+      "path": "3. Resources/Tools/Subscriptions.md",
+      "parentId": "3. Resources/Tools/",
+      "lastModified": "2025-09-23T14:02:46.000Z",
+      "etag": "aef14226d5b20629d52edcac7ecbb3ac",
+      "size": 115
+    },
+    {
+      "id": "4. Archive/",
+      "type": "folder",
+      "name": "4. Archive",
+      "path": "4. Archive/",
+      "parentId": null,
+      "childrenIds": []
+    },
+    {
+      "id": "Welcome.md",
+      "type": "file",
+      "name": "Welcome.md",
+      "path": "Welcome.md",
+      "parentId": null,
+      "lastModified": "2025-10-15T08:18:24.000Z",
+      "etag": "aa9ffd4e122c4b5caa8a488c15333b54",
+      "size": 309
+    }
+  ],
+  "rootIds": [
+    "_Weekly/",
+    "0. Inbox/",
+    "1. Projects/",
+    "2. Areas/",
+    "3. Resources/",
+    "4. Archive/",
+    "Welcome.md"
+  ]
+}
