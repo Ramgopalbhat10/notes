@@ -60,14 +60,35 @@ export async function GET(request: NextRequest) {
       }),
     );
 
-    const folders = (response.CommonPrefixes ?? [])
+    const folderSet = new Set<string>();
+
+    // From CommonPrefixes
+    (response.CommonPrefixes ?? [])
       .map((entry) => entry.Prefix)
       .filter((value): value is string => Boolean(value))
-      .map((value) => {
+      .forEach((value) => {
         const relative = stripVaultPrefix(value);
-        return relative.slice(prefix.length) || relative;
-      })
-      .filter((value) => Boolean(value));
+        const name = relative.slice(prefix.length) || relative;
+        if (name) folderSet.add(name);
+      });
+
+    // From folder markers in Contents (providers may store a zero-byte object instead of returning CommonPrefixes)
+    (response.Contents ?? []).forEach((object) => {
+      const key = object.Key ?? "";
+      if (!key) return;
+      const relative = stripVaultPrefix(key);
+      if (!relative) return;
+      if (prefix && !relative.startsWith(prefix)) return;
+      const remainder = relative.slice(prefix.length);
+      if (!remainder || remainder.includes("/")) return;
+      const isMarkdown = remainder.toLowerCase().endsWith(".md");
+      const isFolderMarker = key.endsWith("/") || (object.Size ?? 0) === 0;
+      if (!isMarkdown && isFolderMarker) {
+        folderSet.add(ensureFolderPath(remainder));
+      }
+    });
+
+    const folders = Array.from(folderSet);
 
     const files = (response.Contents ?? [])
       .map((object) => {

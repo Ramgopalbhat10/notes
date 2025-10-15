@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { startRefreshJob } from "@/lib/tree-refresh";
+import { startRefreshJobAndWait } from "@/lib/tree-refresh";
 
 export const runtime = "nodejs";
 
@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
     return authError;
   }
 
-  const job = startRefreshJob();
+  // Run synchronously to completion; avoids background task cancellation in Workers
+  const job = await startRefreshJobAndWait();
   const statusUrl = buildStatusUrl(request, job.id);
 
   return NextResponse.json(
@@ -51,10 +52,14 @@ export async function POST(request: NextRequest) {
       jobId: job.id,
       status: job.status,
       createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+      metadata: job.metadata ?? null,
+      etag: job.etag ?? null,
+      error: job.error ?? null,
       statusUrl,
     },
     {
-      status: 202,
+      status: 200,
       headers: {
         "Cache-Control": "no-store",
       },

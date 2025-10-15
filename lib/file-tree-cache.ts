@@ -1,44 +1,25 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-
-const CACHE_DIR = path.join(process.cwd(), ".cache", "file-tree");
-const CACHE_FILE = path.join(CACHE_DIR, "manifest.json");
+/**
+ * In-memory cache for Cloudflare Workers environment.
+ * For production, consider using Cloudflare KV or R2 for persistent caching.
+ */
 
 type CachedManifestPayload = {
   etag?: string;
   body: string;
 };
 
-function isCachedManifestPayload(value: unknown): value is CachedManifestPayload {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  const cast = value as { etag?: unknown; body?: unknown };
-  return typeof cast.body === "string" && (typeof cast.etag === "string" || typeof cast.etag === "undefined");
-}
+// Simple in-memory cache (resets on worker restart)
+let memoryCache: CachedManifestPayload | null = null;
 
 export async function writeManifestCache(payload: CachedManifestPayload): Promise<void> {
-  await mkdir(CACHE_DIR, { recursive: true });
-  const serialized = JSON.stringify(payload);
-  await writeFile(CACHE_FILE, serialized, "utf8");
+  memoryCache = payload;
 }
 
 export async function readManifestCache(): Promise<CachedManifestPayload | null> {
-  try {
-    const raw = await readFile(CACHE_FILE, "utf8");
-    const parsed = JSON.parse(raw);
-    if (isCachedManifestPayload(parsed)) {
-      return parsed;
-    }
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") {
-      console.warn("Failed to read cached manifest", error);
-    }
-  }
-  return null;
+  return memoryCache;
 }
 
 export const manifestCachePaths = {
-  directory: CACHE_DIR,
-  file: CACHE_FILE,
+  directory: "(in-memory)",
+  file: "(in-memory)",
 };

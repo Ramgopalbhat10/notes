@@ -15,6 +15,7 @@ interface CliOptions {
   dryRun: boolean;
   pretty: boolean;
   outFile?: string;
+  debug?: boolean;
 }
 
 const REQUIRED_ENV_VARS = [
@@ -33,6 +34,8 @@ function parseArgs(argv: string[]): CliOptions {
       options.dryRun = true;
     } else if (current === "--pretty") {
       options.pretty = true;
+    } else if (current === "--debug") {
+      options.debug = true;
     } else if (current === "--out" || current === "-o") {
       const next = argv[i + 1];
       if (!next) {
@@ -72,6 +75,26 @@ async function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
     verifyRequiredEnvVars();
+    if (options.debug) {
+      const { getS3Client, getBucket, applyVaultPrefix } = await import("@/lib/s3");
+      const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
+      const client = getS3Client();
+      const bucket = getBucket();
+      const prefix = applyVaultPrefix("");
+      let token: string | undefined;
+      const keys: string[] = [];
+      let pages = 0;
+      do {
+        const resp = await client.send(
+          new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: token }),
+        );
+        (resp.Contents ?? []).forEach((o) => o.Key && keys.push(o.Key));
+        token = resp.NextContinuationToken ?? undefined;
+        pages += 1;
+      } while (token);
+      console.log(`[debug] bucket=${bucket} prefix='${prefix}' pages=${pages} objects=${keys.length}`);
+      console.log(`[debug] sample keys:`, keys.slice(0, 20));
+    }
     const manifest = await generateFileTreeManifest();
     const payload = serializeFileTreeManifest(manifest, options.pretty);
 

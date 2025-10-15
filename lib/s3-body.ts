@@ -1,5 +1,4 @@
 import type { GetObjectCommandOutput } from "@aws-sdk/client-s3";
-import { Readable } from "node:stream";
 
 export async function s3BodyToString(body: GetObjectCommandOutput["Body"]): Promise<string> {
   if (!body) {
@@ -8,16 +7,33 @@ export async function s3BodyToString(body: GetObjectCommandOutput["Body"]): Prom
   if (typeof body === "string") {
     return body;
   }
-  if (Buffer.isBuffer(body)) {
+  if (typeof Buffer !== "undefined" && Buffer.isBuffer(body)) {
     return body.toString("utf-8");
   }
   if ("transformToString" in body && typeof body.transformToString === "function") {
     return body.transformToString("utf-8");
   }
-  const readable = body as Readable;
-  const chunks: Buffer[] = [];
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  // Web stream fallback (Workers/Edge)
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "getReader" in (body as ReadableStream<Uint8Array>) &&
+    typeof (body as ReadableStream<Uint8Array>).getReader === "function"
+  ) {
+    const response = new Response(body as ReadableStream<Uint8Array>);
+    return await response.text();
   }
-  return Buffer.concat(chunks).toString("utf-8");
+  // Last resort: try to consume as async iterable (Node)
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of body as AsyncIterable<Uint8Array | string>) {
+    chunks.push(typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk);
+  }
+  const total = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+  const joined = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    joined.set(c, offset);
+    offset += c.byteLength;
+  }
+  return new TextDecoder("utf-8").decode(joined);
 }

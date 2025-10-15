@@ -65,6 +65,18 @@ export function startRefreshJob(): RefreshJobRecord {
   return job;
 }
 
+export async function startRefreshJobAndWait(): Promise<RefreshJobRecord> {
+  const job: RefreshJobRecord = {
+    id: randomUUID(),
+    status: "pending",
+    createdAt: now(),
+    updatedAt: now(),
+  };
+  jobs.set(job.id, job);
+  await run(job);
+  return job;
+}
+
 export function getRefreshJob(id: string): RefreshJobRecord | undefined {
   return jobs.get(id);
 }

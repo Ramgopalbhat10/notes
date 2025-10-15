@@ -73,96 +73,93 @@ async function buildContext(): Promise<BuildContext> {
   const client = getS3Client();
   const bucket = getBucket();
 
-  const folderQueue: string[] = [""];
-  const visited = new Set<string>();
+  // Collect all objects under the vault prefix without relying on delimiter/CommonPrefixes
+  const allObjects: Array<{ Key?: string; ETag?: string; LastModified?: Date; Size?: number }> = [];
+  let continuationToken: string | undefined;
+  do {
+    const resp = await client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: applyVaultPrefix(""),
+        ContinuationToken: continuationToken,
+      }),
+    );
+    if (Array.isArray(resp.Contents)) {
+      allObjects.push(...resp.Contents);
+    }
+    continuationToken = resp.NextContinuationToken ?? undefined;
+  } while (continuationToken);
 
-  while (folderQueue.length > 0) {
-    const prefix = folderQueue.shift() ?? "";
-    if (visited.has(prefix)) {
+  // Derive folders and files from flat listing
+  const folderSet = new Set<string>();
+
+  function addAncestorFolders(path: string) {
+    const norm = path.endsWith("/") ? path.slice(0, -1) : path;
+    const parts = norm.split("/");
+    let acc = "";
+    for (let i = 0; i < parts.length - 1; i += 1) {
+      acc += `${parts[i]}/`;
+      folderSet.add(acc);
+    }
+  }
+
+  for (const obj of allObjects) {
+    const key = obj.Key ?? "";
+    if (!key) continue;
+    const relative = stripVaultPrefix(key);
+    if (!relative) continue;
+    if (relative === FILE_TREE_MANIFEST_FILENAME) continue;
+
+    if (relative.endsWith("/")) {
+      const folderId = ensureFolderPath(relative);
+      folderSet.add(folderId);
+      addAncestorFolders(folderId);
       continue;
     }
-    visited.add(prefix);
 
-    let continuationToken: string | undefined;
-
-    do {
-      const response = await client.send(
-        new ListObjectsV2Command({
-          Bucket: bucket,
-          Prefix: applyVaultPrefix(prefix),
-          Delimiter: "/",
-          ContinuationToken: continuationToken,
-        }),
-      );
-
-      const folderEntries = response.CommonPrefixes ?? [];
-      for (const entry of folderEntries) {
-        const rawPrefix = entry.Prefix;
-        if (!rawPrefix) {
-          continue;
-        }
-        const relative = stripVaultPrefix(rawPrefix);
-        if (!relative) {
-          continue;
-        }
+    if (relative.endsWith(".md")) {
+      addAncestorFolders(relative);
+      const parentId = parentIdFromPath(relative);
+      addChild(childMap, parentId, relative);
+      const fileNode: FileTreeFileNode = {
+        id: relative,
+        type: "file",
+        name: basename(relative),
+        path: relative,
+        parentId,
+        lastModified: obj.LastModified?.toISOString(),
+        etag: sanitizeEtag(obj.ETag ?? undefined),
+        size: typeof obj.Size === "number" ? obj.Size : undefined,
+      };
+      nodes.set(relative, fileNode);
+    } else {
+      // Non-markdown object: treat zero-byte placeholder as a folder marker (provider may have stripped trailing '/')
+      if ((obj.Size ?? 0) === 0) {
         const folderId = ensureFolderPath(relative);
-        if (folderId === FILE_TREE_MANIFEST_FILENAME) {
-          continue;
-        }
-        folderQueue.push(folderId);
-        const parentId = parentIdFromPath(folderId);
-        addChild(childMap, parentId, folderId);
-        if (!nodes.has(folderId)) {
-          const folderNode: FileTreeFolderNode = {
-            id: folderId,
-            type: "folder",
-            name: basename(folderId),
-            path: folderId,
-            parentId,
-            childrenIds: [],
-          };
-          nodes.set(folderId, folderNode);
-        }
+        folderSet.add(folderId);
+        addAncestorFolders(folderId);
+      } else {
+        // Otherwise, just ensure its ancestors are present; we don't surface non-md files
+        addAncestorFolders(relative);
       }
+    }
+  }
 
-      const fileEntries = response.Contents ?? [];
-      for (const object of fileEntries) {
-        const key = object.Key ?? "";
-        if (!key) {
-          continue;
-        }
-        if (key.endsWith("/")) {
-          continue;
-        }
-        const relative = stripVaultPrefix(key);
-        if (!relative) {
-          continue;
-        }
-        if (!relative.endsWith(".md")) {
-          continue;
-        }
-        if (relative === FILE_TREE_MANIFEST_FILENAME) {
-          continue;
-        }
-
-        const parentId = parentIdFromPath(relative);
-        addChild(childMap, parentId, relative);
-
-        const fileNode: FileTreeFileNode = {
-          id: relative,
-          type: "file",
-          name: basename(relative),
-          path: relative,
-          parentId,
-          lastModified: object.LastModified?.toISOString(),
-          etag: sanitizeEtag(object.ETag ?? undefined),
-          size: typeof object.Size === "number" ? object.Size : undefined,
-        };
-        nodes.set(relative, fileNode);
-      }
-
-      continuationToken = response.NextContinuationToken ?? undefined;
-    } while (continuationToken);
+  // Materialize folder nodes and parent/child relationships
+  for (const folderId of folderSet) {
+    if (folderId === FILE_TREE_MANIFEST_FILENAME) continue;
+    const parentId = parentIdFromPath(folderId);
+    addChild(childMap, parentId, folderId);
+    if (!nodes.has(folderId)) {
+      nodes.set(folderId, {
+        id: folderId,
+        type: "folder",
+        name: basename(folderId),
+        path: folderId,
+        parentId,
+        childrenIds: [],
+      } satisfies FileTreeFolderNode);
+    }
   }
 
   return { nodes, childMap };

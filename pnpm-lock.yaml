@@ -80,6 +80,9 @@ importers:
       ai:
         specifier: ^5.0.55
         version: 5.0.55(zod@4.1.11)
+      aws4fetch:
+        specifier: ^1.0.20
+        version: 1.0.20
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
