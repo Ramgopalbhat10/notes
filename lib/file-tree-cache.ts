@@ -1,7 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { tmpdir } from "node:os";
 
-const CACHE_DIR = path.join(process.cwd(), ".cache", "file-tree");
+const DEFAULT_CACHE_ROOT =
+  process.env.NODE_ENV === "production" ? path.join(tmpdir(), "file-tree-cache") : path.join(process.cwd(), ".cache");
+const CACHE_ROOT = process.env.FILE_TREE_CACHE_ROOT ? path.resolve(process.env.FILE_TREE_CACHE_ROOT) : DEFAULT_CACHE_ROOT;
+
+const CACHE_DIR = path.join(CACHE_ROOT, "file-tree");
 const CACHE_FILE = path.join(CACHE_DIR, "manifest.json");
 
 type CachedManifestPayload = {
@@ -18,9 +23,18 @@ function isCachedManifestPayload(value: unknown): value is CachedManifestPayload
 }
 
 export async function writeManifestCache(payload: CachedManifestPayload): Promise<void> {
-  await mkdir(CACHE_DIR, { recursive: true });
-  const serialized = JSON.stringify(payload);
-  await writeFile(CACHE_FILE, serialized, "utf8");
+  try {
+    await mkdir(CACHE_DIR, { recursive: true });
+    const serialized = JSON.stringify(payload);
+    await writeFile(CACHE_FILE, serialized, "utf8");
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
+    if (code === "EROFS") {
+      console.warn("Skipping manifest cache write: read-only filesystem", error);
+      return;
+    }
+    console.warn("Failed to write manifest cache", error);
+  }
 }
 
 export async function readManifestCache(): Promise<CachedManifestPayload | null> {
