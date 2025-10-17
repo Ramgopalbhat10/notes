@@ -16,6 +16,17 @@ TIGRIS_S3_SECRET_ACCESS_KEY=
 TIGRIS_S3_BUCKET=
 # Optional bucket prefix (e.g. "vault/")
 TIGRIS_S3_PREFIX=
+
+# BetterAuth GitHub OAuth
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GITHUB_ALLOWED_LOGIN=
+BETTER_AUTH_SECRET=
+
+# Turso (LibSQL) persistence
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+# Legacy aliases also supported: TURSO_DB_URL, TURSO_DB_TOKEN
 ```
 
 ## Install & Run
@@ -24,6 +35,23 @@ pnpm install
 pnpm dev
 ```
 Visit http://localhost:3000 – you’ll be redirected to `/files`, which renders the cached tree and workspace.
+
+### Database & Auth Setup
+
+BetterAuth now persists users, sessions, accounts, and verification tokens in Turso via Drizzle ORM. After configuring the environment variables above:
+
+```bash
+# Regenerate the BetterAuth Drizzle schema (writes to drizzle/schema.ts)
+pnpm auth:schema
+
+# Generate SQL migrations from the current schema definition
+pnpm db:generate
+
+# Apply migrations to Turso (requires a valid TURSO token with write access)
+pnpm db:migrate
+```
+
+If `pnpm db:migrate` fails with a 401, double-check the `TURSO_AUTH_TOKEN`/`TURSO_DB_TOKEN` value or regenerate a fresh auth token from the Turso dashboard.
 
 ## Working With the Cached File Tree
 The app never walks S3 directly on boot. Instead it expects a manifest JSON at the bucket root:
@@ -69,6 +97,9 @@ The scripts respect the credentials above. `tree:build` is safe to run without n
 | `pnpm dev` | Start Next.js locally |
 | `pnpm tree:build` | Build manifest locally (dry-run, writes to `.cache/file-tree/manifest.json`) |
 | `pnpm tree:refresh` | Build and upload manifest to S3 |
+| `pnpm auth:schema` | Generate/refresh BetterAuth Drizzle schema |
+| `pnpm db:generate` | Emit SQL migration files from the current schema |
+| `pnpm db:migrate` | Apply pending migrations to the Turso database |
 | `pnpm lint` | Run ESLint |
 
 Feel free to explore the rest of the stories in `docs/stories/` to see what’s planned next.

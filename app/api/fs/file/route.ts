@@ -5,6 +5,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFileKey } from "@/lib/fs-validation";
 import { s3BodyToString } from "@/lib/s3-body";
@@ -109,6 +110,10 @@ function parseIfNoneMatch(header: string | null): string[] {
 }
 
 export async function GET(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   try {
     const url = new URL(request.url);
     const key = normalizeFileKey(url.searchParams.get("key"));
@@ -187,6 +192,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   try {
     const body = await request.json();
     const key = normalizeFileKey(body?.key);
@@ -215,6 +224,10 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   try {
     const body = await request.json();
     const key = normalizeFileKey(body?.key);

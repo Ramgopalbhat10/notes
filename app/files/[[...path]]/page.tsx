@@ -8,6 +8,7 @@ import { SidebarChat } from "@/components/ai-chat/sidebar-chat";
 import { FileTree } from "@/components/file-tree";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
+import { authClient } from "@/lib/auth/client";
 import { useTreeStore, type SelectByPathResult } from "@/stores/tree";
 
 function LeftSidebar() {
@@ -128,7 +129,21 @@ function RouteSynchronizer() {
 }
 
 export default function FilesPage() {
+  const router = useRouter();
+  const sessionState = authClient.useSession();
+  const session = sessionState?.data;
+  const isPending = sessionState?.isPending;
   const [header, setHeader] = useState<ReactNode | null>(null);
+
+  useEffect(() => {
+    if (!isPending && !session) {
+      router.replace("/auth/sign-in");
+    }
+  }, [isPending, session, router]);
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <>

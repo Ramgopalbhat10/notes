@@ -1,5 +1,6 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 
 import { writeManifestCache, readManifestCache } from "@/lib/file-tree-cache";
 import {
@@ -62,6 +63,13 @@ function buildHeaders(etag?: string): Headers {
 }
 
 export async function GET(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return new NextResponse(JSON.stringify({ error: authRes.error }), {
+      status: authRes.status,
+      headers: buildHeaders(undefined),
+    });
+  }
   const client = getS3Client();
   const bucket = getBucket();
   const ifNoneMatch = request.headers.get("if-none-match");
