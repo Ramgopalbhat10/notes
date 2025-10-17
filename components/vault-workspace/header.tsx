@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronRight, Eye, FilePenLine, Loader2, MessageSquare, Save } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { authClient } from "@/lib/auth/client";
 
 import { AiActionDropdown } from "./ai-action-dropdown";
 import type { AiActionType, BreadcrumbSegment } from "./types";
@@ -36,6 +40,12 @@ export function WorkspaceHeader({
   const headerRef = useRef<HTMLDivElement>(null);
   const [useCompactMode, setUseCompactMode] = useState(false);
   const fileName = segments[segments.length - 1]?.label ?? "";
+  const router = useRouter();
+  const sessionState = authClient.useSession();
+  const user = sessionState.data?.user;
+  const displayName = user?.name || user?.email || "";
+  const avatarAlt = user?.name || user?.email || "";
+  const avatarFallback = (displayName || "?").slice(0, 1).toUpperCase();
 
   useEffect(() => {
     const headerEl = headerRef.current;
@@ -126,6 +136,32 @@ export function WorkspaceHeader({
         >
           <MessageSquare className="h-3.5 w-3.5" />
         </Button>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="inline-flex items-center gap-2 rounded-md border px-2 h-8 hover:bg-accent">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={user.image || undefined} alt={avatarAlt} />
+                  <AvatarFallback>{avatarFallback}</AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:inline text-xs max-w-32 truncate">{displayName}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">{displayName}</div>
+              <div className="my-1 h-px bg-border" />
+              <DropdownMenuItem
+                onClick={async () => {
+                  await authClient.signOut({ fetchOptions: { onSuccess: () => { router.push("/auth/sign-in"); } } });
+                }}
+              >
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button size="sm" onClick={() => router.push("/auth/sign-in")}>Sign in</Button>
+        )}
       </div>
     </div>
   );

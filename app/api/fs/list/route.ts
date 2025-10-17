@@ -1,5 +1,6 @@
 import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 import {
   applyVaultPrefix,
   ensureFolderPath,
@@ -33,6 +34,10 @@ function normalizeRequestPrefix(input: string | null): string {
 }
 
 export async function GET(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   const url = new URL(request.url);
   let prefix: string;
   try {

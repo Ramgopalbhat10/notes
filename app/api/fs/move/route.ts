@@ -6,6 +6,7 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFileKey, normalizeFolderPrefix } from "@/lib/fs-validation";
 
@@ -131,6 +132,10 @@ function getMessage(error: unknown): string | undefined {
 }
 
 export async function POST(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   try {
     const body = await request.json();
     const fromRaw = body?.fromKey as string | undefined;

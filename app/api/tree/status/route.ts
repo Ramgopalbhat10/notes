@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 
 import { getRefreshJob } from "@/lib/tree-refresh";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
 

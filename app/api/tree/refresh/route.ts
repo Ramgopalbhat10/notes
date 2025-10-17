@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 
 import { startRefreshJob } from "@/lib/tree-refresh";
 
@@ -38,6 +39,10 @@ function buildStatusUrl(request: NextRequest, jobId: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  const authRes = await requireApiUser(request);
+  if (!authRes.ok) {
+    return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
   const authError = authorize(request);
   if (authError) {
     return authError;
