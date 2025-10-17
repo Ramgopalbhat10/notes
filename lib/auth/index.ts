@@ -57,6 +57,22 @@ export async function getSession() {
 
 const ALLOWED_LOGIN = (process.env.GITHUB_ALLOWED_LOGIN || "").trim().toLowerCase();
 
+type AuthSession = Awaited<
+  ReturnType<(typeof auth)["api"]["getSession"]>
+>;
+
+type SessionLike =
+  | AuthSession
+  | {
+      user?: Partial<{
+        username: string | null;
+        login: string | null;
+        email: string | null;
+      }> | null;
+    }
+  | null
+  | undefined;
+
 function normalizeCandidate(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
@@ -65,16 +81,25 @@ function normalizeCandidate(value: unknown): string | null {
   return trimmed ? trimmed.toLowerCase() : null;
 }
 
-function getUserCandidates(session: any) {
+function getUserCandidates(session: SessionLike) {
   const user = session?.user ?? {};
+  const usernameField =
+    typeof user === "object" && user !== null
+      ? (user as { username?: string | null; login?: string | null }).username ??
+        (user as { login?: string | null }).login
+      : undefined;
   const username = normalizeCandidate(
-    user.username ?? (user as Record<string, unknown>)?.login ?? undefined,
+    usernameField,
   );
-  const email = normalizeCandidate(user.email);
+  const emailField =
+    typeof user === "object" && user !== null
+      ? (user as { email?: string | null }).email
+      : undefined;
+  const email = normalizeCandidate(emailField);
   return { username, email };
 }
 
-export function isAllowedUser(session: any): boolean {
+export function isAllowedUser(session: SessionLike): boolean {
   if (!ALLOWED_LOGIN) return true;
   const { username, email } = getUserCandidates(session);
   return username === ALLOWED_LOGIN || email === ALLOWED_LOGIN;

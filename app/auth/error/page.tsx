@@ -7,9 +7,6 @@ import Link from "next/link";
 
 export default function AuthErrorPage() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
-  const email = session?.user?.email || "";
-  const name = session?.user?.name || "";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
