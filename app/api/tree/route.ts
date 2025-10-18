@@ -1,25 +1,16 @@
-import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import { requireApiUser } from "@/lib/auth";
+import { unstable_cache } from "next/cache";
 
-import { writeManifestCache, readManifestCache } from "@/lib/file-tree-cache";
+import { requireApiUser } from "@/lib/auth";
 import {
-  FILE_TREE_MANIFEST_FILENAME,
-  validateFileTreeManifest,
-} from "@/lib/file-tree-manifest";
-import { getBucket, getS3Client } from "@/lib/s3";
-import { s3BodyToString } from "@/lib/s3-body";
+  MANIFEST_CACHE_TAG,
+  loadLatestManifest,
+  type ManifestRecord,
+} from "@/lib/manifest-store";
 
 export const runtime = "nodejs";
 
 const CACHE_CONTROL = "public, max-age=30, s-maxage=300, stale-while-revalidate=60";
-
-function normalizeEtag(value: string | undefined | null): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-  return value.replace(/^W\//i, "").replace(/"/g, "");
-}
 
 function formatEtag(value: string | undefined): string | undefined {
   if (!value) {
@@ -36,7 +27,7 @@ function parseIfNoneMatch(header: string | null): string[] {
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part.length > 0)
-    .map((part) => normalizeEtag(part.replace(/^W\//i, "")))
+    .map((part) => part.replace(/^W\//i, "").replace(/"/g, ""))
     .filter((value): value is string => Boolean(value));
 }
 
@@ -51,7 +42,7 @@ function etagMatches(header: string | null, etag: string | undefined): boolean {
   return values.includes(etag);
 }
 
-function buildHeaders(etag?: string): Headers {
+function buildHeaders(etag?: string, source?: ManifestRecord["source"]): Headers {
   const headers = new Headers();
   headers.set("Content-Type", "application/json; charset=utf-8");
   headers.set("Cache-Control", CACHE_CONTROL);
@@ -59,8 +50,26 @@ function buildHeaders(etag?: string): Headers {
   if (formatted) {
     headers.set("ETag", formatted);
   }
+  if (source) {
+    headers.set("X-Manifest-Source", source);
+  }
   return headers;
 }
+
+const getCachedManifest = unstable_cache(
+  async () => {
+    const record = await loadLatestManifest();
+    if (!record) {
+      throw new Error("Manifest unavailable");
+    }
+    return record;
+  },
+  ["file-tree-manifest"],
+  {
+    tags: [MANIFEST_CACHE_TAG],
+    revalidate: false,
+  },
+);
 
 export async function GET(request: NextRequest) {
   const authRes = await requireApiUser(request);
@@ -70,57 +79,24 @@ export async function GET(request: NextRequest) {
       headers: buildHeaders(undefined),
     });
   }
-  const client = getS3Client();
-  const bucket = getBucket();
-  const ifNoneMatch = request.headers.get("if-none-match");
 
   try {
-    const response = await client.send(
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: FILE_TREE_MANIFEST_FILENAME,
-      }),
-    );
+    const manifestRecord = await getCachedManifest();
+    const ifNoneMatch = request.headers.get("if-none-match");
 
-    const etag = normalizeEtag(response.ETag ?? undefined);
-    if (etagMatches(ifNoneMatch, etag)) {
-      return new NextResponse(null, { status: 304, headers: buildHeaders(etag) });
+    if (etagMatches(ifNoneMatch, manifestRecord.etag)) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: buildHeaders(manifestRecord.etag, manifestRecord.source),
+      });
     }
 
-    const body = await s3BodyToString(response.Body);
-    const parsed = JSON.parse(body);
-    const validation = validateFileTreeManifest(parsed);
-    if (!validation.success) {
-      throw new Error(`Invalid manifest schema: ${validation.errors.join(", ")}`);
-    }
-
-    const normalizedBody = JSON.stringify(validation.manifest);
-
-    await writeManifestCache({ etag, body: normalizedBody });
-    return new NextResponse(normalizedBody, { status: 200, headers: buildHeaders(etag) });
+    return new NextResponse(manifestRecord.body, {
+      status: 200,
+      headers: buildHeaders(manifestRecord.etag, manifestRecord.source),
+    });
   } catch (error) {
-    console.error("Failed to fetch file tree manifest", error);
-    const cached = await readManifestCache();
-    if (cached) {
-      try {
-        const cachedParsed = JSON.parse(cached.body);
-        const validation = validateFileTreeManifest(cachedParsed);
-        if (!validation.success) {
-          console.error("Cached manifest invalid", validation.errors);
-        } else {
-          const normalizedCachedBody = JSON.stringify(validation.manifest);
-          if (etagMatches(ifNoneMatch, cached.etag)) {
-            return new NextResponse(null, { status: 304, headers: buildHeaders(cached.etag ?? undefined) });
-          }
-          return new NextResponse(normalizedCachedBody, {
-            status: 200,
-            headers: buildHeaders(cached.etag ?? undefined),
-          });
-        }
-      } catch (cacheError) {
-        console.error("Failed to parse cached manifest", cacheError);
-      }
-    }
+    console.error("Failed to serve file tree manifest", error);
     return NextResponse.json({ error: "Tree manifest unavailable" }, { status: 503 });
   }
 }

@@ -23,7 +23,7 @@ type ListingResponse = {
 
 export type NodeId = string;
 
-type RefreshState = "idle" | "triggering" | "polling";
+type RefreshState = "idle" | "running";
 type RefreshSource = "manual" | "silent" | null;
 
 export type FileNode = {
@@ -66,9 +66,6 @@ export type SelectByPathResult =
 
 export const ROOT_PARENT_KEY = "__root__";
 
-const REFRESH_POLL_INTERVAL_MS = 1500;
-const REFRESH_MAX_ATTEMPTS = 60;
-
 type TreeState = {
   nodes: Record<NodeId, Node>;
   rootIds: NodeId[];
@@ -87,8 +84,7 @@ type TreeState = {
   refreshError: string | null;
   refreshSuccessAt: string | null;
   refreshLastSource: RefreshSource;
-  refreshJobId: string | null;
-  pendingRefreshRequests: number;
+  refreshQueued: boolean;
 
   initRoot: () => Promise<void>;
   toggleFolder: (id: NodeId) => Promise<void>;
@@ -508,12 +504,6 @@ async function fetchManifest(
   return { manifest, etag: nextEtag };
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 async function extractError(response: Response): Promise<string> {
   try {
     const data = await response.json();
@@ -578,19 +568,16 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
   const refreshTree = async (options?: { silent?: boolean }) => {
     const source: RefreshSource = options?.silent ? "silent" : "manual";
-    const { refreshState } = get();
-
-    if (refreshState !== "idle") {
-      if (options?.silent) {
-        set((current) => ({ pendingRefreshRequests: current.pendingRefreshRequests + 1 }));
-      }
+    if (get().refreshState !== "idle") {
+      set({ refreshQueued: true });
       return;
     }
 
     set({
-      refreshState: "triggering",
+      refreshState: "running",
       refreshError: null,
       refreshLastSource: source,
+      refreshQueued: false,
     });
 
     try {
@@ -602,56 +589,24 @@ export const useTreeStore = create<TreeState>((set, get) => {
         throw new Error(await extractError(response));
       }
 
-      const body = await response.json().catch(() => ({}));
-      const statusUrl = typeof body?.statusUrl === "string"
-        ? body.statusUrl
-        : body?.jobId
-          ? `/api/tree/status?id=${body.jobId}`
-          : "/api/tree/status";
-
-      set({ refreshState: "polling", refreshJobId: body?.jobId ?? null });
-
-      let attempt = 0;
-      while (attempt < REFRESH_MAX_ATTEMPTS) {
-        await sleep(options?.silent ? REFRESH_POLL_INTERVAL_MS * 1.5 : REFRESH_POLL_INTERVAL_MS);
-        const statusResponse = await fetch(statusUrl, { cache: "no-store" });
-        if (!statusResponse.ok) {
-          throw new Error(await extractError(statusResponse));
-        }
-        const status = await statusResponse.json().catch(() => ({}));
-        if (status?.status === "completed") {
-          await loadManifest({ force: true });
-          set({
-            refreshState: "idle",
-            refreshSuccessAt: new Date().toISOString(),
-            refreshError: null,
-            refreshJobId: null,
-            refreshLastSource: source,
-          });
-          break;
-        }
-        if (status?.status === "failed") {
-          const message = typeof status?.error === "string" ? status.error : "Refresh failed";
-          throw new Error(message);
-        }
-        attempt += 1;
-      }
-
-      if (attempt >= REFRESH_MAX_ATTEMPTS) {
-        throw new Error("Timed out waiting for tree refresh");
-      }
+      await loadManifest({ force: true });
+      set({
+        refreshState: "idle",
+        refreshSuccessAt: new Date().toISOString(),
+        refreshError: null,
+        refreshLastSource: source,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to refresh file tree";
       set({
         refreshState: "idle",
         refreshError: message,
-        refreshJobId: null,
         refreshLastSource: source,
       });
     } finally {
-      const pending = get().pendingRefreshRequests;
-      if (pending > 0) {
-        set({ pendingRefreshRequests: pending - 1 });
+      const { refreshQueued } = get();
+      if (refreshQueued) {
+        set({ refreshQueued: false });
         void refreshTree({ silent: true });
       }
     }
@@ -675,8 +630,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
     refreshError: null,
     refreshSuccessAt: null,
     refreshLastSource: null,
-    refreshJobId: null,
-    pendingRefreshRequests: 0,
+    refreshQueued: false,
 
     initRoot: async () => {
       const state = get();

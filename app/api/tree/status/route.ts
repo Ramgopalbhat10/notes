@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireApiUser } from "@/lib/auth";
 
-import { getRefreshJob } from "@/lib/tree-refresh";
+import { requireApiUser } from "@/lib/auth";
+import { loadLatestManifest } from "@/lib/manifest-store";
 
 export const runtime = "nodejs";
 
@@ -10,27 +10,20 @@ export async function GET(request: NextRequest) {
   if (!authRes.ok) {
     return NextResponse.json({ error: authRes.error }, { status: authRes.status });
   }
-  const url = new URL(request.url);
-  const id = url.searchParams.get("id");
 
-  if (!id) {
-    return NextResponse.json({ error: "Missing job id" }, { status: 400 });
-  }
-
-  const job = getRefreshJob(id);
-  if (!job) {
-    return NextResponse.json({ error: "Job not found" }, { status: 404 });
+  const manifestRecord = await loadLatestManifest();
+  if (!manifestRecord) {
+    return NextResponse.json({ error: "Tree manifest unavailable" }, { status: 503 });
   }
 
   return NextResponse.json(
     {
-      jobId: job.id,
-      status: job.status,
-      createdAt: job.createdAt,
-      updatedAt: job.updatedAt,
-      metadata: job.metadata ?? null,
-      etag: job.etag ?? null,
-      error: job.error ?? null,
+      jobId: null,
+      status: "completed",
+      updatedAt: manifestRecord.updatedAt,
+      etag: manifestRecord.etag ?? null,
+      metadata: manifestRecord.manifest.metadata,
+      error: null,
     },
     {
       status: 200,

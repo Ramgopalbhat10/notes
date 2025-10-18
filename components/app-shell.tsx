@@ -159,7 +159,7 @@ export function AppShell({ left, right, children, header }: AppShellProps) {
       <SidebarInset className="flex min-h-svh min-w-0 flex-col">
         <MainHeader header={header} />
         <div className="flex-1 min-h-0 w-full overflow-auto">
-          <div className="space-y-3 p-3 sm:space-y-4 sm:p-4 pb-16 min-w-0">{renderedChildren}</div>
+          <div className="space-y-3 p-3 sm:space-y-4 sm:p-4 min-w-0">{renderedChildren}</div>
         </div>
       </SidebarInset>
 

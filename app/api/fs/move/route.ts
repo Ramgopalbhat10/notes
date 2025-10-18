@@ -6,9 +6,12 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFileKey, normalizeFolderPrefix } from "@/lib/fs-validation";
+import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
+import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 
 export const runtime = "nodejs";
 
@@ -188,6 +191,11 @@ export async function POST(request: NextRequest) {
 
       await deleteKeys(bucket, sourceKeys);
 
+      const sourceRelatives = toRelativeKeys(sourceKeys);
+      const targetRelatives = toRelativeKeys(copyResults);
+      revalidateFileTags([...sourceRelatives, ...targetRelatives]);
+      revalidateTag(MANIFEST_CACHE_TAG);
+
       return NextResponse.json({ etag: undefined });
     }
 
@@ -243,6 +251,9 @@ export async function POST(request: NextRequest) {
         Key: fromFull,
       }),
     );
+
+    revalidateFileTags([fromKey, toKey]);
+    revalidateTag(MANIFEST_CACHE_TAG);
 
     return NextResponse.json({ etag: copyResult.CopyObjectResult?.ETag ?? undefined });
   } catch (error) {

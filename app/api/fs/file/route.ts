@@ -1,14 +1,11 @@
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFileKey } from "@/lib/fs-validation";
-import { s3BodyToString } from "@/lib/s3-body";
+import { getCachedFile, revalidateFileTags } from "@/lib/file-cache";
+import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 
 type StatusError = Error & {
   status?: number;
@@ -20,6 +17,13 @@ type StatusError = Error & {
 export const runtime = "nodejs";
 
 const CACHE_CONTROL_HEADER = "public, max-age=60, stale-while-revalidate=30";
+
+function normalizeEtag(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  return value.replace(/^W\//i, "").replace(/"/g, "");
+}
 
 async function ensureMatchingEtag({
   bucket,
@@ -90,13 +94,6 @@ function handleS3Error(error: unknown) {
   return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
 }
 
-function normalizeEtag(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-  return value.replace(/^W\//i, "").replace(/"/g, "");
-}
-
 function parseIfNoneMatch(header: string | null): string[] {
   if (!header) {
     return [];
@@ -117,20 +114,9 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url);
     const key = normalizeFileKey(url.searchParams.get("key"));
-    const bucket = getBucket();
-    const client = getS3Client();
-    const fullKey = applyVaultPrefix(key);
-
-    const head = await client.send(
-      new HeadObjectCommand({
-        Bucket: bucket,
-        Key: fullKey,
-      }),
-    );
-
-    const etagHeader = head.ETag ?? undefined;
-    const normalizedEtag = normalizeEtag(etagHeader);
-    const lastModifiedDate = head.LastModified ?? null;
+    const cached = await getCachedFile(key);
+    const normalizedEtag = cached.etag ?? null;
+    const lastModifiedDate = cached.lastModified ? new Date(cached.lastModified) : null;
     const lastModifiedHttp = lastModifiedDate ? lastModifiedDate.toUTCString() : undefined;
 
     const incomingEtags = parseIfNoneMatch(request.headers.get("if-none-match"));
@@ -145,44 +131,35 @@ export async function GET(request: NextRequest) {
     if (etagMatches || modifiedSinceMatches) {
       const headers = new Headers();
       headers.set("Cache-Control", CACHE_CONTROL_HEADER);
-      if (etagHeader) {
-        headers.set("ETag", etagHeader);
+      if (cached.etag) {
+        headers.set("ETag", `"${cached.etag}"`);
       }
       if (lastModifiedHttp) {
         headers.set("Last-Modified", lastModifiedHttp);
       }
+      headers.set("X-File-Cache", cached.cacheStatus.toUpperCase());
       return new NextResponse(null, {
         status: 304,
         headers,
       });
     }
 
-    const response = await client.send(
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: fullKey,
-      }),
-    );
-
-    const content = await s3BodyToString(response.Body);
-
-    const responseEtag = response.ETag ?? etagHeader;
-    const responseLastModified = response.LastModified ?? lastModifiedDate ?? undefined;
     const headers = new Headers();
     headers.set("Cache-Control", CACHE_CONTROL_HEADER);
-    if (responseEtag) {
-      headers.set("ETag", responseEtag);
+    if (cached.etag) {
+      headers.set("ETag", `"${cached.etag}"`);
     }
-    if (responseLastModified) {
-      headers.set("Last-Modified", responseLastModified.toUTCString());
+    if (lastModifiedDate) {
+      headers.set("Last-Modified", lastModifiedDate.toUTCString());
     }
+    headers.set("X-File-Cache", cached.cacheStatus.toUpperCase());
 
     return NextResponse.json(
       {
         key,
-        content,
-        etag: responseEtag ?? undefined,
-        lastModified: responseLastModified?.toISOString(),
+        content: cached.content,
+        etag: cached.etag ?? undefined,
+        lastModified: cached.lastModified ?? undefined,
       },
       { headers },
     );
@@ -214,6 +191,9 @@ export async function PUT(request: NextRequest) {
         ...(ifMatchEtag ? { IfMatch: ifMatchEtag } : {}),
       }),
     );
+
+    revalidateFileTags([key]);
+    revalidateTag(MANIFEST_CACHE_TAG);
 
     return NextResponse.json({
       etag: result.ETag ?? undefined,
@@ -247,6 +227,9 @@ export async function DELETE(request: NextRequest) {
         Key: fullKey,
       }),
     );
+
+    revalidateFileTags([key]);
+    revalidateTag(MANIFEST_CACHE_TAG);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireApiUser } from "@/lib/auth";
 
-import { startRefreshJob } from "@/lib/tree-refresh";
+import { requireApiUser } from "@/lib/auth";
+import { refreshFileTree } from "@/lib/tree-refresh";
 
 export const runtime = "nodejs";
 
@@ -30,14 +30,6 @@ function authorize(request: NextRequest): NextResponse | null {
   return null;
 }
 
-function buildStatusUrl(request: NextRequest, jobId: string): string {
-  const url = new URL(request.url);
-  url.pathname = "/api/tree/status";
-  url.search = `id=${jobId}`;
-  url.hash = "";
-  return url.toString();
-}
-
 export async function POST(request: NextRequest) {
   const authRes = await requireApiUser(request);
   if (!authRes.ok) {
@@ -48,21 +40,27 @@ export async function POST(request: NextRequest) {
     return authError;
   }
 
-  const job = startRefreshJob();
-  const statusUrl = buildStatusUrl(request, job.id);
+  try {
+    const result = await refreshFileTree();
 
-  return NextResponse.json(
-    {
-      jobId: job.id,
-      status: job.status,
-      createdAt: job.createdAt,
-      statusUrl,
-    },
-    {
-      status: 202,
-      headers: {
-        "Cache-Control": "no-store",
+    return NextResponse.json(
+      {
+        status: "completed",
+        metadata: result.manifest.metadata,
+        etag: result.etag ?? null,
+        updatedAt: result.updatedAt,
+        statusUrl: "/api/tree/status",
       },
-    },
-  );
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
+    );
+  } catch (error) {
+    console.error("Tree refresh failed", error);
+    const message = error instanceof Error ? error.message : "Failed to refresh tree manifest";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

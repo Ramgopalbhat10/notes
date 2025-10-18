@@ -1,8 +1,10 @@
 import { HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFolderPrefix } from "@/lib/fs-validation";
+import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 
 type StatusError = Error & {
   status?: number;
@@ -92,6 +94,8 @@ export async function POST(request: NextRequest) {
         ContentType: "application/x-directory",
       }),
     );
+
+    revalidateTag(MANIFEST_CACHE_TAG);
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {

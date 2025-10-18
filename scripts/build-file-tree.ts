@@ -10,10 +10,12 @@ import {
   serializeFileTreeManifest,
   uploadFileTreeManifest,
 } from "@/lib/file-tree-builder";
+import { writeManifestToRedis } from "@/lib/manifest-store";
 
 interface CliOptions {
   dryRun: boolean;
   pretty: boolean;
+  pushRedis: boolean;
   outFile?: string;
 }
 
@@ -26,13 +28,15 @@ const REQUIRED_ENV_VARS = [
 ];
 
 function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { dryRun: false, pretty: false };
+  const options: CliOptions = { dryRun: false, pretty: false, pushRedis: false };
   for (let i = 0; i < argv.length; i += 1) {
     const current = argv[i];
     if (current === "--dry-run") {
       options.dryRun = true;
     } else if (current === "--pretty") {
       options.pretty = true;
+    } else if (current === "--push-redis") {
+      options.pushRedis = true;
     } else if (current === "--out" || current === "-o") {
       const next = argv[i + 1];
       if (!next) {
@@ -62,6 +66,20 @@ function verifyRequiredEnvVars() {
   }
 }
 
+function ensureRedisEnv() {
+  const required = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"];
+  const missing = required.filter((key) => {
+    const value = process.env[key];
+    return typeof value !== "string" || value.trim().length === 0;
+  });
+  if (missing.length > 0) {
+    throw new Error(
+      `Cannot push manifest to Redis. Missing environment variables: ${missing.join(", ")}. ` +
+        "Provide Upstash credentials or omit --push-redis.",
+    );
+  }
+}
+
 async function writeOutput(outFile: string, contents: string) {
   const resolved = path.resolve(process.cwd(), outFile);
   await mkdir(path.dirname(resolved), { recursive: true });
@@ -72,17 +90,33 @@ async function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
     verifyRequiredEnvVars();
+    if (options.pushRedis) {
+      ensureRedisEnv();
+    }
     const manifest = await generateFileTreeManifest();
     const payload = serializeFileTreeManifest(manifest, options.pretty);
+    let uploadedEtag: string | undefined;
 
     if (!options.dryRun) {
       const { etag } = await uploadFileTreeManifest(manifest);
-      const etagInfo = etag ? `, etag: ${etag}` : "";
+      uploadedEtag = etag ?? undefined;
+      const etagInfo = uploadedEtag ? `, etag: ${uploadedEtag}` : "";
       console.log(
         `Uploaded ${FILE_TREE_MANIFEST_FILENAME} with ${manifest.metadata.nodeCount} nodes (checksum: ${manifest.metadata.checksum}${etagInfo})`,
       );
     } else {
       console.log(`Dry run generated manifest with ${manifest.metadata.nodeCount} nodes`);
+    }
+
+    if (options.pushRedis) {
+      const canonicalPayload = serializeFileTreeManifest(manifest);
+      await writeManifestToRedis({
+        body: canonicalPayload,
+        metadata: manifest.metadata,
+        etag: uploadedEtag,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log("Synced manifest to Upstash Redis");
     }
 
     if (options.outFile) {

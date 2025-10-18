@@ -4,9 +4,12 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFolderPrefix } from "@/lib/fs-validation";
+import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
+import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 
 export const runtime = "nodejs";
 
@@ -133,10 +136,17 @@ export async function DELETE(request: NextRequest) {
 
     if (keys.length === 0) {
       // Nothing to delete; treat as success.
+      revalidateTag(MANIFEST_CACHE_TAG);
       return new NextResponse(null, { status: 204 });
     }
 
     await deleteKeys(bucket, keys);
+
+    const relativeKeys = toRelativeKeys(keys);
+    if (relativeKeys.length > 0) {
+      revalidateFileTags(relativeKeys);
+    }
+    revalidateTag(MANIFEST_CACHE_TAG);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
