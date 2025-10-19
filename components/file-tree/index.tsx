@@ -68,6 +68,14 @@ export function FileTree() {
   }, [rootError, toast]);
 
   useEffect(() => {
+    if (selectedId) {
+      setActiveId(selectedId);
+    } else {
+      setActiveId(null);
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
     if (refreshLastSource !== "manual") {
       refreshSuccessRef.current = refreshSuccessAt ?? null;
       return;
@@ -79,17 +87,19 @@ export function FileTree() {
   }, [refreshLastSource, refreshSuccessAt, toast]);
 
   useEffect(() => {
-    if (refreshLastSource !== "manual") {
-      refreshErrorRef.current = refreshError ?? null;
-      return;
-    }
-    if (refreshError && refreshError !== refreshErrorRef.current) {
-      toast({ title: "Refresh failed", description: refreshError, variant: "destructive" });
-      refreshErrorRef.current = refreshError;
-    }
     if (!refreshError) {
       refreshErrorRef.current = null;
+      return;
     }
+    if (refreshError === refreshErrorRef.current) {
+      return;
+    }
+    if (refreshLastSource === "manual") {
+      toast({ title: "Refresh failed", description: refreshError, variant: "destructive" });
+    } else if (refreshLastSource === "mutation") {
+      toast({ title: "Update failed", description: refreshError, variant: "destructive" });
+    }
+    refreshErrorRef.current = refreshError;
   }, [refreshLastSource, refreshError, toast]);
 
   useEffect(() => {
@@ -256,6 +266,7 @@ export function FileTree() {
     toggleFolder,
     select,
     filteredRootIds,
+    selectedId,
   });
 
   const renderEmptyState = () => {

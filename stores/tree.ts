@@ -23,8 +23,8 @@ type ListingResponse = {
 
 export type NodeId = string;
 
-type RefreshState = "idle" | "running";
-type RefreshSource = "manual" | "silent" | null;
+type RefreshState = "idle" | "pending" | "running";
+type RefreshSource = "manual" | "silent" | "mutation" | null;
 
 export type FileNode = {
   id: NodeId;
@@ -66,6 +66,163 @@ export type SelectByPathResult =
 
 export const ROOT_PARENT_KEY = "__root__";
 
+const REFRESH_DEBOUNCE_MS = 500;
+
+type StoreSet<T> = (partial: T | Partial<T> | ((state: T) => T | Partial<T>), replace?: boolean) => void;
+
+type MutationJob = {
+  description: string;
+  perform: () => Promise<void>;
+  rollback: () => void;
+};
+
+type StateSnapshot = Pick<
+  TreeState,
+  | "nodes"
+  | "rootIds"
+  | "openFolders"
+  | "slugToId"
+  | "idToSlug"
+  | "selectedId"
+  | "routeTarget"
+  | "selectionOrigin"
+>;
+
+function captureSnapshot(state: TreeState): StateSnapshot {
+  return structuredClone({
+    nodes: state.nodes,
+    rootIds: state.rootIds,
+    openFolders: state.openFolders,
+    slugToId: state.slugToId,
+    idToSlug: state.idToSlug,
+    selectedId: state.selectedId,
+    routeTarget: state.routeTarget,
+    selectionOrigin: state.selectionOrigin,
+  });
+}
+
+function restoreSnapshot(set: StoreSet<TreeState>, snapshot: StateSnapshot) {
+  const cloned = structuredClone(snapshot);
+  set((current) => ({
+    ...current,
+    ...cloned,
+  }));
+}
+
+function createManifestRefresher(
+  loadManifest: (options?: { force?: boolean }) => Promise<void>,
+  set: StoreSet<TreeState>,
+) {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let running = false;
+  let rerun = false;
+
+  const run = async (source: RefreshSource) => {
+    if (running) {
+      rerun = true;
+      return;
+    }
+    running = true;
+    set({ refreshState: "running", refreshLastSource: source });
+    try {
+      const response = await fetch("/api/tree/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(await extractError(response));
+      }
+      await loadManifest({ force: true });
+      set((state) => ({
+        refreshState: state.pendingMutations > 0 ? "pending" : "idle",
+        refreshSuccessAt: new Date().toISOString(),
+        refreshError: null,
+        refreshLastSource: source,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to refresh file tree";
+      set((state) => ({
+        refreshState: state.pendingMutations > 0 ? "pending" : "idle",
+        refreshError: message,
+        refreshLastSource: source,
+      }));
+    } finally {
+      running = false;
+      if (rerun) {
+        rerun = false;
+        void run(source);
+      }
+    }
+  };
+
+  const schedule = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => {
+      timeout = null;
+      void run("mutation");
+    }, REFRESH_DEBOUNCE_MS);
+  };
+
+  const runImmediate = async (source: RefreshSource) => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+    await run(source);
+  };
+
+  return { schedule, runImmediate } as const;
+}
+
+function createMutationEnqueuer(
+  set: StoreSet<TreeState>,
+  get: () => TreeState,
+  scheduleRefresh: () => void,
+) {
+  const queue: MutationJob[] = [];
+  let processing = false;
+
+  const process = async () => {
+    if (processing) {
+      return;
+    }
+    processing = true;
+    while (queue.length > 0) {
+      const job = queue.shift()!;
+      try {
+        await job.perform();
+        set((state) => ({ pendingMutations: Math.max(0, state.pendingMutations - 1) }));
+        scheduleRefresh();
+      } catch (error) {
+        job.rollback();
+        const message = error instanceof Error ? error.message : "Failed to update file tree";
+        set((state) => ({
+          pendingMutations: Math.max(0, state.pendingMutations - 1),
+          refreshError: message,
+          refreshLastSource: "mutation",
+          refreshState: Math.max(0, state.pendingMutations - 1) > 0 ? "pending" : "idle",
+        }));
+      }
+    }
+    processing = false;
+    const state = get();
+    if (state.pendingMutations === 0 && state.refreshState === "pending") {
+      set({ refreshState: "idle" });
+    }
+  };
+
+  return (job: MutationJob) => {
+    queue.push(job);
+    set((state) => ({
+      pendingMutations: state.pendingMutations + 1,
+      refreshState: state.refreshState === "idle" ? "pending" : state.refreshState,
+    }));
+    void process();
+  };
+}
+
 type TreeState = {
   nodes: Record<NodeId, Node>;
   rootIds: NodeId[];
@@ -84,7 +241,7 @@ type TreeState = {
   refreshError: string | null;
   refreshSuccessAt: string | null;
   refreshLastSource: RefreshSource;
-  refreshQueued: boolean;
+  pendingMutations: number;
 
   initRoot: () => Promise<void>;
   toggleFolder: (id: NodeId) => Promise<void>;
@@ -566,50 +723,98 @@ export const useTreeStore = create<TreeState>((set, get) => {
     }
   };
 
-  const refreshTree = async (options?: { silent?: boolean }) => {
-    const source: RefreshSource = options?.silent ? "silent" : "manual";
-    if (get().refreshState !== "idle") {
-      set({ refreshQueued: true });
+  const { schedule: scheduleManifestRefresh, runImmediate: runManifestRefreshImmediate } =
+    createManifestRefresher(loadManifest, set);
+  const enqueueMutation = createMutationEnqueuer(set, get, scheduleManifestRefresh);
+
+  const queueMove = (nodeId: NodeId, targetPath: string) => {
+    const state = get();
+    const node = state.nodes[nodeId];
+    if (!node) {
+      return;
+    }
+    if (node.path === targetPath) {
       return;
     }
 
-    set({
-      refreshState: "running",
-      refreshError: null,
-      refreshLastSource: source,
-      refreshQueued: false,
+    const snapshot = captureSnapshot(state);
+    const newParentId = node.type === "folder"
+      ? parentPathFromFolderKey(targetPath)
+      : parentPathFromKey(targetPath);
+    const newName = basename(targetPath);
+
+    const updatedNode: Node = node.type === "folder"
+      ? {
+          ...node,
+          id: targetPath,
+          path: targetPath,
+          name: newName,
+          parentId: newParentId,
+        }
+      : {
+          ...node,
+          id: targetPath,
+          path: targetPath,
+          name: newName,
+          parentId: newParentId,
+        };
+
+    set((current) => {
+      const without = removeNodeFromState(current, node.id);
+      const next = addNodeToState(without, updatedNode);
+      if (updatedNode.type === "file") {
+        return {
+          ...next,
+          selectedId: updatedNode.id,
+          selectionOrigin: "user",
+          routeTarget: null,
+        };
+      }
+      return next;
     });
 
-    try {
-      const response = await fetch("/api/tree/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) {
-        throw new Error(await extractError(response));
-      }
+    enqueueMutation({
+      description: `move:${node.path}->${targetPath}`,
+      perform: async () => {
+        const body: Record<string, unknown> = {
+          fromKey: node.path,
+          toKey: targetPath,
+          overwrite: false,
+        };
+        if (node.type === "file" && node.etag) {
+          body.ifMatchEtag = node.etag;
+        }
+        const response = await fetch("/api/fs/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!response.ok) {
+          throw new Error(await extractError(response));
+        }
+        const data = await response.json().catch(() => ({})) as { etag?: string };
+        if (updatedNode.type === "file" && typeof data?.etag === "string") {
+          set((current) => ({
+            nodes: {
+              ...current.nodes,
+              [updatedNode.id]: {
+                ...(current.nodes[updatedNode.id] as FileNode),
+                etag: data.etag,
+              },
+            },
+          }));
+        }
+      },
+      rollback: () => restoreSnapshot(set, snapshot),
+    });
+  };
 
-      await loadManifest({ force: true });
-      set({
-        refreshState: "idle",
-        refreshSuccessAt: new Date().toISOString(),
-        refreshError: null,
-        refreshLastSource: source,
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to refresh file tree";
-      set({
-        refreshState: "idle",
-        refreshError: message,
-        refreshLastSource: source,
-      });
-    } finally {
-      const { refreshQueued } = get();
-      if (refreshQueued) {
-        set({ refreshQueued: false });
-        void refreshTree({ silent: true });
-      }
+  const refreshTree = async (options?: { silent?: boolean }) => {
+    if (options?.silent) {
+      scheduleManifestRefresh();
+      return;
     }
+    await runManifestRefreshImmediate("manual");
   };
 
   return {
@@ -630,7 +835,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
     refreshError: null,
     refreshSuccessAt: null,
     refreshLastSource: null,
-    refreshQueued: false,
+    pendingMutations: 0,
 
     initRoot: async () => {
       const state = get();
@@ -831,36 +1036,25 @@ export const useTreeStore = create<TreeState>((set, get) => {
         childrenLoaded: false,
       };
 
-      const snapshot = get();
+      const snapshot = captureSnapshot(get());
       set((state) => addNodeToState(state, optimisticNode));
 
-      try {
-        const response = await fetch("/api/fs/mkdir", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prefix: newPath }),
-        });
-        if (!response.ok) {
-          throw new Error(await extractError(response));
-        }
-        const refreshOptions = parentId
-          ? { force: true }
-          : ({ force: true, mode: "s3" as const });
-        await get().refreshFolder(parentId ?? null, refreshOptions);
-        void refreshTree({ silent: true });
-      } catch (error) {
-        set({
-          nodes: snapshot.nodes,
-          rootIds: snapshot.rootIds,
-          openFolders: snapshot.openFolders,
-          selectedId: snapshot.selectedId,
-          selectionOrigin: snapshot.selectionOrigin,
-          routeTarget: snapshot.routeTarget,
-          slugToId: snapshot.slugToId,
-          idToSlug: snapshot.idToSlug,
-        });
-        throw error;
-      }
+      enqueueMutation({
+        description: `create-folder:${newPath}`,
+        perform: async () => {
+          const response = await fetch("/api/fs/mkdir", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prefix: newPath }),
+          });
+          if (!response.ok) {
+            throw new Error(await extractError(response));
+          }
+        },
+        rollback: () => restoreSnapshot(set, snapshot),
+      });
+
+      return Promise.resolve();
     },
 
     createFile: async (parentId, name, initialContent = "") => {
@@ -875,48 +1069,37 @@ export const useTreeStore = create<TreeState>((set, get) => {
         parentId,
       };
 
-      const snapshot = get();
+      const snapshot = captureSnapshot(get());
       set((state) => addNodeToState(state, optimisticNode));
 
-      try {
-        const response = await fetch("/api/fs/file", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: newPath, content: initialContent }),
-        });
-        if (!response.ok) {
-          throw new Error(await extractError(response));
-        }
-        const data = (await response.json()) as { etag?: string };
-        if (data?.etag) {
-          set((state) => ({
-            nodes: {
-              ...state.nodes,
-              [newPath]: {
-                ...(state.nodes[newPath] as FileNode),
-                etag: data.etag,
+      enqueueMutation({
+        description: `create-file:${newPath}`,
+        perform: async () => {
+          const response = await fetch("/api/fs/file", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: newPath, content: initialContent }),
+          });
+          if (!response.ok) {
+            throw new Error(await extractError(response));
+          }
+          const data = (await response.json().catch(() => ({}))) as { etag?: string };
+          if (data?.etag) {
+            set((state) => ({
+              nodes: {
+                ...state.nodes,
+                [newPath]: {
+                  ...(state.nodes[newPath] as FileNode),
+                  etag: data.etag,
+                },
               },
-            },
-          }));
-        }
-        const refreshOptions = parentId
-          ? { force: true }
-          : ({ force: true, mode: "s3" as const });
-        await get().refreshFolder(parentId ?? null, refreshOptions);
-        void refreshTree({ silent: true });
-      } catch (error) {
-        set({
-          nodes: snapshot.nodes,
-          rootIds: snapshot.rootIds,
-          openFolders: snapshot.openFolders,
-          selectedId: snapshot.selectedId,
-          selectionOrigin: snapshot.selectionOrigin,
-          routeTarget: snapshot.routeTarget,
-          slugToId: snapshot.slugToId,
-          idToSlug: snapshot.idToSlug,
-        });
-        throw error;
-      }
+            }));
+          }
+        },
+        rollback: () => restoreSnapshot(set, snapshot),
+      });
+
+      return Promise.resolve();
     },
 
     renameNode: async (id, newName) => {
@@ -924,13 +1107,13 @@ export const useTreeStore = create<TreeState>((set, get) => {
       if (!node) {
         return;
       }
-      const parentId = node.parentId;
-      const parentPath = parentId ?? "";
+      const parentPath = node.parentId ?? "";
       const safeName = normalizeName(newName);
       const targetPath = node.type === "folder"
         ? ensureFolderPath(parentPath, safeName)
         : ensureFilePath(parentPath, safeName);
-      await performMove(id, targetPath);
+      queueMove(id, targetPath);
+      return Promise.resolve();
     },
 
     deleteNode: async (id) => {
@@ -938,47 +1121,36 @@ export const useTreeStore = create<TreeState>((set, get) => {
       if (!node) {
         return;
       }
-      const snapshot = get();
+      const snapshot = captureSnapshot(get());
       set((state) => removeNodeFromState(state, id));
 
-      try {
-        if (node.type === "folder") {
-          const response = await fetch("/api/fs/folder", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prefix: node.path, recursive: true }),
-          });
-          if (!response.ok && response.status !== 204) {
-            throw new Error(await extractError(response));
+      enqueueMutation({
+        description: `delete:${id}`,
+        perform: async () => {
+          if (node.type === "folder") {
+            const response = await fetch("/api/fs/folder", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prefix: node.path, recursive: true }),
+            });
+            if (!response.ok && response.status !== 204) {
+              throw new Error(await extractError(response));
+            }
+          } else {
+            const response = await fetch("/api/fs/file", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ key: node.path, ifMatchEtag: node.etag }),
+            });
+            if (!response.ok && response.status !== 204) {
+              throw new Error(await extractError(response));
+            }
           }
-        } else {
-          const response = await fetch("/api/fs/file", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: node.path, ifMatchEtag: node.etag }),
-          });
-          if (!response.ok && response.status !== 204) {
-            throw new Error(await extractError(response));
-          }
-        }
-        const refreshOptions = node.parentId
-          ? { force: true }
-          : ({ force: true, mode: "s3" as const });
-        await get().refreshFolder(node.parentId ?? null, refreshOptions);
-        void refreshTree({ silent: true });
-      } catch (error) {
-        set({
-          nodes: snapshot.nodes,
-          rootIds: snapshot.rootIds,
-          openFolders: snapshot.openFolders,
-          selectedId: snapshot.selectedId,
-          selectionOrigin: snapshot.selectionOrigin,
-          routeTarget: snapshot.routeTarget,
-          slugToId: snapshot.slugToId,
-          idToSlug: snapshot.idToSlug,
-        });
-        throw error;
-      }
+        },
+        rollback: () => restoreSnapshot(set, snapshot),
+      });
+
+      return Promise.resolve();
     },
 
     moveNode: async (id, targetParentId) => {
@@ -990,100 +1162,10 @@ export const useTreeStore = create<TreeState>((set, get) => {
       const targetPath = node.type === "folder"
         ? ensureFolderPath(parentPath, node.name)
         : ensureFilePath(parentPath, node.name);
-      await performMove(id, targetPath);
+      queueMove(id, targetPath);
+      return Promise.resolve();
     },
   };
 });
 
-async function performMove(id: NodeId, targetPath: string) {
-  const state = useTreeStore.getState();
-  const node = state.nodes[id];
-  if (!node) {
-    return;
-  }
-
-  const newPath = targetPath;
-
-  if (node.path === newPath) {
-    return;
-  }
-
-  const newParentId = node.type === "folder"
-    ? parentPathFromFolderKey(newPath)
-    : parentPathFromKey(newPath);
-  const newName = basename(newPath);
-
-  const snapshot = useTreeStore.getState();
-  useTreeStore.setState((current) => removeNodeFromState(current, id));
-
-  try {
-    const body: Record<string, unknown> = {
-      fromKey: node.path,
-      toKey: newPath,
-      overwrite: false,
-    };
-    if (node.type === "file" && node.etag) {
-      body.ifMatchEtag = node.etag;
-    }
-    const response = await fetch("/api/fs/move", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      throw new Error(await extractError(response));
-    }
-    const data = await response.json().catch(() => ({}));
-    const updatedNode: Node = node.type === "folder"
-      ? {
-          ...node,
-          id: newPath,
-          path: newPath,
-          name: newName,
-          parentId: newParentId,
-        }
-      : {
-          ...node,
-          id: newPath,
-          path: newPath,
-          name: newName,
-          parentId: newParentId,
-          ...(data?.etag ? { etag: data.etag } : {}),
-        };
-    useTreeStore.setState((current) => {
-      const next = addNodeToState(current, updatedNode);
-      if (updatedNode.type === "file") {
-        return {
-          ...next,
-          selectedId: updatedNode.id,
-          selectionOrigin: "user",
-          routeTarget: null,
-        };
-      }
-      return next;
-    });
-    const refreshOptionsForOldParent = node.parentId
-      ? { force: true }
-      : ({ force: true, mode: "s3" as const });
-    await useTreeStore.getState().refreshFolder(node.parentId ?? null, refreshOptionsForOldParent);
-    if (newParentId !== node.parentId) {
-      const refreshOptionsForNewParent = newParentId
-        ? { force: true }
-        : ({ force: true, mode: "s3" as const });
-      await useTreeStore.getState().refreshFolder(newParentId ?? null, refreshOptionsForNewParent);
-    }
-    void useTreeStore.getState().refreshTree({ silent: true });
-  } catch (error) {
-    useTreeStore.setState({
-      nodes: snapshot.nodes,
-      rootIds: snapshot.rootIds,
-      openFolders: snapshot.openFolders,
-      selectedId: snapshot.selectedId,
-      selectionOrigin: snapshot.selectionOrigin,
-      routeTarget: snapshot.routeTarget,
-      slugToId: snapshot.slugToId,
-      idToSlug: snapshot.idToSlug,
-    });
-    throw error;
-  }
-}
+export type TreeStore = typeof useTreeStore;

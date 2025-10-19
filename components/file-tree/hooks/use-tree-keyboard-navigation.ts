@@ -16,8 +16,9 @@ export function useTreeKeyboardNavigation(params: {
   toggleFolder: (id: NodeId) => Promise<void> | void;
   select: (id: NodeId) => void;
   filteredRootIds: NodeId[];
+  selectedId: NodeId | null;
 }) {
-  const { containerRef, activeId, setActiveId, nodes, openFolders, filterActive, matchMap, toggleFolder, select, filteredRootIds } = params;
+  const { containerRef, activeId, setActiveId, nodes, openFolders, filterActive, matchMap, toggleFolder, select, filteredRootIds, selectedId } = params;
 
   useEffect(() => {
     const items = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-node-id]");
@@ -25,11 +26,19 @@ export function useTreeKeyboardNavigation(params: {
       setActiveId(null);
       return;
     }
-    const activeStillVisible = activeId ? Array.from(items).some((item) => item.dataset.nodeId === activeId) : false;
+    const itemArray = Array.from(items);
+    const activeStillVisible = activeId ? itemArray.some((item) => item.dataset.nodeId === activeId) : false;
     if (!activeStillVisible) {
-      setActiveId(items[0].dataset.nodeId ?? null);
+      if (selectedId) {
+        const selectedElement = itemArray.find((item) => item.dataset.nodeId === selectedId);
+        if (selectedElement) {
+          setActiveId(selectedElement.dataset.nodeId ?? null);
+          return;
+        }
+      }
+      setActiveId(null);
     }
-  }, [filteredRootIds, nodes, openFolders, filterActive, matchMap, activeId, containerRef, setActiveId]);
+  }, [filteredRootIds, nodes, openFolders, filterActive, matchMap, activeId, containerRef, setActiveId, selectedId]);
 
   const focusNodeByIndex = (index: number) => {
     const items = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-node-id]");

@@ -33,6 +33,10 @@ export function ActionDialog({
   onClose,
   formatPathLabel,
 }: ActionDialogProps) {
+  const inputClasses = "rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40";
+  const cancelButtonClasses = "w-full rounded-lg border border-border/70 bg-background text-foreground transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto";
+  const primaryButtonClasses = "w-full rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary/40 sm:w-auto";
+
   const renderContent = () => {
     if (!modal) {
       return null;
@@ -55,15 +59,22 @@ export function ActionDialog({
                 onChange={(event) => onInputChange(event.target.value)}
                 placeholder="Folder name"
                 autoFocus
+                className={inputClasses}
               />
               <p className="text-xs text-muted-foreground">Keep names short and descriptive.</p>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+                className={cancelButtonClasses}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className={primaryButtonClasses}>
                 {submitting ? "Creating..." : "Create Folder"}
               </Button>
             </DialogFooter>
@@ -88,14 +99,21 @@ export function ActionDialog({
                 onChange={(event) => onInputChange(event.target.value)}
                 placeholder="File name"
                 autoFocus
+                className={inputClasses}
               />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+                className={cancelButtonClasses}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className={primaryButtonClasses}>
                 {submitting ? "Creating..." : "Create File"}
               </Button>
             </DialogFooter>
@@ -118,14 +136,21 @@ export function ActionDialog({
                 onChange={(event) => onInputChange(event.target.value)}
                 placeholder={modal.isFolder ? "Folder name" : "File name"}
                 autoFocus
+                className={inputClasses}
               />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+                className={cancelButtonClasses}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className={primaryButtonClasses}>
                 {submitting ? "Renaming..." : "Rename"}
               </Button>
             </DialogFooter>
@@ -148,14 +173,21 @@ export function ActionDialog({
                 onChange={(event) => onInputChange(event.target.value)}
                 placeholder="Destination folder"
                 autoFocus
+                className={inputClasses}
               />
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+                className={cancelButtonClasses}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className={primaryButtonClasses}>
                 {submitting ? "Moving..." : "Move"}
               </Button>
             </DialogFooter>
@@ -172,8 +204,14 @@ export function ActionDialog({
               </DialogDescription>
             </DialogHeader>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+                className={cancelButtonClasses}
+              >
                 Cancel
               </Button>
               <Button
@@ -181,6 +219,7 @@ export function ActionDialog({
                 variant="destructive"
                 onClick={() => onSubmit()}
                 disabled={submitting}
+                className={primaryButtonClasses}
               >
                 {submitting ? "Deleting..." : "Delete"}
               </Button>
@@ -194,8 +233,19 @@ export function ActionDialog({
   };
 
   return (
-    <Dialog open={modal !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
-      {modal ? <DialogContent>{renderContent()}</DialogContent> : null}
+    <Dialog open={modal !== null} onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+    >
+      {modal ? (
+        <DialogContent
+          className="w-[92vw] max-w-md rounded-lg border border-border/60 bg-card/95 p-6 shadow-2xl backdrop-blur-md transition-all duration-150 sm:w-full animate-in fade-in-0 zoom-in-95"
+        >
+          {renderContent()}
+        </DialogContent>
+      ) : null}
     </Dialog>
   );
 }

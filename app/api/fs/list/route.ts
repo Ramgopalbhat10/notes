@@ -65,14 +65,25 @@ export async function GET(request: NextRequest) {
       }),
     );
 
-    const folders = (response.CommonPrefixes ?? [])
-      .map((entry) => entry.Prefix)
-      .filter((value): value is string => Boolean(value))
-      .map((value) => {
-        const relative = stripVaultPrefix(value);
-        return relative.slice(prefix.length) || relative;
-      })
-      .filter((value) => Boolean(value));
+    const folderSet = new Set<string>();
+
+    const addFolder = (rawPrefix: string | null | undefined) => {
+      if (!rawPrefix) {
+        return;
+      }
+      const relative = stripVaultPrefix(rawPrefix);
+      if (!relative || !relative.startsWith(prefix)) {
+        return;
+      }
+      const child = relative.slice(prefix.length) || relative;
+      if (!child) {
+        return;
+      }
+      const normalized = child.endsWith("/") ? child : `${child}/`;
+      folderSet.add(normalized);
+    };
+
+    (response.CommonPrefixes ?? []).forEach((entry) => addFolder(entry.Prefix ?? null));
 
     const files = (response.Contents ?? [])
       .map((object) => {
@@ -81,6 +92,12 @@ export async function GET(request: NextRequest) {
         return { object, key, relative };
       })
       .filter(({ key }) => Boolean(key))
+      .map(({ object, key, relative }) => {
+        if (key.endsWith("/")) {
+          addFolder(key);
+        }
+        return { object, key, relative };
+      })
       .filter(({ key }) => !key.endsWith("/"))
       .filter(({ relative }) => Boolean(relative))
       .filter(({ relative }) => relative.endsWith(".md"))
@@ -95,7 +112,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       prefix,
-      folders,
+      folders: Array.from(folderSet).sort(),
       files,
       nextContinuationToken: response.NextContinuationToken ?? null,
     });

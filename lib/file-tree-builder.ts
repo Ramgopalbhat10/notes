@@ -131,17 +131,34 @@ async function buildContext(): Promise<BuildContext> {
         if (!key) {
           continue;
         }
-        if (key.endsWith("/")) {
-          continue;
-        }
+
         const relative = stripVaultPrefix(key);
         if (!relative) {
           continue;
         }
-        if (!relative.endsWith(".md")) {
+        if (relative === FILE_TREE_MANIFEST_FILENAME) {
           continue;
         }
-        if (relative === FILE_TREE_MANIFEST_FILENAME) {
+
+        if (key.endsWith("/")) {
+          const folderId = ensureFolderPath(relative);
+          const parentId = parentIdFromPath(folderId);
+          addChild(childMap, parentId, folderId);
+          if (!nodes.has(folderId)) {
+            const folderNode: FileTreeFolderNode = {
+              id: folderId,
+              type: "folder",
+              name: basename(folderId),
+              path: folderId,
+              parentId,
+              childrenIds: [],
+            };
+            nodes.set(folderId, folderNode);
+          }
+          continue;
+        }
+
+        if (!relative.endsWith(".md")) {
           continue;
         }
 

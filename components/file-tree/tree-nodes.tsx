@@ -113,7 +113,6 @@ export function TreeNode({
       node={node}
       depth={depth}
       selectedId={selectedId}
-      activeId={activeId}
       onActiveChange={onActiveChange}
       openModal={openModal}
       posInSet={posInSet}
@@ -170,6 +169,7 @@ function FolderNode({
     ? node.children.filter((childId) => matchMap.get(childId)?.include)
     : node.children;
   const isActive = node.id === activeId;
+  const selectionState = selectedId === node.id ? "selected" : null;
   const showActions = isActive;
   const connectorLeft = depth * INDENT_SIZE + 10;
 
@@ -192,7 +192,11 @@ function FolderNode({
           <div
             className={cn(
               "group/folder flex items-center rounded-md px-1 transition-colors",
-              isActive ? "bg-accent/30" : "hover:bg-accent/15 focus-within:bg-accent/15",
+              selectionState === "selected"
+                ? "bg-muted text-foreground"
+                : isActive
+                  ? "bg-muted/20"
+                  : "hover:bg-muted/15 focus-within:bg-muted/15",
             )}
             style={{ paddingLeft: depth * INDENT_SIZE }}
           >
@@ -223,7 +227,7 @@ function FolderNode({
             >
               <button
                 type="button"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 aria-label="New folder"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -234,7 +238,7 @@ function FolderNode({
               </button>
               <button
                 type="button"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 aria-label="New file"
                 onClick={(event) => {
                   event.stopPropagation();
@@ -275,7 +279,10 @@ function FolderNode({
             <ContextMenuShortcut>⇧⌘M</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem onSelect={handleDelete} className="text-destructive focus:text-destructive">
+          <ContextMenuItem
+            onSelect={handleDelete}
+            className="rounded-md bg-destructive/80 text-destructive-foreground transition-colors hover:bg-destructive data-[highlighted]:bg-destructive data-[highlighted]:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground"
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
             <ContextMenuShortcut>⌘⌫</ContextMenuShortcut>
@@ -351,7 +358,6 @@ type FileNodeProps = {
   node: Extract<Node, { type: "file" }>;
   depth: number;
   selectedId: NodeId | null;
-  activeId: NodeId | null;
   onActiveChange: (id: NodeId) => void;
   openModal: (modal: ModalState) => void;
   posInSet?: number;
@@ -362,7 +368,6 @@ function FileNode({
   node,
   depth,
   selectedId,
-  activeId,
   onActiveChange,
   openModal,
   posInSet,
@@ -372,7 +377,6 @@ function FileNode({
   const { toast } = useToast();
 
   const isSelected = node.id === selectedId;
-  const isActive = node.id === activeId;
 
   const displayName = node.name.replace(/\.md$/i, "");
 
@@ -422,10 +426,10 @@ function FileNode({
           data-node-id={node.id}
           onClick={handleOpen}
           className={cn(
-            "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-accent/60",
-            "hover:bg-accent",
-            isSelected ? "bg-accent text-accent-foreground" : "",
-            !isSelected && isActive ? "bg-accent/40" : "",
+            "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+            isSelected
+              ? "bg-muted text-foreground"
+              : "hover:bg-muted/20",
           )}
           style={{ paddingLeft: depth * INDENT_SIZE + INDENT_SIZE }}
           role="treeitem"
@@ -460,7 +464,10 @@ function FileNode({
           <ContextMenuShortcut>⇧⌘M</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onSelect={handleDelete} className="text-destructive focus:text-destructive">
+        <ContextMenuItem
+          onSelect={handleDelete}
+          className="rounded-md bg-destructive/80 text-destructive-foreground transition-colors hover:bg-destructive data-[highlighted]:bg-destructive data-[highlighted]:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground"
+        >
           <Trash2 className="mr-2 h-4 w-4" />
           Delete
           <ContextMenuShortcut>⌘⌫</ContextMenuShortcut>
