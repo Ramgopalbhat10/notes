@@ -68,7 +68,7 @@ export const ROOT_PARENT_KEY = "__root__";
 
 const REFRESH_DEBOUNCE_MS = 500;
 
-type StoreSet<T> = (partial: T | Partial<T> | ((state: T) => T | Partial<T>), replace?: boolean) => void;
+type StoreSet<T> = (partial: Partial<T> | ((state: T) => Partial<T>)) => void;
 
 type MutationJob = {
   description: string;
