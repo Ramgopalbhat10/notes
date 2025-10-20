@@ -35,7 +35,7 @@ export function parentPathFromFolderKey(key: string): NodeId | null {
   return `${trimmed.slice(0, idx + 1)}`;
 }
 
-export function removeNodesWithPrefix(nodes: Record<NodeId, Node>, prefix: string): void {
+export function removeNodesWithPrefix(nodes: Record<NodeId, TreeNode>, prefix: string): void {
   Object.keys(nodes).forEach((key) => {
     if (key.startsWith(prefix)) {
       delete nodes[key];

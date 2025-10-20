@@ -12,7 +12,7 @@ import {
 import type {
   FileNode,
   FolderNode,
-  Node,
+  Node as TreeNode,
   NodeId,
   RefreshSource,
   RefreshState,
@@ -42,6 +42,8 @@ import { createMutationQueue } from "@/lib/tree/mutation-queue";
 import { captureTreeSnapshot, restoreTreeSnapshot } from "@/lib/tree/snapshots";
 type EditorStoreHook = typeof import("./editor")["useEditorStore"];
 
+export type { SelectByPathResult } from "@/lib/tree/types";
+
 export const ROOT_PARENT_KEY = "__root__";
 
 const EDITOR_STORE_GLOBAL_KEY = "__MRGB_EDITOR_STORE__";
@@ -64,7 +66,7 @@ function getEditorStore(): EditorStoreHook | null {
   return globalWindow[EDITOR_STORE_GLOBAL_KEY] ?? null;
 }
 type TreeState = {
-  nodes: Record<NodeId, Node>;
+  nodes: Record<NodeId, TreeNode>;
   rootIds: NodeId[];
   openFolders: Record<NodeId, boolean>;
   loadingByParent: Record<string, boolean>;
@@ -115,12 +117,12 @@ function createSnapshot(state: TreeState): TreeSnapshot {
 }
 
 function buildStateFromManifest(manifest: FileTreeManifest): {
-  nodes: Record<NodeId, Node>;
+  nodes: Record<NodeId, TreeNode>;
   rootIds: NodeId[];
   slugToId: Record<string, NodeId>;
   idToSlug: Record<NodeId, string>;
 } {
-  const nodes: Record<NodeId, Node> = {};
+  const nodes: Record<NodeId, TreeNode> = {};
 
   manifest.nodes.forEach((entry) => {
     if (isFolderNode(entry)) {
@@ -159,7 +161,7 @@ function buildStateFromManifest(manifest: FileTreeManifest): {
   };
 }
 
-function addNodeToState(state: TreeState, node: Node): TreeState {
+function addNodeToState(state: TreeState, node: TreeNode): TreeState {
   const nodes = { ...state.nodes, [node.id]: node };
   let rootIds = state.rootIds;
   const openFolders = { ...state.openFolders };
@@ -301,7 +303,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       : parentPathFromKey(targetPath);
     const newName = basename(targetPath);
 
-    const updatedNode: Node = node.type === "folder"
+    const updatedNode: TreeNode = node.type === "folder"
       ? {
           ...node,
           id: targetPath,
@@ -469,7 +471,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       const slugKey = hasTrailingSlash ? (baseSlug ? `${baseSlug}/` : "") : baseSlug;
 
       const nodes = state.nodes;
-      let target: Node | undefined;
+      let target: TreeNode | undefined;
       if (slugKey) {
         target = state.slugToId[slugKey] ? nodes[state.slugToId[slugKey]] : undefined;
         if (!target && !slugKey.endsWith("/")) {
