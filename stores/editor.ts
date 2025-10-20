@@ -4,7 +4,6 @@ import { create } from "zustand";
 import type { EditorView } from "@codemirror/view";
 import { useTreeStore } from "@/stores/tree";
 import {
-  clearPersistentDocuments,
   loadPersistentDocument,
   savePersistentDocument,
   subscribePersistentDocumentEvictions,
@@ -535,7 +534,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
     activeEditorView = null;
     documentCache.clear();
-    void clearPersistentDocuments();
     set({ ...initialState });
   },
 }));
