@@ -10,7 +10,7 @@ Goal: Serve a consistent, low-latency file tree by caching the manifest in Upsta
 - Manifest persisted in Upstash Redis (`file-tree:manifest`), populated from S3, consumed by `/api/tree`, and invalidated via `revalidateTag`.
 - `lib/file-tree-builder` generates a manifest that includes empty folders represented by zero-byte S3 objects; `/api/fs/list` mirrors the same structure.
 - Client tree store powered by an optimistic mutation queue: UI updates instantly, backend jobs run sequentially, a debounced `/api/tree/refresh` harmonises S3 + Redis, and rollbacks restore the previous state on failure.
-- File content requests (`/api/fs/file`) leverage Next.js `unstable_cache` with per-file tags and participate in the same invalidation scheme.
+- File content requests (`/api/fs/file`) leverage Next.js `unstable_cache` with per-file tags and participate in the same invalidation scheme, while the editor keeps a persistent client-side cache (IndexedDB) for instant repeat loads.
 - Tooling updates (`tree:refresh -- --push-redis`, README, runbook) so developers and CI can build/upload the manifest and inspect Redis entries confidently.
 
 ## Acceptance Criteria
@@ -18,7 +18,8 @@ Goal: Serve a consistent, low-latency file tree by caching the manifest in Upsta
 - Any tree mutation (create, rename, move, delete) updates the UI immediately; the refresh icon reflects queued work; if the backend call fails the UI rolls back and surfaces an error.
 - Empty folders created via the UI appear instantly and survive manifest refreshes thanks to placeholder support.
 - `pnpm tree:refresh -- --push-redis` uploads `file-tree.json` to S3 **and** syncs Redis; developers without Redis credentials can still run `tree:build`.
-- `/api/fs/file` returns 304 on repeat requests (`X-File-Cache: HIT`) until mutated actions invalidate the relevant tags.
+- `/api/fs/file` returns 304 on repeat requests (`X-File-Cache: HIT`) until mutated actions invalidate the relevant tags and the client persistent cache is updated in the background without flashing outdated content.
+- Opening a previously viewed file is perceived as instant (<100 ms) thanks to the local persistent cache; background validation keeps content consistent across devices.
 
 ---
 
@@ -46,21 +47,32 @@ Test Plan
 
 ---
 
-## Story 10.2 — File Content Caching (`/api/fs/file`)
+## Story 10.2 — File Content Caching (`/api/fs/file`) & Persistent Client Cache
 - Files fetched via `/api/fs/file` are cached with `unstable_cache`, keyed by `file:${relativePath}` and tagged so mutations invalidate them.
 - Conditional requests (If-None-Match / If-Modified-Since) short-circuit to 304 with `X-File-Cache: HIT`; first loads show `MISS`.
-- File/folder mutations trigger `revalidateFileTags` for affected paths and `revalidateTag("file-tree-manifest")` to keep the manifest consistent.
+- A persistent client cache (IndexedDB/localForage) keeps the most recent file payloads per device, enabling optimistic rendering without waiting for the network.
+- Background validation refreshes the persistent cache when the server reports a new ETag; mutations purge local entries so stale content is never shown.
+- Client persistence lives in `lib/persistent-document-cache.ts`, backed by IndexedDB helpers that support per-key loads plus prefix eviction.
+- `stores/editor.ts` hydrates state from the persistent cache immediately, then issues a conditional fetch to reconcile headers/content without flashing changes.
+- Tree mutations call the persistent cache eviction helpers so local IndexedDB entries disappear before the queued refresh pushes new data to other tabs/devices.
+- Optional prefetching hydrates the client cache for adjacent files/folders after the first load.
 
 Sub-tasks
 - [x] Create `lib/file-cache.ts` (`getCachedFile`, `revalidateFileTags`, `toRelativeKeys`) layered on Next.js incremental cache.
 - [x] Refactor `/api/fs/file` GET to read via the helper and emit diagnostic headers.
 - [x] Ensure every mutation route (`/api/fs/file`, `/api/fs/folder`, `/api/fs/move`, `/api/fs/mkdir`) revalidates the appropriate tags.
 - [x] Adjust the client store to rely on cached fetches instead of blocking on `/api/fs/list` during optimistic mutations.
+- [x] Implement persistent client cache wrapper (IndexedDB/localForage) with load/save helpers.
+- [x] Update `stores/editor.ts` to optimistically render from persistent cache and validate in the background.
+- [x] Invalidate local cache entries on file/folder mutations (PUT/DELETE/move/rename).
+- [ ] (Optional) Prefetch likely next files (siblings / recently opened) into the client cache.
 
 Test Plan
 - Fetch the same file twice: first response 200 + `X-File-Cache: MISS`, second response 304 + `X-File-Cache: HIT`.
 - Edit or delete a file: subsequent fetch returns fresh content with `MISS`.
 - Move/rename a folder with children: nested files are invalidated (`revalidateFileTags` run with child keys) and new paths produce fresh cache entries.
+- Reload the page after viewing a file and confirm the editor renders immediately from persistent cache (<100 ms) while a background request revalidates.
+- After a mutation, ensure the stale content is not rendered (local cache cleared) and the background load shows the new version.
 
 ---
 
@@ -83,5 +95,5 @@ Test Plan
 ## Definition of Done
 - Manifest served from Redis (validated via `/api/tree` headers) and synchronised with S3 after each mutation batch.
 - Tree mutations feel instantaneous; background jobs complete without blocking dialogs; failures revert state and notify the user.
-- File content cache honours Next.js incremental cache semantics and invalidates on every mutation.
+- File content cache honours Next.js incremental cache semantics and invalidates on every mutation, and the client persistent cache surfaces the latest server state without perceivable lag.
 - Documentation and tooling enable new contributors and CI/CD pipelines to manage manifests and caches without reverting to per-instance storage.

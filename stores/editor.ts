@@ -3,6 +3,12 @@
 import { create } from "zustand";
 import type { EditorView } from "@codemirror/view";
 import { useTreeStore } from "@/stores/tree";
+import {
+  clearPersistentDocuments,
+  loadPersistentDocument,
+  savePersistentDocument,
+  subscribePersistentDocumentEvictions,
+} from "@/lib/persistent-document-cache";
 
 type EditorMode = "preview" | "edit";
 type EditorStatus = "idle" | "loading" | "saving" | "error" | "conflict";
@@ -42,7 +48,10 @@ type EditorState = {
   reset: () => void;
 };
 
-const initialState: Omit<EditorState, "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "registerEditorView" | "applyAiResult"> = {
+const initialState: Omit<
+  EditorState,
+  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "registerEditorView" | "applyAiResult"
+> = {
   fileKey: null,
   content: "",
   originalContent: "",
@@ -63,6 +72,41 @@ let loadSeq = 0;
 let currentSaveAbort: AbortController | null = null;
 let activeEditorView: EditorView | null = null;
 const documentCache = new Map<string, CachedDocument>();
+
+if (typeof window !== "undefined") {
+  subscribePersistentDocumentEvictions((event) => {
+    if (event.type === "single") {
+      documentCache.delete(event.key);
+      return;
+    }
+    for (const key of event.keys) {
+      documentCache.delete(key);
+    }
+  });
+}
+
+async function ensureCachedDocument(key: string): Promise<CachedDocument | null> {
+  const inMemory = documentCache.get(key);
+  if (inMemory) {
+    return inMemory;
+  }
+  const persistent = await loadPersistentDocument(key);
+  if (!persistent) {
+    return null;
+  }
+  const record: CachedDocument = {
+    content: persistent.content,
+    etag: persistent.etag,
+    lastModified: persistent.lastModified,
+  };
+  documentCache.set(key, record);
+  return record;
+}
+
+function rememberDocument(key: string, value: CachedDocument): void {
+  documentCache.set(key, value);
+  void savePersistentDocument(key, value);
+}
 
 async function parseErrorResponse(response: Response): Promise<string> {
   try {
@@ -101,19 +145,44 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const controller = new AbortController();
     currentAbort = controller;
 
-    const cached = documentCache.get(key);
+    const cached = await ensureCachedDocument(key);
     const requestHeaders: Record<string, string> = {};
     if (cached?.etag) {
       requestHeaders["If-None-Match"] = cached.etag;
     }
 
-    set({
-      status: "loading",
-      error: null,
-      conflictMessage: null,
-      fileKey: key,
-      errorSource: null,
-    });
+    if (cached) {
+      set({
+        fileKey: key,
+        content: cached.content,
+        originalContent: cached.content,
+        etag: cached.etag,
+        lastModified: cached.lastModified,
+        status: "idle",
+        lastSavedAt: cached.lastModified ?? null,
+        error: null,
+        conflictMessage: null,
+        errorSource: null,
+        dirty: false,
+        mode: "preview",
+        selection: null,
+      });
+    } else {
+      set({
+        status: "loading",
+        error: null,
+        conflictMessage: null,
+        fileKey: key,
+        errorSource: null,
+        content: "",
+        originalContent: "",
+        etag: null,
+        lastModified: null,
+        dirty: false,
+        mode: "preview",
+        selection: null,
+      });
+    }
 
     try {
       const response = await fetch(`/api/fs/file?key=${encodeURIComponent(key)}`, {
@@ -136,7 +205,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
         const cachedContent = cached?.content ?? get().content ?? "";
 
-        documentCache.set(key, {
+        rememberDocument(key, {
           content: cachedContent,
           etag: responseEtag,
           lastModified: responseLastModifiedIso,
@@ -199,7 +268,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const etag = data.etag ?? null;
       const lastModified = data.lastModified ?? null;
 
-      documentCache.set(key, {
+      rememberDocument(key, {
         content: data.content,
         etag,
         lastModified,
@@ -242,12 +311,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         return;
       }
       const message = error instanceof Error ? error.message : "Failed to load file";
-      set({
-        status: "error",
-        error: message,
-        conflictMessage: null,
-        errorSource: "load",
-      });
+      if (cached) {
+        set((current) => ({
+          ...current,
+          status: "idle",
+          error: message,
+          errorSource: "load",
+        }));
+      } else {
+        set({
+          status: "error",
+          error: message,
+          conflictMessage: null,
+          errorSource: "load",
+        });
+      }
     } finally {
       if (currentAbort === controller) {
         currentAbort = null;
@@ -404,7 +482,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }));
 
       const latestState = get();
-      documentCache.set(key, {
+      rememberDocument(key, {
         content: latestState.content,
         etag: newEtag ?? null,
         lastModified: latestState.lastModified,
@@ -457,6 +535,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
     activeEditorView = null;
     documentCache.clear();
+    void clearPersistentDocuments();
     set({ ...initialState });
   },
 }));
+
+if (typeof window !== "undefined") {
+  const globalWindow = window as typeof window & {
+    __MRGB_EDITOR_STORE__?: typeof useEditorStore;
+  };
+  globalWindow.__MRGB_EDITOR_STORE__ = useEditorStore;
+}

@@ -5,7 +5,11 @@ import { create } from "zustand";
 import { normalizeName } from "@/lib/fs-validation";
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
 import { isFolderNode } from "@/lib/file-tree-manifest";
-import { useEditorStore } from "@/stores/editor";
+import {
+  removePersistentDocument,
+  removePersistentDocumentsWithPrefix,
+} from "@/lib/persistent-document-cache";
+type EditorStoreHook = typeof import("./editor")["useEditorStore"];
 
 type ContinuationToken = string | null | undefined;
 
@@ -75,6 +79,26 @@ type MutationJob = {
   perform: () => Promise<void>;
   rollback: () => void;
 };
+
+const EDITOR_STORE_GLOBAL_KEY = "__MRGB_EDITOR_STORE__";
+
+function getEditorStore(): EditorStoreHook | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const globalWindow = window as typeof window & { [EDITOR_STORE_GLOBAL_KEY]?: EditorStoreHook };
+  if (globalWindow[EDITOR_STORE_GLOBAL_KEY]) {
+    return globalWindow[EDITOR_STORE_GLOBAL_KEY] ?? null;
+  }
+  void import("./editor")
+    .then((module) => {
+      globalWindow[EDITOR_STORE_GLOBAL_KEY] = module.useEditorStore;
+    })
+    .catch(() => {
+      // ignore load failures; selection will proceed without dirty guard
+    });
+  return globalWindow[EDITOR_STORE_GLOBAL_KEY] ?? null;
+}
 
 type StateSnapshot = Pick<
   TreeState,
@@ -804,6 +828,11 @@ export const useTreeStore = create<TreeState>((set, get) => {
             },
           }));
         }
+        if (node.type === "folder") {
+          await removePersistentDocumentsWithPrefix(node.path);
+        } else {
+          await removePersistentDocument(node.path);
+        }
       },
       rollback: () => restoreSnapshot(set, snapshot),
     });
@@ -866,9 +895,10 @@ export const useTreeStore = create<TreeState>((set, get) => {
       if (!node || node.type !== "file") {
         return;
       }
-      const editorState = useEditorStore.getState();
+      const editorStore = getEditorStore();
+      const editorState = editorStore?.getState();
       if (
-        editorState.fileKey &&
+        editorState?.fileKey &&
         editorState.fileKey !== node.id &&
         (editorState.dirty || editorState.status === "conflict") &&
         typeof window !== "undefined"
@@ -1136,6 +1166,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
             if (!response.ok && response.status !== 204) {
               throw new Error(await extractError(response));
             }
+            await removePersistentDocumentsWithPrefix(node.path);
           } else {
             const response = await fetch("/api/fs/file", {
               method: "DELETE",
@@ -1145,6 +1176,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
             if (!response.ok && response.status !== 204) {
               throw new Error(await extractError(response));
             }
+            await removePersistentDocument(node.path);
           }
         },
         rollback: () => restoreSnapshot(set, snapshot),
