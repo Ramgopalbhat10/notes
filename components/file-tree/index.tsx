@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 
 export function FileTree() {
   const initRoot = useTreeStore((state) => state.initRoot);
-  const refreshFolder = useTreeStore((state) => state.refreshFolder);
   const refreshTree = useTreeStore((state) => state.refreshTree);
   const rootIds = useTreeStore((state) => state.rootIds);
   const rootLoading = useTreeStore((state) => state.loadingByParent[ROOT_PARENT_KEY] ?? false);
@@ -337,12 +336,7 @@ export function FileTree() {
           {rootError ? (
             <div className="flex flex-col gap-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
               <span>Failed to load files: {rootError}</span>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-fit"
-                onClick={() => void refreshFolder(null, { mode: "manifest", force: true })}
-              >
+              <Button size="sm" variant="outline" className="w-fit" onClick={() => void refreshTree()}>
                 Retry
               </Button>
             </div>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
 import {
   ChevronRight,
   Download,
@@ -12,8 +10,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -147,20 +143,7 @@ function FolderNode({
   setSize,
 }: FolderNodeProps) {
   const toggleFolder = useTreeStore((state) => state.toggleFolder);
-  const refreshFolder = useTreeStore((state) => state.refreshFolder);
-  const { toast } = useToast();
-
   const isOpenState = useTreeStore((state) => state.openFolders[node.id] ?? false);
-  const isLoading = useTreeStore((state) => state.loadingByParent[node.id] ?? false);
-  const error = useTreeStore((state) => state.errorByParent[node.id] ?? null);
-
-  const lastErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (error && error !== lastErrorRef.current) {
-      toast({ title: "Failed to load folder", description: error, variant: "destructive" });
-      lastErrorRef.current = error;
-    }
-  }, [error, toast]);
 
   const matches = filterActive && matchMap ? matchMap.get(node.id) : undefined;
   const shouldForceOpen = filterActive && Boolean(matches?.include);
@@ -300,35 +283,12 @@ function FolderNode({
             />
           ) : null}
           <div className="space-y-1">
-            {isLoading ? (
+            {childIds.length === 0 ? (
               <div
-                className="space-y-1"
+                className="py-1 text-xs text-muted-foreground"
                 style={{ marginLeft: (depth + 1) * INDENT_SIZE + 12 }}
               >
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-            ) : null}
-
-            {error ? (
-              <div className="flex flex-col gap-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
-                <span>Failed to load folder: {error}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-fit"
-                  onClick={() => void refreshFolder(node.id)}
-                >
-                  Retry
-                </Button>
-              </div>
-            ) : null}
-
-            {!isLoading && !error && childIds.length === 0 ? (
-              <div
-                className="text-xs text-muted-foreground py-1"
-                style={{ marginLeft: (depth + 1) * INDENT_SIZE + 12 }}
-              >
+                Empty folder
               </div>
             ) : null}
 

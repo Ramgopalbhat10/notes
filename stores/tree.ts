@@ -9,76 +9,40 @@ import {
   removePersistentDocument,
   removePersistentDocumentsWithPrefix,
 } from "@/lib/persistent-document-cache";
+import type {
+  FileNode,
+  FolderNode,
+  Node,
+  NodeId,
+  RefreshSource,
+  RefreshState,
+  RouteTargetState,
+  SelectByPathResult,
+  SelectionOrigin,
+  TreeSnapshot,
+} from "@/lib/tree/types";
+import {
+  basename,
+  buildSlugState,
+  ensureFilePath,
+  ensureFolderPath,
+  filterOpenFolders,
+  openAncestorFolders,
+  parentPathFromFolderKey,
+  parentPathFromKey,
+  removeNodesWithPrefix,
+  slugifySegment,
+} from "@/lib/tree/utils";
+import {
+  createManifestRefresher,
+  extractTreeError,
+  fetchManifest,
+} from "@/lib/tree/manifest-client";
+import { createMutationQueue } from "@/lib/tree/mutation-queue";
+import { captureTreeSnapshot, restoreTreeSnapshot } from "@/lib/tree/snapshots";
 type EditorStoreHook = typeof import("./editor")["useEditorStore"];
 
-type ContinuationToken = string | null | undefined;
-
-type ListingResponse = {
-  prefix: string;
-  folders: string[];
-  files: {
-    key: string;
-    etag?: string;
-    lastModified?: string;
-    size?: number;
-  }[];
-  nextContinuationToken: ContinuationToken;
-};
-
-export type NodeId = string;
-
-type RefreshState = "idle" | "pending" | "running";
-type RefreshSource = "manual" | "silent" | "mutation" | null;
-
-export type FileNode = {
-  id: NodeId;
-  type: "file";
-  name: string;
-  path: string;
-  parentId: NodeId | null;
-  etag?: string;
-  lastModified?: string;
-  size?: number;
-};
-
-export type FolderNode = {
-  id: NodeId;
-  type: "folder";
-  name: string;
-  path: string;
-  parentId: NodeId | null;
-  children: NodeId[];
-  childrenLoaded: boolean;
-  lastModified?: string;
-};
-
-export type Node = FileNode | FolderNode;
-
-export type RouteTargetState = {
-  path: string;
-  status: "missing" | "folder-empty";
-} | null;
-
-export type SelectionOrigin = "user" | "route" | null;
-
-export type SelectByPathResult =
-  | { status: "pending" }
-  | { status: "cleared" }
-  | { status: "selected"; nodeId: NodeId }
-  | { status: "folder-empty"; folderId: NodeId }
-  | { status: "missing"; path: string };
-
 export const ROOT_PARENT_KEY = "__root__";
-
-const REFRESH_DEBOUNCE_MS = 500;
-
-type StoreSet<T> = (partial: Partial<T> | ((state: T) => Partial<T>)) => void;
-
-type MutationJob = {
-  description: string;
-  perform: () => Promise<void>;
-  rollback: () => void;
-};
 
 const EDITOR_STORE_GLOBAL_KEY = "__MRGB_EDITOR_STORE__";
 
@@ -99,154 +63,6 @@ function getEditorStore(): EditorStoreHook | null {
     });
   return globalWindow[EDITOR_STORE_GLOBAL_KEY] ?? null;
 }
-
-type StateSnapshot = Pick<
-  TreeState,
-  | "nodes"
-  | "rootIds"
-  | "openFolders"
-  | "slugToId"
-  | "idToSlug"
-  | "selectedId"
-  | "routeTarget"
-  | "selectionOrigin"
->;
-
-function captureSnapshot(state: TreeState): StateSnapshot {
-  return structuredClone({
-    nodes: state.nodes,
-    rootIds: state.rootIds,
-    openFolders: state.openFolders,
-    slugToId: state.slugToId,
-    idToSlug: state.idToSlug,
-    selectedId: state.selectedId,
-    routeTarget: state.routeTarget,
-    selectionOrigin: state.selectionOrigin,
-  });
-}
-
-function restoreSnapshot(set: StoreSet<TreeState>, snapshot: StateSnapshot) {
-  const cloned = structuredClone(snapshot);
-  set((current) => ({
-    ...current,
-    ...cloned,
-  }));
-}
-
-function createManifestRefresher(
-  loadManifest: (options?: { force?: boolean }) => Promise<void>,
-  set: StoreSet<TreeState>,
-) {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  let running = false;
-  let rerun = false;
-
-  const run = async (source: RefreshSource) => {
-    if (running) {
-      rerun = true;
-      return;
-    }
-    running = true;
-    set({ refreshState: "running", refreshLastSource: source });
-    try {
-      const response = await fetch("/api/tree/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) {
-        throw new Error(await extractError(response));
-      }
-      await loadManifest({ force: true });
-      set((state) => ({
-        refreshState: state.pendingMutations > 0 ? "pending" : "idle",
-        refreshSuccessAt: new Date().toISOString(),
-        refreshError: null,
-        refreshLastSource: source,
-      }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to refresh file tree";
-      set((state) => ({
-        refreshState: state.pendingMutations > 0 ? "pending" : "idle",
-        refreshError: message,
-        refreshLastSource: source,
-      }));
-    } finally {
-      running = false;
-      if (rerun) {
-        rerun = false;
-        void run(source);
-      }
-    }
-  };
-
-  const schedule = () => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(() => {
-      timeout = null;
-      void run("mutation");
-    }, REFRESH_DEBOUNCE_MS);
-  };
-
-  const runImmediate = async (source: RefreshSource) => {
-    if (timeout) {
-      clearTimeout(timeout);
-      timeout = null;
-    }
-    await run(source);
-  };
-
-  return { schedule, runImmediate } as const;
-}
-
-function createMutationEnqueuer(
-  set: StoreSet<TreeState>,
-  get: () => TreeState,
-  scheduleRefresh: () => void,
-) {
-  const queue: MutationJob[] = [];
-  let processing = false;
-
-  const process = async () => {
-    if (processing) {
-      return;
-    }
-    processing = true;
-    while (queue.length > 0) {
-      const job = queue.shift()!;
-      try {
-        await job.perform();
-        set((state) => ({ pendingMutations: Math.max(0, state.pendingMutations - 1) }));
-        scheduleRefresh();
-      } catch (error) {
-        job.rollback();
-        const message = error instanceof Error ? error.message : "Failed to update file tree";
-        set((state) => ({
-          pendingMutations: Math.max(0, state.pendingMutations - 1),
-          refreshError: message,
-          refreshLastSource: "mutation",
-          refreshState: Math.max(0, state.pendingMutations - 1) > 0 ? "pending" : "idle",
-        }));
-      }
-    }
-    processing = false;
-    const state = get();
-    if (state.pendingMutations === 0 && state.refreshState === "pending") {
-      set({ refreshState: "idle" });
-    }
-  };
-
-  return (job: MutationJob) => {
-    queue.push(job);
-    set((state) => ({
-      pendingMutations: state.pendingMutations + 1,
-      refreshState: state.refreshState === "idle" ? "pending" : state.refreshState,
-    }));
-    void process();
-  };
-}
-
 type TreeState = {
   nodes: Record<NodeId, Node>;
   rootIds: NodeId[];
@@ -268,14 +84,10 @@ type TreeState = {
   pendingMutations: number;
 
   initRoot: () => Promise<void>;
-  toggleFolder: (id: NodeId) => Promise<void>;
+  toggleFolder: (id: NodeId) => void;
   select: (id: NodeId) => void;
   selectByPath: (path: string | null) => SelectByPathResult;
   acknowledgeSelectionOrigin: () => void;
-  refreshFolder: (
-    id: NodeId | null,
-    options?: { force?: boolean; mode?: "manifest" | "s3" },
-  ) => Promise<void>;
   refreshTree: (options?: { silent?: boolean }) => Promise<void>;
   createFolder: (parentId: NodeId | null, name: string) => Promise<void>;
   createFile: (parentId: NodeId | null, name: string, initialContent?: string) => Promise<void>;
@@ -288,232 +100,70 @@ function parentKey(id: NodeId | null): string {
   return id ?? ROOT_PARENT_KEY;
 }
 
-function basename(path: string): string {
-  const trimmed = path.endsWith("/") ? path.slice(0, -1) : path;
-  const idx = trimmed.lastIndexOf("/");
-  return idx >= 0 ? trimmed.slice(idx + 1) : trimmed;
-}
 
-async function fetchFolder(prefix: string): Promise<Pick<ListingResponse, "folders" | "files">> {
-  const accumulatedFolders = new Set<string>();
-  const files: ListingResponse["files"] = [];
-  let continuation: ContinuationToken = null;
-
-  do {
-    const params = new URLSearchParams();
-    if (prefix) {
-      params.set("prefix", prefix);
-    }
-    if (continuation) {
-      params.set("continuationToken", continuation);
-    }
-
-    const response = await fetch(`/api/fs/list${params.size ? `?${params.toString()}` : ""}`);
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      const message = typeof body?.error === "string" ? body.error : "Failed to load folder";
-      throw new Error(message);
-    }
-
-    const data = (await response.json()) as ListingResponse;
-    data.folders.forEach((folder) => accumulatedFolders.add(folder));
-    files.push(...data.files);
-    continuation = data.nextContinuationToken;
-  } while (continuation);
-
-  return { folders: Array.from(accumulatedFolders), files };
-}
-
-function ensureFolderPath(parentPath: string, name: string) {
-  return `${parentPath}${name}/`;
-}
-
-function ensureFilePath(parentPath: string, name: string) {
-  const normalized = name.toLowerCase().endsWith(".md") ? name : `${name}.md`;
-  return `${parentPath}${normalized}`;
-}
-
-function removeNodesWithPrefix(nodes: Record<NodeId, Node>, prefix: string) {
-  Object.keys(nodes).forEach((key) => {
-    if (key.startsWith(prefix)) {
-      delete nodes[key];
-    }
-  });
-}
-
-function applyListing(
-  state: TreeState,
-  parentId: NodeId | null,
-  prefix: string,
-  listing: Pick<ListingResponse, "folders" | "files">,
-): TreeState {
-  const nodes = { ...state.nodes };
-  const folderIds: NodeId[] = [];
-  const fileIds: NodeId[] = [];
-
-  listing.folders.forEach((folderName) => {
-    const path = `${prefix}${folderName}`;
-    folderIds.push(path);
-    const existing = nodes[path];
-    nodes[path] = {
-      id: path,
-      type: "folder",
-      name: basename(path),
-      path,
-      parentId,
-      children: existing && existing.type === "folder" ? existing.children : [],
-      childrenLoaded: existing && existing.type === "folder" ? existing.childrenLoaded : false,
-      lastModified: existing?.lastModified,
-    } satisfies FolderNode;
-  });
-
-  listing.files.forEach((file) => {
-    const path = file.key;
-    fileIds.push(path);
-    nodes[path] = {
-      id: path,
-      type: "file",
-      name: basename(path),
-      path,
-      parentId: parentPathFromKey(path),
-      etag: file.etag,
-      lastModified: file.lastModified,
-      size: file.size,
-    } satisfies FileNode;
-  });
-
-  const children = [...folderIds, ...fileIds].sort();
-
-  if (parentId) {
-    const parentNode = nodes[parentId];
-    if (parentNode && parentNode.type === "folder") {
-      parentNode.children = children;
-      parentNode.childrenLoaded = true;
-    }
-  }
-
-  const rootIds = parentId ? state.rootIds : children;
-  const { slugToId, idToSlug } = buildSlugState(nodes);
-
+function createSnapshot(state: TreeState): TreeSnapshot {
   return {
-    ...state,
-    nodes,
-    rootIds,
-    slugToId,
-    idToSlug,
+    nodes: state.nodes,
+    rootIds: state.rootIds,
+    openFolders: state.openFolders,
+    slugToId: state.slugToId,
+    idToSlug: state.idToSlug,
+    selectedId: state.selectedId,
+    routeTarget: state.routeTarget,
+    selectionOrigin: state.selectionOrigin,
   };
 }
 
-function parentPathFromKey(key: string): NodeId | null {
-  const idx = key.lastIndexOf("/");
-  if (idx === -1) {
-    return null;
-  }
-  return key.slice(0, idx + 1);
-}
-
-function parentPathFromFolderKey(key: string): NodeId | null {
-  const trimmed = key.endsWith("/") ? key.slice(0, -1) : key;
-  if (!trimmed) {
-    return null;
-  }
-  const idx = trimmed.lastIndexOf("/");
-  if (idx === -1) {
-    return null;
-  }
-  return `${trimmed.slice(0, idx + 1)}`;
-}
-
-function openAncestorFolders(
-  nodes: Record<NodeId, Node>,
-  openFolders: Record<NodeId, boolean>,
-  startId: NodeId | null,
-): Record<NodeId, boolean> {
-  const updated = { ...openFolders };
-  if (!startId) {
-    return updated;
-  }
-  const visited = new Set<NodeId>();
-  let current: NodeId | null = startId;
-  while (current && !visited.has(current)) {
-    visited.add(current);
-    updated[current] = true;
-    const node = nodes[current] as Node | undefined;
-    if (!node || node.type !== "folder") {
-      break;
-    }
-    current = node.parentId;
-  }
-  return updated;
-}
-
-function pathSegmentsForSlug(path: string): string[] {
-  const trimmed = path.endsWith("/") ? path.slice(0, -1) : path;
-  if (!trimmed) {
-    return [];
-  }
-  return trimmed.split("/");
-}
-
-function slugifySegment(segment: string, stripExtension: boolean): string {
-  let value = segment;
-  if (stripExtension) {
-    value = value.replace(/\.md$/i, "");
-  }
-  return value.trim().replace(/\s+/g, "-").toLowerCase();
-}
-
-function buildSlugPath(node: Node): string {
-  const segments = pathSegmentsForSlug(node.path);
-  if (segments.length === 0) {
-    return node.type === "folder" ? "" : "";
-  }
-  const slugSegments = segments.map((segment, index) => {
-    const isFileSegment = node.type === "file" && index === segments.length - 1;
-    return slugifySegment(segment, isFileSegment);
-  });
-  let slug = slugSegments.join("/");
-  if (node.type === "folder" && slug) {
-    slug = `${slug}/`;
-  }
-  return slug;
-}
-
-function buildSlugState(nodes: Record<NodeId, Node>): {
+function buildStateFromManifest(manifest: FileTreeManifest): {
+  nodes: Record<NodeId, Node>;
+  rootIds: NodeId[];
   slugToId: Record<string, NodeId>;
   idToSlug: Record<NodeId, string>;
 } {
-  const slugToId: Record<string, NodeId> = {};
-  const idToSlug: Record<NodeId, string> = {};
+  const nodes: Record<NodeId, Node> = {};
 
-  Object.values(nodes).forEach((node) => {
-    const baseSlug = buildSlugPath(node);
-    if (!baseSlug) {
-      idToSlug[node.id] = node.id;
-      return;
+  manifest.nodes.forEach((entry) => {
+    if (isFolderNode(entry)) {
+      const path = entry.path.endsWith("/") ? entry.path : `${entry.path}/`;
+      nodes[entry.id] = {
+        id: entry.id,
+        type: "folder",
+        name: entry.name,
+        path,
+        parentId: entry.parentId,
+        children: [...entry.childrenIds].sort(),
+        childrenLoaded: true,
+        lastModified: entry.lastModified,
+      } satisfies FolderNode;
+    } else {
+      nodes[entry.id] = {
+        id: entry.id,
+        type: "file",
+        name: entry.name,
+        path: entry.path,
+        parentId: entry.parentId,
+        etag: entry.etag,
+        lastModified: entry.lastModified,
+        size: entry.size,
+      } satisfies FileNode;
     }
-    let slug = baseSlug;
-    let counter = 2;
-    while (slugToId[slug] && slugToId[slug] !== node.id) {
-      if (node.type === "folder") {
-        const folderSlug = baseSlug.replace(/\/$/, "");
-        slug = `${folderSlug}-${counter}/`;
-      } else {
-        slug = `${baseSlug}-${counter}`;
-      }
-      counter += 1;
-    }
-    slugToId[slug] = node.id;
-    idToSlug[node.id] = slug;
   });
 
-  return { slugToId, idToSlug };
+  const { slugToId, idToSlug } = buildSlugState(nodes);
+
+  return {
+    nodes,
+    rootIds: [...manifest.rootIds].sort(),
+    slugToId,
+    idToSlug,
+  };
 }
 
 function addNodeToState(state: TreeState, node: Node): TreeState {
   const nodes = { ...state.nodes, [node.id]: node };
   let rootIds = state.rootIds;
   const openFolders = { ...state.openFolders };
+
   if (node.parentId) {
     const parent = nodes[node.parentId];
     if (parent && parent.type === "folder") {
@@ -581,122 +231,6 @@ function removeNodeFromState(state: TreeState, id: NodeId): TreeState {
   };
 }
 
-function sanitizeEtag(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-  return value.replace(/^W\//i, "").replace(/"/g, "");
-}
-
-function formatIfNoneMatch(value: string | null): string | null {
-  if (!value) {
-    return null;
-  }
-  return `"${value}"`;
-}
-
-function filterOpenFolders(
-  openFolders: Record<NodeId, boolean>,
-  nodes: Record<NodeId, Node>,
-): Record<NodeId, boolean> {
-  const result: Record<NodeId, boolean> = {};
-  Object.entries(openFolders).forEach(([id, isOpen]) => {
-    const node = nodes[id];
-    if (node && node.type === "folder") {
-      result[id] = isOpen;
-    }
-  });
-  return result;
-}
-
-function buildStateFromManifest(manifest: FileTreeManifest): {
-  nodes: Record<NodeId, Node>;
-  rootIds: NodeId[];
-  slugToId: Record<string, NodeId>;
-  idToSlug: Record<NodeId, string>;
-} {
-  const nodes: Record<NodeId, Node> = {};
-
-  manifest.nodes.forEach((entry) => {
-    if (isFolderNode(entry)) {
-      const path = entry.path.endsWith("/") ? entry.path : `${entry.path}/`;
-      nodes[entry.id] = {
-        id: entry.id,
-        type: "folder",
-        name: entry.name,
-        path,
-        parentId: entry.parentId,
-        children: [...entry.childrenIds].sort(),
-        childrenLoaded: true,
-        lastModified: entry.lastModified,
-      } satisfies FolderNode;
-    } else {
-      nodes[entry.id] = {
-        id: entry.id,
-        type: "file",
-        name: entry.name,
-        path: entry.path,
-        parentId: entry.parentId,
-        etag: entry.etag,
-        lastModified: entry.lastModified,
-        size: entry.size,
-      } satisfies FileNode;
-    }
-  });
-
-  const { slugToId, idToSlug } = buildSlugState(nodes);
-
-  return {
-    nodes,
-    rootIds: [...manifest.rootIds].sort(),
-    slugToId,
-    idToSlug,
-  };
-}
-
-async function fetchManifest(
-  etag: string | null,
-  force: boolean,
-): Promise<{ manifest?: FileTreeManifest; etag?: string | null }> {
-  const headers = new Headers();
-  if (!force) {
-    const headerValue = formatIfNoneMatch(etag);
-    if (headerValue) {
-      headers.set("If-None-Match", headerValue);
-    }
-  }
-
-  const response = await fetch("/api/tree", {
-    method: "GET",
-    headers,
-    cache: "no-store",
-  });
-
-  if (response.status === 304) {
-    return {};
-  }
-
-  if (!response.ok) {
-    throw new Error(await extractError(response));
-  }
-
-  const manifest = (await response.json()) as FileTreeManifest;
-  const nextEtag = sanitizeEtag(response.headers.get("ETag"));
-  return { manifest, etag: nextEtag };
-}
-
-async function extractError(response: Response): Promise<string> {
-  try {
-    const data = await response.json();
-    if (typeof data?.error === "string") {
-      return data.error;
-    }
-  } catch {
-    // ignore
-  }
-  return response.statusText || "Request failed";
-}
-
 export const useTreeStore = create<TreeState>((set, get) => {
   const loadManifest = async ({ force = false }: { force?: boolean } = {}) => {
     const state = get();
@@ -749,7 +283,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
   const { schedule: scheduleManifestRefresh, runImmediate: runManifestRefreshImmediate } =
     createManifestRefresher(loadManifest, set);
-  const enqueueMutation = createMutationEnqueuer(set, get, scheduleManifestRefresh);
+  const enqueueMutation = createMutationQueue(set, get, scheduleManifestRefresh);
 
   const queueMove = (nodeId: NodeId, targetPath: string) => {
     const state = get();
@@ -761,7 +295,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       return;
     }
 
-    const snapshot = captureSnapshot(state);
+    const snapshot = captureTreeSnapshot(createSnapshot(state));
     const newParentId = node.type === "folder"
       ? parentPathFromFolderKey(targetPath)
       : parentPathFromKey(targetPath);
@@ -814,7 +348,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
           body: JSON.stringify(body),
         });
         if (!response.ok) {
-          throw new Error(await extractError(response));
+          throw new Error(await extractTreeError(response));
         }
         const data = await response.json().catch(() => ({})) as { etag?: string };
         if (updatedNode.type === "file" && typeof data?.etag === "string") {
@@ -834,7 +368,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
           await removePersistentDocument(node.path);
         }
       },
-      rollback: () => restoreSnapshot(set, snapshot),
+      rollback: () => restoreTreeSnapshot(set, snapshot),
     });
   };
 
@@ -875,7 +409,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       set({ initialized: true });
     },
 
-    toggleFolder: async (id) => {
+    toggleFolder: (id) => {
       const node = get().nodes[id];
       if (!node || node.type !== "folder") {
         return;
@@ -884,10 +418,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
       set((state) => ({
         openFolders: { ...state.openFolders, [id]: !isOpen },
       }));
-
-      if (!isOpen && !node.childrenLoaded) {
-        await get().refreshFolder(id);
-      }
     },
 
     select: (id) => {
@@ -1020,35 +550,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
       set({ selectionOrigin: null });
     },
 
-    refreshFolder: async (id, options) => {
-      const strategy = options?.mode ?? (id === null ? "manifest" : "s3");
-      if (id === null && strategy === "manifest") {
-        await loadManifest({ force: options?.force ?? false });
-        return;
-      }
-
-      const prefix = id ?? "";
-      const key = parentKey(id);
-
-      set((state) => ({
-        loadingByParent: { ...state.loadingByParent, [key]: true },
-        errorByParent: { ...state.errorByParent, [key]: null },
-      }));
-
-      try {
-        const { folders, files } = await fetchFolder(prefix);
-        set((state) => ({
-          ...applyListing(state, id, prefix, { folders, files }),
-          loadingByParent: { ...state.loadingByParent, [key]: false },
-        }));
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to load folder";
-        set((state) => ({
-          loadingByParent: { ...state.loadingByParent, [key]: false },
-          errorByParent: { ...state.errorByParent, [key]: message },
-        }));
-      }
-    },
 
     refreshTree,
 
@@ -1063,10 +564,10 @@ export const useTreeStore = create<TreeState>((set, get) => {
         path: newPath,
         parentId,
         children: [],
-        childrenLoaded: false,
+        childrenLoaded: true,
       };
 
-      const snapshot = captureSnapshot(get());
+      const snapshot = captureTreeSnapshot(createSnapshot(get()));
       set((state) => addNodeToState(state, optimisticNode));
 
       enqueueMutation({
@@ -1078,10 +579,10 @@ export const useTreeStore = create<TreeState>((set, get) => {
             body: JSON.stringify({ prefix: newPath }),
           });
           if (!response.ok) {
-            throw new Error(await extractError(response));
+            throw new Error(await extractTreeError(response));
           }
         },
-        rollback: () => restoreSnapshot(set, snapshot),
+        rollback: () => restoreTreeSnapshot(set, snapshot),
       });
 
       return Promise.resolve();
@@ -1099,7 +600,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         parentId,
       };
 
-      const snapshot = captureSnapshot(get());
+      const snapshot = captureTreeSnapshot(createSnapshot(get()));
       set((state) => addNodeToState(state, optimisticNode));
 
       enqueueMutation({
@@ -1111,7 +612,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
             body: JSON.stringify({ key: newPath, content: initialContent }),
           });
           if (!response.ok) {
-            throw new Error(await extractError(response));
+            throw new Error(await extractTreeError(response));
           }
           const data = (await response.json().catch(() => ({}))) as { etag?: string };
           if (data?.etag) {
@@ -1126,7 +627,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
             }));
           }
         },
-        rollback: () => restoreSnapshot(set, snapshot),
+        rollback: () => restoreTreeSnapshot(set, snapshot),
       });
 
       return Promise.resolve();
@@ -1151,7 +652,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       if (!node) {
         return;
       }
-      const snapshot = captureSnapshot(get());
+      const snapshot = captureTreeSnapshot(createSnapshot(get()));
       set((state) => removeNodeFromState(state, id));
 
       enqueueMutation({
@@ -1164,7 +665,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
               body: JSON.stringify({ prefix: node.path, recursive: true }),
             });
             if (!response.ok && response.status !== 204) {
-              throw new Error(await extractError(response));
+              throw new Error(await extractTreeError(response));
             }
             await removePersistentDocumentsWithPrefix(node.path);
           } else {
@@ -1174,12 +675,12 @@ export const useTreeStore = create<TreeState>((set, get) => {
               body: JSON.stringify({ key: node.path, ifMatchEtag: node.etag }),
             });
             if (!response.ok && response.status !== 204) {
-              throw new Error(await extractError(response));
+              throw new Error(await extractTreeError(response));
             }
             await removePersistentDocument(node.path);
           }
         },
-        rollback: () => restoreSnapshot(set, snapshot),
+        rollback: () => restoreTreeSnapshot(set, snapshot),
       });
 
       return Promise.resolve();
