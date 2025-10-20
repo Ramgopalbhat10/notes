@@ -42,7 +42,8 @@ import { createMutationQueue } from "@/lib/tree/mutation-queue";
 import { captureTreeSnapshot, restoreTreeSnapshot } from "@/lib/tree/snapshots";
 type EditorStoreHook = typeof import("./editor")["useEditorStore"];
 
-export type { SelectByPathResult } from "@/lib/tree/types";
+export type Node = TreeNode;
+export type { NodeId, FileNode, FolderNode, SelectByPathResult } from "@/lib/tree/types";
 
 export const ROOT_PARENT_KEY = "__root__";
 
@@ -214,7 +215,7 @@ function removeNodeFromState(state: TreeState, id: NodeId): TreeState {
     if (parent && parent.type === "folder") {
       nodes[node.parentId] = {
         ...parent,
-        children: parent.children.filter((childId) => childId !== id),
+        children: parent.children.filter((childId: NodeId) => childId !== id),
       };
     }
   }
@@ -463,7 +464,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       const withoutTrailing = trimmedLeading.replace(/\/+$/, "");
       const segments = withoutTrailing ? withoutTrailing.split("/").filter((segment) => segment.length > 0) : [];
 
-      const slugSegments = segments.map((segment, index) => {
+      const slugSegments = segments.map((segment, index: number) => {
         const isLast = index === segments.length - 1;
         return slugifySegment(segment, isLast && !hasTrailingSlash);
       });
@@ -517,7 +518,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       const folderNode = target;
       let openFoldersState = openAncestorFolders(nodes, state.openFolders, folderNode.id);
 
-      const firstFileId = folderNode.children.find((childId) => {
+      const firstFileId = folderNode.children.find((childId: NodeId) => {
         const child = nodes[childId];
         return child?.type === "file";
       });
