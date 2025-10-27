@@ -6,7 +6,6 @@ import { s3BodyToString } from "@/lib/s3-body";
 
 export const FILE_CACHE_TAG_PREFIX = "file:";
 const FILE_CACHE_KEY_PREFIX = "file-cache:";
-const DEFAULT_REVALIDATE_SECONDS = 300;
 
 const cacheMissTracker = new Set<string>();
 
@@ -71,7 +70,7 @@ export async function getCachedFile(key: string): Promise<CachedFileRecord> {
     [cacheKey],
     {
       tags: [tag],
-      revalidate: DEFAULT_REVALIDATE_SECONDS,
+      revalidate: false,
     },
   );
 

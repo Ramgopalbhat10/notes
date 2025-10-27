@@ -16,12 +16,12 @@ We observed a risk of the browser serving locally cached file content for up to 
   - Edit `stores/editor.ts` to call `fetch(..., { cache: "no-cache" })` when hitting `/api/fs/file`.
 - For the file content API, require revalidation and prevent shared caching:
   - In `app/api/fs/file/route.ts`, set `Cache-Control` to `private, no-cache, must-revalidate`.
-- Keep server-side cache TTL for S3-backed file reads and tag invalidation as-is for efficiency.
+- Switch server-side file content cache to tag-only revalidation (`revalidate: false`) and rely on tag invalidation.
 - Keep manifest caching behavior as-is (short HTTP TTL + tag invalidation + client `no-store`).
 
 ## Details
 - File data caching
-  - Server cache: `lib/file-cache.ts` uses `unstable_cache` with key `file-cache:${key}` and tag `file:${key}`. `revalidate: 300`.
+  - Server cache: `lib/file-cache.ts` uses `unstable_cache` with key `file-cache:${key}` and tag `file:${key}`. `revalidate: false` (tag-only revalidation).
   - Invalidation: `revalidateFileTags([...])` is called from write endpoints: 
     - `app/api/fs/file/route.ts`
     - `app/api/fs/folder/route.ts`
@@ -37,7 +37,7 @@ We observed a risk of the browser serving locally cached file content for up to 
 
 ## TTL Alignment Rationale
 - File content
-  - Server cache TTL (`300s`) reduces S3 reads. Writes trigger tag invalidation to evict stale entries immediately.
+  - Server cache uses tag-only revalidation (`revalidate: false`), so entries persist until explicitly invalidated, minimizing periodic misses across instances. Writes trigger tag invalidation to evict stale entries immediately.
   - Browser always revalidates ("no-cache" + ETag) so user never sees stale content after a write. Most refreshes return `304`.
 - Manifest
   - Short HTTP TTLs are acceptable for list/navigation UX while tag invalidation ensures freshness after writes.
@@ -45,7 +45,7 @@ We observed a risk of the browser serving locally cached file content for up to 
 
 ## Alternatives Considered
 - Using `cache: "no-store"` for editor file reads: guarantees network round-trip but removes `304` wins. "no-cache" keeps conditional GET benefits.
-- Reducing server `revalidate` for files: improves freshness marginally but increases S3 load. Tag invalidation already guarantees post-write freshness.
+- Using a TTL for server file cache: provides periodic refresh but introduces avoidable misses; tag-only revalidation preferred since writes already trigger tag invalidation.
 - Enabling Dynamic IO + `use cache`: not adopted now; current approach with `unstable_cache` is stable and explicit.
 
 ## Consequences
