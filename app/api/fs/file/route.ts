@@ -16,7 +16,7 @@ type StatusError = Error & {
 
 export const runtime = "nodejs";
 
-const CACHE_CONTROL_HEADER = "public, max-age=60, stale-while-revalidate=30";
+const CACHE_CONTROL_HEADER = "private, no-cache, must-revalidate";
 
 function normalizeEtag(value: string | null | undefined): string | null {
   if (!value) {

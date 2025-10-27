@@ -187,6 +187,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const response = await fetch(`/api/fs/file?key=${encodeURIComponent(key)}`, {
         signal: controller.signal,
         headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+        cache: "no-cache",
       });
       if (response.status === 304) {
         if (requestId !== loadSeq) {
