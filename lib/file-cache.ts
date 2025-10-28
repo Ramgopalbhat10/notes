@@ -20,6 +20,34 @@ export interface CachedFileRecord {
   cacheStatus: "hit" | "miss";
 }
 
+// Value stored in Redis for file cache entries (key is implicit in the Redis key)
+interface RedisFileCacheValue {
+  content: string;
+  etag?: string;
+  lastModified?: string;
+  fetchedAt?: string;
+}
+
+function isRedisFileCacheValue(value: unknown): value is RedisFileCacheValue {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.content !== "string") {
+    return false;
+  }
+  if (obj.etag !== undefined && typeof obj.etag !== "string") {
+    return false;
+  }
+  if (obj.lastModified !== undefined && typeof obj.lastModified !== "string") {
+    return false;
+  }
+  if (obj.fetchedAt !== undefined && typeof obj.fetchedAt !== "string") {
+    return false;
+  }
+  return true;
+}
+
 function sanitizeEtag(value: string | undefined): string | undefined {
   if (!value) {
     return undefined;
@@ -68,27 +96,19 @@ async function readFromRedis(
 ): Promise<Omit<CachedFileRecord, "cacheStatus"> | null> {
   try {
     const redis = getRedisClient();
-    const value = await redis.get<string | Record<string, unknown> | null>(buildRedisKey(key));
-    if (!value) {
+    const value = await redis.get<unknown>(buildRedisKey(key));
+    if (value == null) {
       return null;
     }
-    const obj = typeof value === "string" ? JSON.parse(value) : value;
-    if (
-      obj &&
-      typeof obj === "object" &&
-      typeof (obj as any).content === "string"
-    ) {
-      const etag = typeof (obj as any).etag === "string" ? (obj as any).etag : undefined;
-      const lastModified =
-        typeof (obj as any).lastModified === "string" ? (obj as any).lastModified : undefined;
-      const fetchedAt =
-        typeof (obj as any).fetchedAt === "string" ? (obj as any).fetchedAt : new Date().toISOString();
+    const parsed: unknown = typeof value === "string" ? JSON.parse(value) : value;
+    if (isRedisFileCacheValue(parsed)) {
+      const { content, etag, lastModified, fetchedAt } = parsed;
       return {
         key,
-        content: (obj as any).content as string,
+        content,
         etag,
         lastModified,
-        fetchedAt,
+        fetchedAt: fetchedAt ?? new Date().toISOString(),
       };
     }
     return null;
