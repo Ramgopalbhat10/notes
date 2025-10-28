@@ -6,7 +6,7 @@
   - Left: Folder/File navigation (markdown-only) with hover utilities and context menu.
   - Center: Markdown edit/preview with top actions: Edit/Preview toggle, AI actions dropdown.
   - Right: AI chat with context of currently opened file using Vercel AI SDK + AI UI elements.
-- Storage: S3-compatible (Tigris) via AWS JS SDK v3. Client calls our Next.js API routes; secrets remain server-side.
+- Storage: S3-compatible (Tigris) via AWS JS SDK v3. Cluster-wide cache: Upstash Redis for file content cache and manifest. Client calls our Next.js API routes; secrets remain server-side.
 - Tech: Next.js App Router, React 19, Tailwind v4, Radix UI/shadcn, react-markdown, Vercel AI SDK.
 
 ## 2. In-Scope Features
@@ -72,6 +72,7 @@
 - Client UI uses shadcn primitives; state for file tree and editor is kept in a client store (Zustand recommended) for responsiveness.
 - Server-side Next.js Route Handlers under `/app/api` provide S3 operations and AI endpoints.
 - All S3 credentials/config live on server; client never sees secrets.
+ - File content reads use a Redis-backed read-through cache (Upstash) plus Next.js Incremental Cache (`unstable_cache`) for per-instance dedupe. Writes delete Redis keys and `revalidateTag` to keep caches coherent.
 
 ### 5.2 Packages
 - Storage: `@aws-sdk/client-s3` (v3) configured for Tigris S3-compatible endpoint.
@@ -142,6 +143,8 @@ Env Vars
 - `TIGRIS_S3_SECRET_ACCESS_KEY`
 - `TIGRIS_S3_BUCKET`
 - `TIGRIS_S3_PREFIX` (optional)
+- `UPSTASH_REDIS_REST_URL` (for Redis-backed caches)
+- `UPSTASH_REDIS_REST_TOKEN` (for Redis-backed caches)
 - `AI_MODEL` (e.g., `gpt-4o-mini`, configurable)
 - Provider API keys (e.g., `OPENAI_API_KEY`) as needed by Vercel AI SDK provider.
 
@@ -201,6 +204,8 @@ Env Vars
   - Debounced autosave; cancel inflight save on quick edits; coalesce changes.
 - AI
   - Stream responses; chunk insert; clamp file context by tokens (e.g., 20–40k tokens target) with smart excerpting.
+ - File Content
+   - Redis-backed cluster-wide cache for file payloads eliminates cross-region misses; Next.js incremental cache handles per-instance dedupe. Tag invalidation and Redis `DEL` on writes keep data fresh.
 
 ## 10. Error Handling & Edge Cases
 - S3 permission failures → user-facing error with retry.

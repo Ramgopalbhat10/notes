@@ -192,7 +192,7 @@ export async function PUT(request: NextRequest) {
       }),
     );
 
-    revalidateFileTags([key]);
+    await revalidateFileTags([key]);
     revalidateTag(MANIFEST_CACHE_TAG);
 
     return NextResponse.json({
@@ -228,7 +228,7 @@ export async function DELETE(request: NextRequest) {
       }),
     );
 
-    revalidateFileTags([key]);
+    await revalidateFileTags([key]);
     revalidateTag(MANIFEST_CACHE_TAG);
 
     return new NextResponse(null, { status: 204 });

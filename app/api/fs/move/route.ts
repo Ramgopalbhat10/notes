@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
 
       const sourceRelatives = toRelativeKeys(sourceKeys);
       const targetRelatives = toRelativeKeys(copyResults);
-      revalidateFileTags([...sourceRelatives, ...targetRelatives]);
+      await revalidateFileTags([...sourceRelatives, ...targetRelatives]);
       revalidateTag(MANIFEST_CACHE_TAG);
 
       return NextResponse.json({ etag: undefined });
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    revalidateFileTags([fromKey, toKey]);
+    await revalidateFileTags([fromKey, toKey]);
     revalidateTag(MANIFEST_CACHE_TAG);
 
     return NextResponse.json({ etag: copyResult.CopyObjectResult?.ETag ?? undefined });

@@ -144,7 +144,7 @@ export async function DELETE(request: NextRequest) {
 
     const relativeKeys = toRelativeKeys(keys);
     if (relativeKeys.length > 0) {
-      revalidateFileTags(relativeKeys);
+      await revalidateFileTags(relativeKeys);
     }
     revalidateTag(MANIFEST_CACHE_TAG);
 
