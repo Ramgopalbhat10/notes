@@ -126,6 +126,10 @@ async function writeToRedis(key: string, record: Omit<CachedFileRecord, "cacheSt
   }
 }
 
+export async function setFileCacheRecord(key: string, record: Omit<CachedFileRecord, "cacheStatus">): Promise<void> {
+  await writeToRedis(key, record);
+}
+
 export async function getCachedFile(key: string): Promise<CachedFileRecord> {
   const cacheKey = buildCacheKey(key);
   const tag = buildCacheTag(key);

@@ -71,6 +71,7 @@ let loadSeq = 0;
 let currentSaveAbort: AbortController | null = null;
 let activeEditorView: EditorView | null = null;
 const documentCache = new Map<string, CachedDocument>();
+const firstOpenValidatedKeys = new Set<string>();
 
 if (typeof window !== "undefined") {
   subscribePersistentDocumentEvictions((event) => {
@@ -141,13 +142,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return;
     }
 
-    const controller = new AbortController();
-    currentAbort = controller;
-
     const cached = await ensureCachedDocument(key);
+    const isFirstOpen = !firstOpenValidatedKeys.has(key);
+    let skipNetwork = Boolean(cached?.etag && node.etag && cached.etag === node.etag);
     const requestHeaders: Record<string, string> = {};
     if (cached?.etag) {
       requestHeaders["If-None-Match"] = cached.etag;
+    }
+
+    const forceFirstOpen = isFirstOpen && Boolean(cached?.etag);
+    if (forceFirstOpen) {
+      skipNetwork = false;
     }
 
     if (cached) {
@@ -183,7 +188,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       });
     }
 
+    if (skipNetwork) {
+      currentAbort = null;
+      return;
+    }
+
+    let controller: AbortController | null = null;
     try {
+      controller = new AbortController();
+      currentAbort = controller;
       const response = await fetch(`/api/fs/file?key=${encodeURIComponent(key)}`, {
         signal: controller.signal,
         headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
@@ -248,6 +261,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           });
         }
 
+        firstOpenValidatedKeys.add(key);
         return;
       }
       if (!response.ok) {
@@ -289,6 +303,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         selection: null,
       });
 
+      firstOpenValidatedKeys.add(key);
+
       useTreeStore.setState((state) => {
         const target = state.nodes[key];
         if (!target || target.type !== "file") {
@@ -327,7 +343,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         });
       }
     } finally {
-      if (currentAbort === controller) {
+      if (controller && currentAbort === controller) {
         currentAbort = null;
       }
     }

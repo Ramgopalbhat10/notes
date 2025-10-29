@@ -85,9 +85,16 @@ export async function GET(request: NextRequest) {
     const ifNoneMatch = request.headers.get("if-none-match");
 
     if (etagMatches(ifNoneMatch, manifestRecord.etag)) {
-      return new NextResponse(null, {
-        status: 304,
-        headers: buildHeaders(manifestRecord.etag, manifestRecord.source),
+      const latest = await loadLatestManifest();
+      if (!latest || latest.etag === manifestRecord.etag) {
+        return new NextResponse(null, {
+          status: 304,
+          headers: buildHeaders(manifestRecord.etag, manifestRecord.source),
+        });
+      }
+      return new NextResponse(latest.body, {
+        status: 200,
+        headers: buildHeaders(latest.etag, latest.source),
       });
     }
 

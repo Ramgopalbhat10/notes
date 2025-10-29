@@ -4,7 +4,7 @@ import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFileKey } from "@/lib/fs-validation";
-import { getCachedFile, revalidateFileTags } from "@/lib/file-cache";
+import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 
 type StatusError = Error & {
@@ -192,7 +192,25 @@ export async function PUT(request: NextRequest) {
       }),
     );
 
+    const head = await client.send(
+      new HeadObjectCommand({
+        Bucket: bucket,
+        Key: applyVaultPrefix(key),
+      }),
+    );
+    const newEtag = normalizeEtag(result.ETag ?? head.ETag ?? null) ?? undefined;
+    const lastModifiedIso = head.LastModified ? head.LastModified.toISOString() : new Date().toISOString();
+
     await revalidateFileTags([key]);
+
+    await setFileCacheRecord(key, {
+      key,
+      content,
+      etag: newEtag,
+      lastModified: lastModifiedIso,
+      fetchedAt: new Date().toISOString(),
+    });
+
     revalidateTag(MANIFEST_CACHE_TAG);
 
     return NextResponse.json({
