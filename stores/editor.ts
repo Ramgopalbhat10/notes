@@ -189,6 +189,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
 
     if (skipNetwork) {
+      firstOpenValidatedKeys.add(key);
       currentAbort = null;
       return;
     }
