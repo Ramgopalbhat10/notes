@@ -428,10 +428,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
       if (!node || node.type !== "file") {
         return;
       }
-      const stateBefore = get();
-      if (stateBefore.selectedId === id) {
-        return;
-      }
       const editorStore = getEditorStore();
       const editorState = editorStore?.getState();
       if (
