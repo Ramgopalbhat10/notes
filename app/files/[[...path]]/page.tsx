@@ -33,6 +33,12 @@ function decodePathSegments(segments: readonly string[] | undefined): string | n
   return segments.map((segment) => decodeURIComponent(segment)).join("/");
 }
 
+function normalizeSlug(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.replace(/\/$/, "");
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function RouteSynchronizer() {
   const params = useParams<{ path?: string[] }>();
   const router = useRouter();
@@ -119,7 +125,9 @@ function RouteSynchronizer() {
     if (!selectionOrigin) {
       return;
     }
-    if (selectionOrigin === "user" && targetPath !== pathname) {
+    const currentSlug = normalizeSlug(routePath);
+    const desiredSlug = normalizeSlug(selectedSlug);
+    if (selectionOrigin === "user" && currentSlug !== desiredSlug) {
       router.push(targetPath);
     }
     acknowledgeSelectionOrigin();
