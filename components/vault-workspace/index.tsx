@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { MarkdownPreview } from "@/components/markdown-preview";
@@ -10,6 +10,7 @@ import { SelectedFilePlaceholder } from "@/components/selected-file-placeholder"
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editor";
 import { useTreeStore } from "@/stores/tree";
+import { usePublicStore } from "@/stores/public";
 import { useToast } from "@/hooks/use-toast";
 
 import { AiResultPanel } from "./ai-result-panel";
@@ -135,6 +136,104 @@ export function VaultWorkspace({
     setMode,
   });
 
+  const shareKey = selectedPath;
+  const shareRecord = usePublicStore((state) => (shareKey ? state.records[shareKey] : undefined));
+  const loadShareState = usePublicStore((state) => state.load);
+  const toggleShareState = usePublicStore((state) => state.toggle);
+
+  useEffect(() => {
+    if (shareKey) {
+      void loadShareState(shareKey);
+    }
+  }, [shareKey, loadShareState]);
+
+  const publicPath = useMemo(() => (shareKey ? buildPublicPath(shareKey) : null), [shareKey]);
+  const publicUrl = useMemo(() => {
+    if (!publicPath) {
+      return null;
+    }
+    if (typeof window === "undefined") {
+      return publicPath;
+    }
+    try {
+      return new URL(publicPath, window.location.origin).toString();
+    } catch {
+      return `${window.location.origin}${publicPath}`;
+    }
+  }, [publicPath]);
+
+  const shareRecordPublic = Boolean(shareRecord?.public);
+  const shareRecordLoading = Boolean(shareRecord?.loading);
+  const shareRecordUpdating = Boolean(shareRecord?.updating);
+  const shareRecordHasData = Boolean(shareRecord);
+
+  const sharingState = useMemo(
+    () =>
+      shareKey
+        ? {
+            isPublic: shareRecordPublic,
+            loading: !shareRecordHasData || shareRecordLoading,
+            updating: shareRecordUpdating,
+            shareUrl: shareRecordPublic && publicUrl ? publicUrl : null,
+          }
+        : undefined,
+    [shareKey, shareRecordPublic, shareRecordHasData, shareRecordLoading, shareRecordUpdating, publicUrl],
+  );
+
+  const lastShareErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!shareRecord?.error) {
+      lastShareErrorRef.current = null;
+      return;
+    }
+    if (shareRecord.error === lastShareErrorRef.current) {
+      return;
+    }
+    lastShareErrorRef.current = shareRecord.error;
+    toast({
+      title: "Sharing update failed",
+      description: shareRecord.error,
+      variant: "destructive",
+    });
+  }, [shareRecord?.error, toast]);
+
+  const handleTogglePublic = useCallback(() => {
+    if (!shareKey) {
+      return;
+    }
+    if (!sharingState || sharingState.loading || sharingState.updating) {
+      return;
+    }
+    const next = !(sharingState.isPublic ?? false);
+    void toggleShareState(shareKey, next).then((success) => {
+      if (success) {
+        toast({
+          title: next ? "Public link enabled" : "Public link disabled",
+          description: next && publicUrl ? "Anyone with the link can view this file." : undefined,
+        });
+      }
+    });
+  }, [shareKey, sharingState, toggleShareState, toast, publicUrl]);
+
+  const handleCopyPublicLink = useCallback(async () => {
+    if (!sharingState?.shareUrl) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(sharingState.shareUrl);
+      toast({
+        title: "Public link copied",
+        description: "Share it with anyone to give read-only access.",
+      });
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy the public link. Try again.",
+        variant: "destructive",
+      });
+    }
+  }, [sharingState?.shareUrl, toast]);
+
   const headerContent = useMemo(
     () => (
       <WorkspaceHeader
@@ -151,9 +250,27 @@ export function VaultWorkspace({
         }}
         hasFile={hasFile}
         onToggleRight={onToggleRight}
+        sharingState={hasFile ? sharingState : undefined}
+        onTogglePublic={hasFile ? handleTogglePublic : undefined}
+        onCopyPublicLink={hasFile ? handleCopyPublicLink : undefined}
       />
     ),
-    [aiStreaming, dirty, handleSave, hasDocumentContent, hasFile, mode, onToggleRight, segments, setMode, start, status],
+    [
+      aiStreaming,
+      dirty,
+      handleCopyPublicLink,
+      handleSave,
+      handleTogglePublic,
+      hasDocumentContent,
+      hasFile,
+      mode,
+      onToggleRight,
+      segments,
+      setMode,
+      sharingState,
+      start,
+      status,
+    ],
   );
 
   useEffect(() => {
@@ -249,6 +366,11 @@ export function VaultWorkspace({
       ) : null}
     </div>
   );
+}
+
+function buildPublicPath(path: string): string {
+  const segments = path.split("/").map((segment) => encodeURIComponent(segment));
+  return `/p/${segments.join("/")}`;
 }
 
 function buildSegments(path: string): BreadcrumbSegment[] {

@@ -16,8 +16,9 @@ const REFRESH_DEBOUNCE_MS = 100;
 
 export async function fetchManifest(
   etag: string | null,
-  force: boolean,
+  _force: boolean,
 ): Promise<{ manifest?: FileTreeManifest; etag?: string | null }> {
+  void _force;
   const headers = new Headers();
   const headerValue = formatIfNoneMatch(etag);
   if (headerValue) {

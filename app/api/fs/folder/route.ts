@@ -10,6 +10,7 @@ import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFolderPrefix } from "@/lib/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
+import { deleteFileMeta } from "@/lib/file-meta";
 
 export const runtime = "nodejs";
 
@@ -145,6 +146,9 @@ export async function DELETE(request: NextRequest) {
     const relativeKeys = toRelativeKeys(keys);
     if (relativeKeys.length > 0) {
       await revalidateFileTags(relativeKeys);
+      for (const key of relativeKeys) {
+        void deleteFileMeta(key);
+      }
     }
     revalidateTag(MANIFEST_CACHE_TAG);
 

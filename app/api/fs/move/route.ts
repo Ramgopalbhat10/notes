@@ -8,10 +8,11 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
+import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/s3";
 import { normalizeFileKey, normalizeFolderPrefix } from "@/lib/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
+import { renameFileMeta } from "@/lib/file-meta";
 
 export const runtime = "nodejs";
 
@@ -195,6 +196,18 @@ export async function POST(request: NextRequest) {
       const targetRelatives = toRelativeKeys(copyResults);
       await revalidateFileTags([...sourceRelatives, ...targetRelatives]);
       revalidateTag(MANIFEST_CACHE_TAG);
+      for (let index = 0; index < sourceKeys.length; index += 1) {
+        const sourceKey = stripVaultPrefix(sourceKeys[index] ?? "");
+        const targetKey = stripVaultPrefix(copyResults[index] ?? "");
+        if (
+          sourceKey &&
+          targetKey &&
+          !sourceKey.endsWith("/") &&
+          !targetKey.endsWith("/")
+        ) {
+          void renameFileMeta(sourceKey, targetKey);
+        }
+      }
 
       return NextResponse.json({ etag: undefined });
     }
@@ -254,6 +267,7 @@ export async function POST(request: NextRequest) {
 
     await revalidateFileTags([fromKey, toKey]);
     revalidateTag(MANIFEST_CACHE_TAG);
+    void renameFileMeta(fromKey, toKey);
 
     return NextResponse.json({ etag: copyResult.CopyObjectResult?.ETag ?? undefined });
   } catch (error) {

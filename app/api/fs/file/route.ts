@@ -6,6 +6,7 @@ import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { normalizeFileKey } from "@/lib/fs-validation";
 import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
+import { deleteFileMeta } from "@/lib/file-meta";
 
 type StatusError = Error & {
   status?: number;
@@ -248,6 +249,7 @@ export async function DELETE(request: NextRequest) {
 
     await revalidateFileTags([key]);
     revalidateTag(MANIFEST_CACHE_TAG);
+    void deleteFileMeta(key);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
