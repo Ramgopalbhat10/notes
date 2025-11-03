@@ -5,10 +5,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const bypass =
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/public") ||
     pathname.startsWith("/_next/") ||
     pathname === "/favicon.ico" ||
     pathname.startsWith("/auth/error") ||
-    pathname.startsWith("/auth/sign-in");
+    pathname.startsWith("/auth/sign-in") ||
+    pathname === "/p" ||
+    pathname === "/p/" ||
+    pathname.startsWith("/p/");
 
   if (bypass) {
     return NextResponse.next();
