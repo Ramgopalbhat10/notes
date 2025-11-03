@@ -370,6 +370,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         } else {
           await removePersistentDocument(node.path);
         }
+        await runManifestRefreshImmediate("mutation");
       },
       rollback: () => restoreTreeSnapshot(set, snapshot),
     });
@@ -584,6 +585,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
           if (!response.ok) {
             throw new Error(await extractTreeError(response));
           }
+          await runManifestRefreshImmediate("mutation");
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),
       });
@@ -629,6 +631,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
               },
             }));
           }
+          await runManifestRefreshImmediate("mutation");
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),
       });
@@ -671,6 +674,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
               throw new Error(await extractTreeError(response));
             }
             await removePersistentDocumentsWithPrefix(node.path);
+            await runManifestRefreshImmediate("mutation");
           } else {
             const response = await fetch("/api/fs/file", {
               method: "DELETE",
@@ -681,6 +685,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
               throw new Error(await extractTreeError(response));
             }
             await removePersistentDocument(node.path);
+            await runManifestRefreshImmediate("mutation");
           }
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),

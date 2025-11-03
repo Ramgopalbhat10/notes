@@ -12,18 +12,16 @@ type RefreshableState = {
   pendingMutations: number;
 };
 
-const REFRESH_DEBOUNCE_MS = 500;
+const REFRESH_DEBOUNCE_MS = 100;
 
 export async function fetchManifest(
   etag: string | null,
   force: boolean,
 ): Promise<{ manifest?: FileTreeManifest; etag?: string | null }> {
   const headers = new Headers();
-  if (!force) {
-    const headerValue = formatIfNoneMatch(etag);
-    if (headerValue) {
-      headers.set("If-None-Match", headerValue);
-    }
+  const headerValue = formatIfNoneMatch(etag);
+  if (headerValue) {
+    headers.set("If-None-Match", headerValue);
   }
 
   const response = await fetch("/api/tree", {
