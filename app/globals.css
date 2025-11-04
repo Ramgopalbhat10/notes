@@ -210,3 +210,30 @@ body {
     background-color: color-mix(in srgb, var(--muted) 70%, transparent);
   }
 }
+
+@layer components {
+  .markdown-content [data-streamdown="table-wrapper"] {
+    @apply my-4 space-y-2;
+  }
+
+  .markdown-content [data-streamdown="table-wrapper"] > div:last-child {
+    @apply overflow-x-auto;
+  }
+
+  .markdown-content [data-streamdown="table"] {
+    @apply w-full max-w-full border-collapse text-left text-xs md:text-sm;
+  }
+
+  .markdown-content [data-streamdown="table"] th,
+  .markdown-content [data-streamdown="table"] td {
+    @apply border-b border-border/60 px-2 md:px-3 py-2 align-top break-words text-[13px] md:text-sm;
+  }
+
+  .markdown-content [data-streamdown="table"] th {
+    @apply text-muted-foreground font-medium;
+  }
+
+  .markdown-content [data-streamdown="table-body"] tr:last-child td {
+    @apply border-b-0;
+  }
+}

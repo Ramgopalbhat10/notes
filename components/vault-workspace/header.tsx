@@ -63,6 +63,8 @@ export function WorkspaceHeader({
   const canCopyPublicLink = Boolean(
     hasFile && sharingState?.isPublic && sharingState.shareUrl && onCopyPublicLink && !sharingState.updating,
   );
+  const iconButtonClass =
+    "size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40";
 
   useEffect(() => {
     const headerEl = headerRef.current;
@@ -84,7 +86,7 @@ export function WorkspaceHeader({
 
   return (
     <TooltipProvider>
-      <div ref={headerRef} className="flex w-full items-center gap-1">
+      <div ref={headerRef} className="flex w-full items-center gap-0.5">
         <div className="flex-1 min-w-0 text-sm text-muted-foreground" role="presentation">
           {hasFile && segments.length > 0 ? (
             <>
@@ -98,11 +100,11 @@ export function WorkspaceHeader({
                   {fileName}
                 </span>
             ) : (
-              <div className="hidden md:flex items-center gap-1 whitespace-nowrap">
+              <div className="hidden md:flex items-center gap-0.5 whitespace-nowrap">
                 {segments.map((segment, index) => {
                   const isLast = index === segments.length - 1;
                   return (
-                    <div key={`${segment.label}-${index}`} className="flex items-center gap-1 shrink-0">
+                    <div key={`${segment.label}-${index}`} className="flex items-center gap-0.5 shrink-0">
                       {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
                       <span className={cn("shrink-0", isLast ? "font-medium text-foreground" : "text-muted-foreground")}>
                         {segment.label}
@@ -117,13 +119,13 @@ export function WorkspaceHeader({
           <span className="truncate font-medium text-foreground">Select a file</span>
         )}
         </div>
-        <div className="ml-auto flex flex-shrink-0 items-center gap-1">
+        <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
           {hasFile ? (
             <>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className={iconButtonClass}
                 onClick={onToggleMode}
                 aria-label={mode === "preview" ? "Switch to edit mode" : "Switch to preview mode"}
               >
@@ -131,9 +133,9 @@ export function WorkspaceHeader({
               </Button>
               {mode === "edit" ? (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className={iconButtonClass}
                   onClick={onSave}
                   disabled={!canSave}
                   aria-label="Save changes"
@@ -145,11 +147,11 @@ export function WorkspaceHeader({
                 <TooltipTrigger asChild>
                   <span className="inline-flex">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
                       className={cn(
-                        "h-8 w-8 transition-colors",
-                        sharingState?.isPublic ? "text-emerald-500 border-emerald-500/60" : undefined,
+                        iconButtonClass,
+                        sharingState?.isPublic ? "text-emerald-500" : undefined,
                       )}
                       onClick={() => {
                         if (!shareButtonDisabled && sharingState) {
@@ -177,9 +179,9 @@ export function WorkspaceHeader({
                 <TooltipTrigger asChild>
                   <span className="inline-flex">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className={iconButtonClass}
                         onClick={onCopyPublicLink}
                         aria-label="Copy public link"
                       >
@@ -194,9 +196,9 @@ export function WorkspaceHeader({
           ) : null}
           <AiActionDropdown disabled={aiDisabled} busy={aiBusy} onSelect={onTriggerAction} />
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className={iconButtonClass}
             onClick={onToggleRight}
             disabled={!onToggleRight}
             aria-label="Open chat panel"

@@ -12,7 +12,7 @@ export function Message({ className, from, ...props }: MessageProps) {
   return (
     <div
       className={cn(
-        "group flex w-full items-end justify-end gap-2 py-4",
+        "group flex w-full items-end justify-end gap-2 py-3",
         from === "user"
           ? "is-user"
           : "is-assistant flex-row-reverse justify-end",
@@ -29,12 +29,12 @@ const messageContentVariants = cva(
     variants: {
       variant: {
         contained: [
-          "px-4 py-3",
+          "px-3 py-2",
           "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground",
           "group-[.is-assistant]:bg-secondary group-[.is-assistant]:text-foreground",
         ],
         flat: [
-          "group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
+          "group-[.is-user]:bg-secondary group-[.is-user]:px-3 group-[.is-user]:py-2 group-[.is-user]:text-foreground",
           "group-[.is-assistant]:text-foreground",
         ],
       },

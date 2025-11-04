@@ -283,21 +283,21 @@ export function FileTree() {
     <>
       <div className="space-y-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Filter files"
-            className="pl-8 focus-visible:ring-0 focus-visible:border-border focus-visible:outline-none"
+            className="h-9 rounded-full border border-transparent bg-muted/20 pl-4 pr-10 text-sm shadow-none focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-muted/30"
             aria-label="Filter files"
           />
+          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
-        <div className="flex justify-end gap-1">
+        <div className="flex justify-end gap-0.5">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
             aria-label="Refresh tree"
             title="Refresh file tree"
             onClick={() => void refreshTree()}
@@ -306,18 +306,18 @@ export function FileTree() {
             <RefreshCw className={`h-3.5 w-3.5 ${refreshState !== "idle" ? "animate-spin" : ""}`} />
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
             aria-label="New folder"
             onClick={() => openModal({ type: "create-folder", parentId: null })}
           >
             <FolderPlus className="h-3.5 w-3.5" />
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
             aria-label="New file"
             onClick={() => openModal({ type: "create-file", parentId: null })}
           >

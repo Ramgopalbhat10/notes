@@ -235,21 +235,21 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
   }, [messages]);
 
   const composer = useMemo(() => (
-    <form onSubmit={handleSubmit} className="flex w-full items-center gap-2">
+    <form onSubmit={handleSubmit} className="flex w-full items-center gap-1.5">
       <div className="relative flex-1">
         <Textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           placeholder={canChat ? "Ask the assistant about this file…" : "Open a file to start chatting."}
           disabled={composerDisabled}
-          className="h-9 md:h-10 min-h-0 resize-none pr-12 text-sm"
+          className="h-8 md:h-9 min-h-0 resize-none rounded-md border border-border/40 bg-background px-2.5 pr-9 py-1.5 text-sm shadow-none focus-visible:border-border/60 focus-visible:ring-0"
           rows={1}
         />
         <Button
           type={isStreaming ? "button" : "submit"}
           size="icon"
           variant="default"
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full p-0"
           onClick={isStreaming ? handleStop : undefined}
           disabled={isStreaming ? false : composerDisabled || !draft.trim()}
         >
@@ -258,7 +258,7 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
         </Button>
       </div>
       {isStreaming ? (
-        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
           Streaming…
         </span>

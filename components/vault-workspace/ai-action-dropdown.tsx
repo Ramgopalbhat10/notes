@@ -22,9 +22,9 @@ export function AiActionDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
           disabled={disabled}
           aria-label="AI actions menu"
         >

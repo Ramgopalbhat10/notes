@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUp, Loader2, LogOut, Maximize2, Minimize2, X } from "lucide-react";
+import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, X } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
 import {
   Sidebar,
@@ -23,9 +23,11 @@ import {
 } from "@/components/ui/sidebar";
 import { useEditorStore } from "@/stores/editor";
 
-const FOOTER_HEIGHT_CLASS = "h-12 md:h-14";
+const FOOTER_HEIGHT_CLASS = "h-10 md:h-11";
 const FOOTER_SURFACE_CLASS =
   "border-t border-dashed bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
+const ICON_BUTTON_BASE =
+  "inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40";
 
 type AppShellChildren = React.ReactNode | ((helpers: { toggleRight: () => void }) => React.ReactNode);
 
@@ -200,13 +202,13 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
             )}
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "auto" } as CSSProperties}
           >
-            <SheetHeader className="px-3 py-2.5 md:px-4 md:py-3 border-b border-dashed">
+            <SheetHeader className="px-3 py-2 md:px-4 md:py-2 border-b border-dashed">
               <div className="flex items-center justify-between">
                 <SheetTitle className="text-sm md:text-base">Chat</SheetTitle>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   {/* Expand button - only on tablet (md) and above */}
                   <button
-                    className="hidden md:inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+                    className={cn("hidden md:inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={toggleRightMobileExpansion}
                     aria-label={rightMobileExpanded ? "Shrink chat panel" : "Expand chat panel"}
                   >
@@ -214,7 +216,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                   </button>
                   {/* Close button - always visible */}
                   <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={() => setRightMobileOpen(false)}
                     aria-label="Close chat panel"
                   >
@@ -235,12 +237,12 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
 
       {/* Left sidebar using shadcn primitives */}
       <Sidebar side="left" variant="sidebar" className="max-h-svh">
-        <SidebarHeader className="h-12 md:h-14 shrink-0 border-b border-dashed">
+        <SidebarHeader className="h-10 md:h-11 shrink-0 border-b border-dashed">
           <div className="flex h-full items-center justify-between px-2.5 md:px-3">
             <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">
               Vault
             </div>
-            <SidebarTrigger className="size-7" />
+            <SidebarTrigger className={cn("size-7", ICON_BUTTON_BASE)} />
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1 min-h-0">
@@ -292,12 +294,12 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                 "--sidebar-width": rightExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
               } as CSSProperties}
             >
-            <SidebarHeader className="h-12 md:h-14 border-b border-dashed">
+            <SidebarHeader className="h-10 md:h-11 border-b border-dashed">
               <div className="flex h-full items-center justify-between px-2.5 md:px-3">
                 <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={toggleRightExpansion}
                     aria-label={rightExpanded ? "Shrink details panel" : "Expand details panel"}
                     disabled={!rightDesktopOpen}
@@ -305,7 +307,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                     {rightExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                   </button>
                   <button
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={() => {
                       setRightDesktopOpen(false);
                       setRightExpanded(false);
@@ -372,7 +374,7 @@ function LeftSidebarFooter() {
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className={cn("size-7", ICON_BUTTON_BASE)}
         onClick={handleSignOut}
         disabled={signingOut}
         aria-label="Sign out"
@@ -421,7 +423,7 @@ function MainFooter({
 
   return (
     <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex items-center justify-between px-3 md:px-4 text-xs md:text-sm")}>
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0">
         {descriptor?.showLoader ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
         <span className={cn("truncate", toneClass)}>
           {descriptor?.message ?? "Select a note to see save status"}
@@ -432,13 +434,16 @@ function MainFooter({
           </Button>
         ) : null}
         {canReload && onReload ? (
-          <Button variant="outline" size="sm" className="h-7 px-2" onClick={onReload}>
+          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onReload}>
             Reload
           </Button>
         ) : null}
       </div>
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <span className="whitespace-nowrap">Total read time: {totalReadTime}</span>
+      <div className="flex items-center gap-1 text-muted-foreground">
+        <div className="flex items-center gap-1 whitespace-nowrap">
+          <Clock3 className="h-4 w-4" />
+          <span className="text-xs md:text-sm">{totalReadTime}</span>
+        </div>
         {canScrollTop ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -446,7 +451,7 @@ function MainFooter({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className={cn("size-7", ICON_BUTTON_BASE)}
                 onClick={onScrollTop}
                 aria-label="Scroll to top"
               >
@@ -601,12 +606,18 @@ function MainHeader({ header }: { header?: React.ReactNode }) {
   const { open } = useSidebar();
   return (
     <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-12 md:h-14 items-center gap-1.5 md:gap-2 px-3 md:px-4 border-b border-dashed">
+      <div className="flex h-10 md:h-11 items-center gap-1 md:gap-1.5 px-3 md:px-4 border-b border-dashed">
         {/* Show left toggle in main: always on mobile; on md+ only when sidebar is closed */}
-        <SidebarTrigger className={cn("size-7 inline-flex", open ? "md:hidden" : "md:inline-flex")} />
+        <SidebarTrigger
+          className={cn(
+            "size-7",
+            ICON_BUTTON_BASE,
+            open ? "md:hidden" : "md:inline-flex",
+          )}
+        />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">{header}</div>
+          <div className="flex items-center gap-0.5">{header}</div>
         </div>
       </div>
     </header>
