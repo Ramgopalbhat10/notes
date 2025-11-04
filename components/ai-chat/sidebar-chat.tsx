@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
 import { ArrowDownLeft, Bot, Copy, Loader2, RefreshCcw, SendHorizontal, Square } from "lucide-react";
@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useEditorStore } from "@/stores/editor";
-import { cn } from "@/lib/utils";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 
 const MAX_EXCERPT_CHARS = 6_000;
@@ -31,7 +30,11 @@ type FilePayload = {
   excerpt: string | null;
 };
 
-export function SidebarChat() {
+type SidebarChatProps = {
+  onComposerChange?: (composer: ReactNode | null) => void;
+};
+
+export function SidebarChat({ onComposerChange }: SidebarChatProps) {
   const fileKey = useEditorStore((state) => state.fileKey);
   const editorStatus = useEditorStore((state) => state.status);
   const content = useEditorStore((state) => state.content);
@@ -59,7 +62,6 @@ export function SidebarChat() {
   }, [filePayload]);
 
   const stickContextRef = useRef<StickContext | null>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const transport = useMemo(
     () =>
@@ -133,7 +135,6 @@ export function SidebarChat() {
       const context = stickContextRef.current;
       if (context) {
         context.scrollToBottom({ animation: "instant" });
-        setIsAtBottom(true);
       }
       setDraft("");
       await sendMessage({ text });
@@ -205,13 +206,6 @@ export function SidebarChat() {
 
   const composerDisabled = !canChat || isStreaming;
   const hasMessages = visibleMessages.length > 0;
-  const composerWrapperClass = cn(
-    "mt-1 space-y-2",
-    "lg:sticky lg:bottom-0 lg:transition-all lg:duration-200",
-    "lg:bg-background lg:shadow-sm",
-    "lg:rounded-t-xl",
-    !isAtBottom && "lg:shadow-lg",
-  );
 
   const previousMessageCountRef = useRef(messages.length);
 
@@ -229,17 +223,58 @@ export function SidebarChat() {
     }
 
     const context = stickContextRef.current;
-    if (!context) {
-      return;
-    }
+      if (!context) {
+        return;
+      }
 
-    requestAnimationFrame(() => {
-      context.scrollToBottom({
-        animation: { damping: 0.72, stiffness: 0.08, mass: 1.1 },
+      requestAnimationFrame(() => {
+        context.scrollToBottom({
+          animation: { damping: 0.72, stiffness: 0.08, mass: 1.1 },
+        });
       });
-      setIsAtBottom(true);
-    });
   }, [messages]);
+
+  const composer = useMemo(() => (
+    <form onSubmit={handleSubmit} className="flex w-full items-center gap-2">
+      <div className="relative flex-1">
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={canChat ? "Ask the assistant about this file…" : "Open a file to start chatting."}
+          disabled={composerDisabled}
+          className="h-9 md:h-10 min-h-0 resize-none pr-12 text-sm"
+          rows={1}
+        />
+        <Button
+          type={isStreaming ? "button" : "submit"}
+          size="icon"
+          variant="default"
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0"
+          onClick={isStreaming ? handleStop : undefined}
+          disabled={isStreaming ? false : composerDisabled || !draft.trim()}
+        >
+          {isStreaming ? <Square className="h-3.5 w-3.5 md:h-4 md:w-4" /> : <SendHorizontal className="h-3.5 w-3.5 md:h-4 md:w-4" />}
+          <span className="sr-only">{isStreaming ? "Stop" : "Send"}</span>
+        </Button>
+      </div>
+      {isStreaming ? (
+        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Streaming…
+        </span>
+      ) : null}
+    </form>
+  ), [canChat, composerDisabled, draft, handleStop, handleSubmit, isStreaming]);
+
+  useEffect(() => {
+    onComposerChange?.(composer);
+  }, [composer, onComposerChange]);
+
+  useEffect(() => {
+    return () => {
+      onComposerChange?.(null);
+    };
+  }, [onComposerChange]);
 
   return (
     <div className="flex h-full flex-col gap-3 text-sm md:text-base">
@@ -276,10 +311,9 @@ export function SidebarChat() {
           <StickToBottomWatcher
             onContext={(ctx) => {
               stickContextRef.current = ctx;
-              setIsAtBottom(ctx.isAtBottom);
             }}
           />
-          <ConversationContent className="space-y-2 pb-32">
+          <ConversationContent className="space-y-2 pb-6">
             {hasMessages ? (
               visibleMessages.map((message) => (
                 <ChatMessageRow
@@ -308,34 +342,6 @@ export function SidebarChat() {
         </Conversation>
       </div>
 
-      <form onSubmit={handleSubmit} className={composerWrapperClass}>
-        <div className="relative flex items-center">
-          <Textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={canChat ? "Ask the assistant about this file…" : "Open a file to start chatting."}
-            disabled={composerDisabled}
-            className="min-h-[3rem] resize-none pr-12"
-          />
-          <Button
-            type={isStreaming ? "button" : "submit"}
-            size="icon"
-            variant="default"
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-            onClick={isStreaming ? handleStop : undefined}
-            disabled={isStreaming ? false : composerDisabled || !draft.trim()}
-          >
-            {isStreaming ? <Square className="h-3.5 w-3.5 md:h-4 md:w-4" /> : <SendHorizontal className="h-3.5 w-3.5 md:h-4 md:w-4" />}
-            <span className="sr-only">{isStreaming ? "Stop" : "Send"}</span>
-          </Button>
-        </div>
-        {isStreaming ? (
-          <div className="flex items-center justify-end text-xs text-muted-foreground/80">
-            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-            <span>Streaming response…</span>
-          </div>
-        ) : null}
-      </form>
     </div>
   );
 }

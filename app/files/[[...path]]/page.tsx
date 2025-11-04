@@ -15,8 +15,8 @@ function LeftSidebar() {
   return <FileTree />;
 }
 
-function RightSidebar() {
-  return <SidebarChat />;
+function RightSidebar({ onComposerChange }: { onComposerChange?: (node: ReactNode | null) => void }) {
+  return <SidebarChat onComposerChange={onComposerChange} />;
 }
 
 function encodePath(path: string): string {
@@ -134,6 +134,7 @@ export default function FilesPage() {
   const session = sessionState?.data;
   const isPending = sessionState?.isPending;
   const [header, setHeader] = useState<ReactNode | null>(null);
+  const [rightFooter, setRightFooter] = useState<ReactNode | null>(null);
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -148,7 +149,12 @@ export default function FilesPage() {
   return (
     <>
       <RouteSynchronizer />
-      <AppShell left={<LeftSidebar />} right={<RightSidebar />} header={header}>
+      <AppShell
+        left={<LeftSidebar />}
+        right={<RightSidebar onComposerChange={setRightFooter} />}
+        header={header}
+        rightFooter={rightFooter}
+      >
         {({ toggleRight }) => (
           <VaultWorkspace onHeaderChange={setHeader} onToggleRight={toggleRight} />
         )}

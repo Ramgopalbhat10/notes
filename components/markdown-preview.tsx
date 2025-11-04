@@ -88,7 +88,7 @@ const components: Components = {
   table: (props) => (
     <div className="my-4 md:my-6 overflow-x-auto">
       <table
-        className="w-full border-collapse text-left text-xs md:text-sm [&_th]:border-b [&_th]:px-2 md:[&_th]:px-3 [&_th]:py-2 [&_td]:border-b [&_td]:px-2 md:[&_td]:px-3 [&_td]:py-2"
+        className="w-full border-collapse text-left text-xs md:text-sm [&_th]:border-b [&_th]:px-2 md:[&_th]:px-3 [&_th]:py-2 [&_th]:align-top [&_td]:border-b [&_td]:px-2 md:[&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:break-words [&_td]:whitespace-pre-wrap"
         {...props}
       />
     </div>
@@ -122,7 +122,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   }
 
   return (
-    <div className={cn("markdown-preview text-sm md:text-base leading-7 w-full max-w-full", className)}>
+    <div className={cn("markdown-preview markdown-content text-sm md:text-base leading-7 w-full max-w-full", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeSanitize, schema]]}

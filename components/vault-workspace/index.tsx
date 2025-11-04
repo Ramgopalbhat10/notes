@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { AiResultPanel } from "./ai-result-panel";
 import { WorkspaceHeader } from "./header";
 import { useAiSession } from "./use-ai-session";
-import { WorkspaceStatusBar } from "./status-bar";
 import type { BreadcrumbSegment } from "./types";
 
 export function VaultWorkspace({
@@ -49,8 +48,6 @@ export function VaultWorkspace({
   const setMode = useEditorStore((state) => state.setMode);
   const setContent = useEditorStore((state) => state.setContent);
   const dirty = useEditorStore((state) => state.dirty);
-  const lastSavedAt = useEditorStore((state) => state.lastSavedAt);
-  const conflictMessage = useEditorStore((state) => state.conflictMessage);
   const loadFile = useEditorStore((state) => state.loadFile);
   const reset = useEditorStore((state) => state.reset);
   const save = useEditorStore((state) => state.save);
@@ -87,31 +84,12 @@ export function VaultWorkspace({
 
   const segments = useMemo(() => (selectedPath ? buildSegments(selectedPath) : []), [selectedPath]);
 
-  const handleRetrySave = useCallback(() => {
-    void save("manual");
-  }, [save]);
-
   const handleSave = useCallback(() => {
     if (!dirty || status === "saving" || status === "conflict") {
       return;
     }
     void save("manual");
   }, [dirty, save, status]);
-
-  const handleReloadRemote = () => {
-    if (!fileKey) {
-      return;
-    }
-    if (dirty) {
-      const confirmed = window.confirm(
-        "Reloading the remote file will discard your unsaved changes. Continue?",
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-    void loadFile(fileKey);
-  };
 
   const {
     state: aiState,
@@ -352,18 +330,6 @@ export function VaultWorkspace({
         />
       ) : null}
       {body}
-      {hasFile ? (
-        <WorkspaceStatusBar
-          status={status}
-          dirty={dirty}
-          lastSavedAt={lastSavedAt}
-          error={error}
-          conflictMessage={conflictMessage}
-          onRetrySave={status === "error" && errorSource === "save" ? handleRetrySave : undefined}
-          onReloadRemote={status === "conflict" ? handleReloadRemote : undefined}
-          errorSource={errorSource}
-        />
-      ) : null}
     </div>
   );
 }

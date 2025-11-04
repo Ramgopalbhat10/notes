@@ -9,7 +9,10 @@ type ResponseProps = ComponentProps<typeof Streamdown>;
 
 export const Response = memo(
   ({ className, ...props }: ResponseProps) => (
-    <Streamdown className={cn("w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)} {...props} />
+    <Streamdown
+      className={cn("markdown-content w-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
+      {...props}
+    />
   ),
   (prevProps, nextProps) => prevProps.children === nextProps.children,
 );

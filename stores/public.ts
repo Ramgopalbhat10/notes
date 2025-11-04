@@ -56,9 +56,15 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
       return;
     }
     const record = get().records[normalizedKey];
-    if (!options?.force && record && !record.loading && record.lastFetchedAt && Date.now() - record.lastFetchedAt < 5_000) {
-      // Skip rapid refetches unless forced.
-      return;
+    if (!options?.force) {
+      if (record?.loading) {
+        // A fetch is already in-flight; reuse it instead of spamming the API.
+        return;
+      }
+      if (record && record.lastFetchedAt && Date.now() - record.lastFetchedAt < 5_000) {
+        // Skip rapid refetches unless forced.
+        return;
+      }
     }
 
     loadSeq += 1;

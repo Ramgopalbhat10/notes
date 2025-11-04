@@ -1,20 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "../lib/utils";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Maximize2, Minimize2, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowUp, Loader2, LogOut, Maximize2, Minimize2, X } from "lucide-react";
+import { authClient } from "@/lib/auth/client";
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useEditorStore } from "@/stores/editor";
+
+const FOOTER_HEIGHT_CLASS = "h-12 md:h-14";
+const FOOTER_SURFACE_CLASS =
+  "border-t border-dashed bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
 
 type AppShellChildren = React.ReactNode | ((helpers: { toggleRight: () => void }) => React.ReactNode);
 
@@ -23,13 +34,16 @@ type AppShellProps = {
   right?: React.ReactNode;
   children: AppShellChildren;
   header?: React.ReactNode;
+  rightFooter?: React.ReactNode | null;
 };
 
-export function AppShell({ left, right, children, header }: AppShellProps) {
+export function AppShell({ left, right, children, header, rightFooter }: AppShellProps) {
   const RIGHT_SIDEBAR_WIDTH_REM = 30;
   const LEFT_SIDEBAR_WIDTH_REM = 17.5;
   const REM_IN_PX = 16;
   const MIN_MAIN_CONTENT_RATIO = 0.45;
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+  const [isMainScrollable, setIsMainScrollable] = useState(false);
 
   // Right column visibility (desktop/mobile)
   const [rightDesktopOpen, setRightDesktopOpen] = useState(false);
@@ -72,12 +86,91 @@ export function AppShell({ left, right, children, header }: AppShellProps) {
   }, []);
 
   const renderedChildren = typeof children === "function" ? children({ toggleRight }) : children;
+  const editorStatus = useEditorStore((state) => state.status);
+  const dirty = useEditorStore((state) => state.dirty);
+  const lastSavedAt = useEditorStore((state) => state.lastSavedAt);
+  const error = useEditorStore((state) => state.error);
+  const conflictMessage = useEditorStore((state) => state.conflictMessage);
+  const errorSource = useEditorStore((state) => state.errorSource);
+  const fileKey = useEditorStore((state) => state.fileKey);
+  const content = useEditorStore((state) => state.content);
+  const save = useEditorStore((state) => state.save);
+  const loadFile = useEditorStore((state) => state.loadFile);
+  const hasFile = Boolean(fileKey);
+  const totalReadTime = useMemo(() => computeReadingTimeLabel(content, hasFile), [content, hasFile]);
+  const statusDescriptor = useMemo(
+    () => buildStatusDescriptor({ status: editorStatus, dirty, lastSavedAt, error, conflictMessage, errorSource, hasFile }),
+    [editorStatus, dirty, lastSavedAt, error, conflictMessage, errorSource, hasFile],
+  );
+  const canRetrySave = hasFile && editorStatus === "error" && errorSource === "save";
+  const canReloadRemote = hasFile && editorStatus === "conflict";
+  const handleRetrySave = useCallback(() => {
+    void save("manual");
+  }, [save]);
+  const handleReloadRemote = useCallback(() => {
+    if (!fileKey) {
+      return;
+    }
+    if (dirty) {
+      const confirmed = window.confirm(
+        "Reloading the remote file will discard your unsaved changes. Continue?",
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+    void loadFile(fileKey);
+  }, [dirty, fileKey, loadFile]);
+  const scrollMainToTop = useCallback(() => {
+    const el = mainScrollRef.current;
+    if (!el) {
+      return;
+    }
+    el.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const rightSidebarWidthClass = !rightDesktopOpen
     ? "w-0 border-transparent"
     : rightExpanded
       ? "w-1/2 border-border"
       : "w-[30rem] border-border";
+  const updateMainScrollMetrics = useCallback(() => {
+    const el = mainScrollRef.current;
+    if (!el) {
+      return;
+    }
+    const scrollable = el.scrollHeight - el.clientHeight > 8;
+    setIsMainScrollable(scrollable);
+  }, []);
+
+  useEffect(() => {
+    const el = mainScrollRef.current;
+    if (!el) {
+      return;
+    }
+    updateMainScrollMetrics();
+    const handleScroll = () => updateMainScrollMetrics();
+    el.addEventListener("scroll", handleScroll);
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => updateMainScrollMetrics()) : null;
+    if (resizeObserver) {
+      resizeObserver.observe(el);
+    }
+    return () => {
+      el.removeEventListener("scroll", handleScroll);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [updateMainScrollMetrics]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const id = window.requestAnimationFrame(() => updateMainScrollMetrics());
+    return () => window.cancelAnimationFrame(id);
+  }, [renderedChildren, updateMainScrollMetrics]);
 
   return (
     <SidebarProvider
@@ -102,7 +195,7 @@ export function AppShell({ left, right, children, header }: AppShellProps) {
           <SheetContent
             side="right"
             className={cn(
-              "lg:hidden p-0 transition-[width,max-width] duration-300 ease-in-out [&>button]:hidden w-full max-w-full",
+              "lg:hidden p-0 transition-[width,max-width] duration-300 ease-in-out [&>button]:hidden w-full max-w-full flex flex-col",
               rightMobileExpanded ? "md:w-full md:max-w-full" : "md:w-1/2 md:max-w-md"
             )}
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "auto" } as CSSProperties}
@@ -130,9 +223,12 @@ export function AppShell({ left, right, children, header }: AppShellProps) {
                 </div>
               </div>
             </SheetHeader>
-            <ScrollArea className="h-[calc(100vh-3rem)] md:h-[calc(100vh-3.5rem)]">
-              <div className="p-3 md:p-4">{right}</div>
-            </ScrollArea>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <ScrollArea className="flex-1">
+                <div className="p-3 md:p-4">{right}</div>
+              </ScrollArea>
+              <RightSidebarFooter content={rightFooter} />
+            </div>
           </SheetContent>
         </Sheet>
       ) : null}
@@ -152,15 +248,28 @@ export function AppShell({ left, right, children, header }: AppShellProps) {
             <div className="p-3 md:p-4">{left}</div>
           </ScrollArea>
         </SidebarContent>
+        <SidebarFooter className="mt-auto p-0 sticky bottom-0">
+          <LeftSidebarFooter />
+        </SidebarFooter>
         <SidebarRail />
       </Sidebar>
 
       {/* Main content inset */}
       <SidebarInset className="flex min-h-svh min-w-0 flex-col">
         <MainHeader header={header} />
-        <div className="flex-1 min-h-0 w-full overflow-auto">
+        <div ref={mainScrollRef} className="flex-1 min-h-0 w-full overflow-auto">
           <div className="space-y-3 p-3 sm:space-y-4 sm:p-4 min-w-0">{renderedChildren}</div>
         </div>
+        <MainFooter
+          descriptor={statusDescriptor}
+          canRetry={canRetrySave}
+          canReload={canReloadRemote}
+          onRetry={canRetrySave ? handleRetrySave : undefined}
+          onReload={canReloadRemote ? handleReloadRemote : undefined}
+          totalReadTime={totalReadTime}
+          canScrollTop={isMainScrollable}
+          onScrollTop={scrollMainToTop}
+        />
       </SidebarInset>
 
       {/* Right sidebar container with smooth width animation (desktop only) */}
@@ -213,12 +322,234 @@ export function AppShell({ left, right, children, header }: AppShellProps) {
                 <div className="p-3 md:p-4">{right}</div>
               </ScrollArea>
             </SidebarContent>
+            <SidebarFooter className="mt-auto p-0 sticky bottom-0">
+              <RightSidebarFooter content={rightFooter} />
+            </SidebarFooter>
           </Sidebar>
           </div>
         </div>
       ) : null}
     </SidebarProvider>
   );
+}
+
+function LeftSidebarFooter() {
+  const router = useRouter();
+  const sessionState = authClient.useSession();
+  const user = sessionState.data?.user;
+  const [signingOut, setSigningOut] = useState(false);
+
+  const displayName = user?.name || user?.email || "";
+  const avatarImage = user?.image ?? undefined;
+  const avatarFallback = (displayName || "?").slice(0, 1).toUpperCase();
+
+  const handleSignOut = useCallback(async () => {
+    if (signingOut) {
+      return;
+    }
+    setSigningOut(true);
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/auth/sign-in");
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Failed to sign out", error);
+      setSigningOut(false);
+    }
+  }, [router, signingOut]);
+
+  return (
+    <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex w-full items-center justify-between px-3 md:px-4")}>
+      <Avatar className="h-9 w-9">
+        {avatarImage ? <AvatarImage src={avatarImage} alt={displayName || "Profile"} /> : null}
+        <AvatarFallback>{avatarFallback}</AvatarFallback>
+      </Avatar>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={handleSignOut}
+        disabled={signingOut}
+        aria-label="Sign out"
+      >
+        {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
+}
+
+type StatusDescriptor = {
+  message: string;
+  tone: "idle" | "info" | "warning" | "error";
+  showLoader?: boolean;
+};
+
+type MainFooterProps = {
+  descriptor: StatusDescriptor | null;
+  canRetry: boolean;
+  canReload: boolean;
+  onRetry?: () => void;
+  onReload?: () => void;
+  totalReadTime: string;
+  canScrollTop: boolean;
+  onScrollTop: () => void;
+};
+
+function MainFooter({
+  descriptor,
+  canRetry,
+  canReload,
+  onRetry,
+  onReload,
+  totalReadTime,
+  canScrollTop,
+  onScrollTop,
+}: MainFooterProps) {
+  const toneClass = descriptor
+    ? {
+        idle: "text-muted-foreground",
+        info: "text-foreground",
+        warning: "text-amber-500",
+        error: "text-destructive",
+      }[descriptor.tone]
+    : "text-muted-foreground";
+
+  return (
+    <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex items-center justify-between px-3 md:px-4 text-xs md:text-sm")}>
+      <div className="flex items-center gap-2 min-w-0">
+        {descriptor?.showLoader ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
+        <span className={cn("truncate", toneClass)}>
+          {descriptor?.message ?? "Select a note to see save status"}
+        </span>
+        {canRetry && onRetry ? (
+          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onRetry}>
+            Retry
+          </Button>
+        ) : null}
+        {canReload && onReload ? (
+          <Button variant="outline" size="sm" className="h-7 px-2" onClick={onReload}>
+            Reload
+          </Button>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <span className="whitespace-nowrap">Total read time: {totalReadTime}</span>
+        {canScrollTop ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onScrollTop}
+                aria-label="Scroll to top"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Scroll to top</TooltipContent>
+          </Tooltip>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function RightSidebarFooter({ content }: { content?: React.ReactNode | null }) {
+  return (
+    <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex w-full items-center px-3 md:px-4")}>
+      {content ? content : <span className="text-xs text-muted-foreground">Chat unavailable</span>}
+    </div>
+  );
+}
+
+type StatusDescriptorInput = {
+  status: string;
+  dirty: boolean;
+  lastSavedAt: string | null;
+  error: string | null;
+  conflictMessage: string | null;
+  errorSource: "load" | "save" | null;
+  hasFile: boolean;
+};
+
+function buildStatusDescriptor({
+  status,
+  dirty,
+  lastSavedAt,
+  error,
+  conflictMessage,
+  errorSource,
+  hasFile,
+}: StatusDescriptorInput): StatusDescriptor | null {
+  if (!hasFile) {
+    return { message: "Select a file to begin", tone: "idle" };
+  }
+
+  if (status === "loading") {
+    return { message: "Loading…", tone: "info", showLoader: true };
+  }
+
+  if (status === "saving") {
+    return { message: "Saving…", tone: "info", showLoader: true };
+  }
+
+  if (status === "error") {
+    const prefix = errorSource === "load" ? "Failed to load" : "Failed to save";
+    const detail = error ? `: ${error}` : "";
+    return { message: `${prefix}${detail}`, tone: "error" };
+  }
+
+  if (status === "conflict") {
+    const detail = conflictMessage ? `: ${conflictMessage}` : "";
+    return { message: `Save blocked by remote changes${detail}`, tone: "error" };
+  }
+
+  if (dirty) {
+    return { message: "Unsaved changes", tone: "warning" };
+  }
+
+  const formatted = lastSavedAt ? formatTimestamp(lastSavedAt) : null;
+  return { message: formatted ? `Saved • ${formatted}` : "Saved", tone: "idle" };
+}
+
+function computeReadingTimeLabel(content: string, hasFile: boolean): string {
+  if (!hasFile) {
+    return "—";
+  }
+  const words = content.trim().split(/\s+/).filter(Boolean).length;
+  if (!words) {
+    return "< 1 min";
+  }
+  const minutes = words / 200;
+  if (minutes < 1) {
+    return "< 1 min";
+  }
+  if (minutes < 60) {
+    return `${Math.max(1, Math.round(minutes))} min`;
+  }
+  const hours = minutes / 60;
+  return `${hours.toFixed(1)} hr`;
+}
+
+function formatTimestamp(value: string): string | null {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  const datePart = date.toLocaleDateString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  const timePart = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return `${datePart} ${timePart}`;
 }
 
 function SidebarAutoCollapse({
