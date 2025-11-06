@@ -207,21 +207,24 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                 <SheetTitle className="text-sm md:text-base">Chat</SheetTitle>
                 <div className="flex items-center gap-0.5">
                   {/* Expand button - only on tablet (md) and above */}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className={cn("hidden md:inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={toggleRightMobileExpansion}
                     aria-label={rightMobileExpanded ? "Shrink chat panel" : "Expand chat panel"}
                   >
                     {rightMobileExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                  </button>
+                  </Button>
                   {/* Close button - always visible */}
-                  <button
+                  <Button
+                    variant="ghost"
                     className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={() => setRightMobileOpen(false)}
                     aria-label="Close chat panel"
                   >
                     <X className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </SheetHeader>
@@ -298,15 +301,19 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
               <div className="flex h-full items-center justify-between px-2.5 md:px-3">
                 <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
                 <div className="flex items-center gap-0.5">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={toggleRightExpansion}
                     aria-label={rightExpanded ? "Shrink details panel" : "Expand details panel"}
                     disabled={!rightDesktopOpen}
                   >
                     {rightExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={() => {
                       setRightDesktopOpen(false);
@@ -315,7 +322,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                     aria-label="Collapse right sidebar"
                   >
                     <X className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </SidebarHeader>

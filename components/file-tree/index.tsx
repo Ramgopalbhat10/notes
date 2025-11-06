@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FilePlus2, FolderPlus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROOT_PARENT_KEY, type NodeId, useTreeStore } from "@/stores/tree";
@@ -282,18 +283,18 @@ export function FileTree() {
   return (
     <>
       <div className="space-y-3">
-        <div className="relative">
+        <div className="relative mb-2">
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter files"
-            className="h-9 rounded-full border border-transparent bg-muted/20 pl-4 pr-10 text-sm shadow-none focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-muted/30"
-            aria-label="Filter files"
+            placeholder="Search..."
+            className="h-9 rounded-md border border-transparent bg-muted/20 pl-4 pr-10 text-sm shadow-none focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0 focus-visible:bg-muted/30"
+            aria-label="Search files"
           />
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
-        <div className="flex justify-end gap-0.5">
+        <div className="mb-2 flex justify-end gap-0.5">
           <Button
             variant="ghost"
             size="icon"

@@ -58,8 +58,8 @@ export function WorkspaceHeader({
     : sharingState?.loading
       ? "Loading sharing status..."
       : sharingState?.isPublic
-        ? "Public link is active. Click to make private."
-        : "Enable a public link so anyone with the link can view this file.";
+        ? "Public link is active."
+        : "Enable a public link.";
   const canCopyPublicLink = Boolean(
     hasFile && sharingState?.isPublic && sharingState.shareUrl && onCopyPublicLink && !sharingState.updating,
   );
@@ -120,91 +120,99 @@ export function WorkspaceHeader({
         )}
         </div>
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
-          {hasFile ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={iconButtonClass}
-                onClick={onToggleMode}
-                aria-label={mode === "preview" ? "Switch to edit mode" : "Switch to preview mode"}
-              >
-                {mode === "preview" ? <FilePenLine className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              </Button>
-              {mode === "edit" ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={iconButtonClass}
-                  onClick={onSave}
-                  disabled={!canSave}
-                  aria-label="Save changes"
-                >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                </Button>
-              ) : null}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
+          <div className="flex items-center gap-0.5 md:pr-4">
+            {hasFile ? (
+              <>
+                <div className="flex items-center gap-0.5 md:pr-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={iconButtonClass}
+                    onClick={onToggleMode}
+                    aria-label={mode === "preview" ? "Switch to edit mode" : "Switch to preview mode"}
+                  >
+                    {mode === "preview" ? <FilePenLine className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </Button>
+                  {mode === "edit" ? (
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        iconButtonClass,
-                        sharingState?.isPublic ? "text-emerald-500" : undefined,
-                      )}
-                      onClick={() => {
-                        if (!shareButtonDisabled && sharingState) {
-                          onTogglePublic?.();
-                        }
-                      }}
-                      disabled={shareButtonDisabled}
-                      aria-pressed={sharingState?.isPublic ?? false}
-                      aria-label={sharingState?.isPublic ? "Disable public link" : "Enable public link"}
+                      className={iconButtonClass}
+                      onClick={onSave}
+                      disabled={!canSave}
+                      aria-label="Save changes"
                     >
-                      {sharingState?.loading || sharingState?.updating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : sharingState?.isPublic ? (
-                        <Globe className="h-3.5 w-3.5" />
-                      ) : (
-                        <Lock className="h-3.5 w-3.5" />
-                      )}
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">{shareTooltip}</TooltipContent>
-              </Tooltip>
-              {canCopyPublicLink ? (
-                <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={iconButtonClass}
-                        onClick={onCopyPublicLink}
-                        aria-label="Copy public link"
-                      >
-                        <Link className="h-3.5 w-3.5" />
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Copy public link</TooltipContent>
-                </Tooltip>
-              ) : null}
-            </>
-          ) : null}
-          <AiActionDropdown disabled={aiDisabled} busy={aiBusy} onSelect={onTriggerAction} />
-          <Button
-            variant="ghost"
-            size="icon"
-            className={iconButtonClass}
-            onClick={onToggleRight}
-            disabled={!onToggleRight}
-            aria-label="Open chat panel"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-          </Button>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-0.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            iconButtonClass,
+                            sharingState?.isPublic ? "text-emerald-500" : undefined,
+                          )}
+                          onClick={() => {
+                            if (!shareButtonDisabled && sharingState) {
+                              onTogglePublic?.();
+                            }
+                          }}
+                          disabled={shareButtonDisabled}
+                          aria-pressed={sharingState?.isPublic ?? false}
+                          aria-label={sharingState?.isPublic ? "Disable public link" : "Enable public link"}
+                        >
+                          {sharingState?.loading || sharingState?.updating ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : sharingState?.isPublic ? (
+                            <Globe className="h-3.5 w-3.5" />
+                          ) : (
+                            <Lock className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{shareTooltip}</TooltipContent>
+                  </Tooltip>
+                  {canCopyPublicLink ? (
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={iconButtonClass}
+                            onClick={onCopyPublicLink}
+                            aria-label="Copy public link"
+                          >
+                            <Link className="h-3.5 w-3.5" />
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">Copy public link</TooltipContent>
+                    </Tooltip>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-0.5">
+            <AiActionDropdown disabled={aiDisabled} busy={aiBusy} onSelect={onTriggerAction} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className={iconButtonClass}
+              onClick={onToggleRight}
+              disabled={!onToggleRight}
+              aria-label="Open chat panel"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
     </TooltipProvider>
