@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Notes icon">
+  <rect width="64" height="64" rx="12" fill="#0f172a" />
+  <rect x="14" y="14" width="36" height="8" rx="2" fill="#1b4332" />
+  <rect x="14" y="26" width="28" height="6" rx="2" fill="#52b788" />
+  <rect x="14" y="38" width="36" height="6" rx="2" fill="#95d5b2" />
+  <rect x="14" y="50" width="24" height="4" rx="2" fill="#d8f3dc" />
+</svg>
