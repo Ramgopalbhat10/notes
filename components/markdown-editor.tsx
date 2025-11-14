@@ -76,10 +76,12 @@ const editorTheme = EditorView.theme(
       backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
     },
     ".cm-selectionBackground, .cm-content ::selection": {
-      backgroundColor: "color-mix(in srgb, var(--primary) 50%, var(--card))",
+      backgroundColor: "var(--primary)",
+      color: "var(--primary)",
     },
     "&.cm-focused .cm-selectionBackground, &.cm-focused .cm-content ::selection": {
-      backgroundColor: "color-mix(in srgb, var(--primary) 60%, var(--card))",
+      backgroundColor: "var(--primary)",
+      color: "var(--primary)",
     },
     ".cm-foldPlaceholder": {
       backgroundColor: "var(--background)",
