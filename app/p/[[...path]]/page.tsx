@@ -2,9 +2,15 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { MarkdownPreview } from "@/components/markdown-preview";
-import { normalizeFileKey } from "@/lib/fs-validation";
 import { getCachedFile } from "@/lib/file-cache";
 import { getFileMeta } from "@/lib/file-meta";
+import { normalizeFileKey } from "@/lib/fs-validation";
+import {
+  absoluteUrl,
+  decodePathSegments,
+  publicCanonicalPath,
+  siteMetadata,
+} from "@/lib/site-metadata";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,13 +21,6 @@ type PublicFile = {
   content: string;
   lastModified: string | null;
 };
-
-function decodePathSegments(segments: readonly string[] | undefined): string | null {
-  if (!segments || segments.length === 0) {
-    return null;
-  }
-  return segments.map((segment) => decodeURIComponent(segment)).join("/");
-}
 
 function stripExtension(name: string): string {
   return name.replace(/\.md$/i, "");
@@ -75,14 +74,53 @@ export async function generateMetadata({
   const resolved = await params;
   const relative = decodePathSegments(resolved.path);
   const file = await loadPublicFile(relative);
+  const canonical = publicCanonicalPath(relative);
+  const canonicalUrl = absoluteUrl(canonical);
   if (!file) {
+    const title = "Public note not found";
+    const description = "This shared note is either private or no longer exists.";
     return {
-      title: "File not found",
+      title,
+      description,
+      alternates: {
+        canonical: canonicalUrl,
+      },
+      openGraph: {
+        title,
+        description,
+        url: canonicalUrl,
+        siteName: siteMetadata.product,
+        type: "article",
+      },
+      twitter: {
+        title,
+        description,
+      },
     };
   }
+
+  const pageTitle = `${file.title} - Shared Vault`;
+  const description = `Read "${file.title}" directly from the Markdown Vault.`;
+
   return {
-    title: `${file.title} — Shared Vault`,
-    description: `Public copy of ${file.key}`,
+    title: pageTitle,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: pageTitle,
+      description,
+      url: canonicalUrl,
+      siteName: siteMetadata.product,
+      type: "article",
+      modifiedTime: file.lastModified ?? undefined,
+    },
+    twitter: {
+      title: pageTitle,
+      description,
+      card: "summary_large_image",
+    },
   };
 }
 
