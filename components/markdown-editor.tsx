@@ -48,11 +48,11 @@ const editorTheme = EditorView.theme(
     "&": {
       backgroundColor: "var(--card)",
       color: "var(--foreground)",
-      fontFamily: "var(--font-mono)",
+      fontFamily: "var(--font-family-mono, var(--font-family-mono-fallback))",
       fontSize: "0.875rem",
     },
     ".cm-scroller": {
-      fontFamily: "var(--font-mono)",
+      fontFamily: "var(--font-family-mono, var(--font-family-mono-fallback))",
       lineHeight: "1.6",
       backgroundColor: "var(--card)",
     },
