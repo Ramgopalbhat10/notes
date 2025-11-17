@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
@@ -7,6 +7,8 @@ import { normalizeFileKey } from "@/lib/fs-validation";
 import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 import { deleteFileMeta } from "@/lib/file-meta";
+import { normalizeEtag } from "@/lib/etag";
+import { writeMarkdownFile } from "@/lib/file-writer";
 
 type StatusError = Error & {
   status?: number;
@@ -15,16 +17,7 @@ type StatusError = Error & {
   };
 };
 
-export const runtime = "nodejs";
-
 const CACHE_CONTROL_HEADER = "private, no-cache, must-revalidate";
-
-function normalizeEtag(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-  return value.replace(/^W\//i, "").replace(/"/g, "");
-}
 
 async function ensureMatchingEtag({
   bucket,
@@ -179,28 +172,7 @@ export async function PUT(request: NextRequest) {
     const key = normalizeFileKey(body?.key);
     const content = typeof body?.content === "string" ? body.content : "";
     const ifMatchEtag = typeof body?.ifMatchEtag === "string" ? body.ifMatchEtag : undefined;
-
-    const bucket = getBucket();
-    const client = getS3Client();
-
-    const result = await client.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: applyVaultPrefix(key),
-        Body: content,
-        ContentType: "text/markdown; charset=utf-8",
-        ...(ifMatchEtag ? { IfMatch: ifMatchEtag } : {}),
-      }),
-    );
-
-    const head = await client.send(
-      new HeadObjectCommand({
-        Bucket: bucket,
-        Key: applyVaultPrefix(key),
-      }),
-    );
-    const newEtag = normalizeEtag(result.ETag ?? head.ETag ?? null) ?? undefined;
-    const lastModifiedIso = head.LastModified ? head.LastModified.toISOString() : new Date().toISOString();
+    const { etag: newEtag, lastModified } = await writeMarkdownFile({ key, content, ifMatchEtag });
 
     await revalidateFileTags([key]);
 
@@ -208,14 +180,14 @@ export async function PUT(request: NextRequest) {
       key,
       content,
       etag: newEtag,
-      lastModified: lastModifiedIso,
+      lastModified,
       fetchedAt: new Date().toISOString(),
     });
 
-    revalidateTag(MANIFEST_CACHE_TAG);
+    revalidateTag(MANIFEST_CACHE_TAG, "max");
 
     return NextResponse.json({
-      etag: result.ETag ?? undefined,
+      etag: newEtag,
     });
   } catch (error) {
     return handleS3Error(error);
@@ -248,7 +220,7 @@ export async function DELETE(request: NextRequest) {
     );
 
     await revalidateFileTags([key]);
-    revalidateTag(MANIFEST_CACHE_TAG);
+    revalidateTag(MANIFEST_CACHE_TAG, "max");
     void deleteFileMeta(key);
 
     return new NextResponse(null, { status: 204 });

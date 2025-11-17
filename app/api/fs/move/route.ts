@@ -14,8 +14,6 @@ import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 import { renameFileMeta } from "@/lib/file-meta";
 
-export const runtime = "nodejs";
-
 type StatusError = Error & {
   status?: number;
   $metadata?: {
@@ -195,7 +193,7 @@ export async function POST(request: NextRequest) {
       const sourceRelatives = toRelativeKeys(sourceKeys);
       const targetRelatives = toRelativeKeys(copyResults);
       await revalidateFileTags([...sourceRelatives, ...targetRelatives]);
-      revalidateTag(MANIFEST_CACHE_TAG);
+      revalidateTag(MANIFEST_CACHE_TAG, "max");
       for (let index = 0; index < sourceKeys.length; index += 1) {
         const sourceKey = stripVaultPrefix(sourceKeys[index] ?? "");
         const targetKey = stripVaultPrefix(copyResults[index] ?? "");
@@ -266,7 +264,7 @@ export async function POST(request: NextRequest) {
     );
 
     await revalidateFileTags([fromKey, toKey]);
-    revalidateTag(MANIFEST_CACHE_TAG);
+    revalidateTag(MANIFEST_CACHE_TAG, "max");
     void renameFileMeta(fromKey, toKey);
 
     return NextResponse.json({ etag: copyResult.CopyObjectResult?.ETag ?? undefined });

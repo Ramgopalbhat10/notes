@@ -1,4 +1,6 @@
+import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { MarkdownPreview } from "@/components/markdown-preview";
@@ -11,9 +13,6 @@ import {
   publicCanonicalPath,
   siteMetadata,
 } from "@/lib/site-metadata";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 type PublicFile = {
   key: string;
@@ -38,6 +37,9 @@ function deriveTitle(key: string, content: string): string {
 }
 
 async function loadPublicFile(relativePath: string | null): Promise<PublicFile | null> {
+  "use cache";
+  cacheLife("seconds");
+
   if (!relativePath) {
     return null;
   }
@@ -69,10 +71,9 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ path?: string[] }>;
+  params: { path?: string[] };
 }): Promise<Metadata> {
-  const resolved = await params;
-  const relative = decodePathSegments(resolved.path);
+  const relative = decodePathSegments(params.path);
   const file = await loadPublicFile(relative);
   const canonical = publicCanonicalPath(relative);
   const canonicalUrl = absoluteUrl(canonical);
@@ -124,14 +125,22 @@ export async function generateMetadata({
   };
 }
 
-export default async function PublicFilePage({
-  params,
-}: {
-  params: Promise<{ path?: string[] }>;
-}) {
-  const resolved = await params;
-  const relative = decodePathSegments(resolved.path);
-  const file = await loadPublicFile(relative);
+function PublicFileFallback() {
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <article className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-16">
+        <div className="space-y-4 animate-pulse">
+          <div className="h-8 w-2/3 rounded bg-muted" />
+          <div className="h-4 w-1/3 rounded bg-muted" />
+          <div className="h-64 w-full rounded bg-muted" />
+        </div>
+      </article>
+    </main>
+  );
+}
+
+async function PublicFileContent({ relativePath }: { relativePath: string | null }) {
+  const file = await loadPublicFile(relativePath);
   if (!file) {
     notFound();
   }
@@ -155,5 +164,19 @@ export default async function PublicFilePage({
         <MarkdownPreview content={file.content} />
       </article>
     </main>
+  );
+}
+
+export default function PublicFilePage({
+  params,
+}: {
+  params: { path?: string[] };
+}) {
+  const relative = decodePathSegments(params.path);
+
+  return (
+    <Suspense fallback={<PublicFileFallback />}>
+      <PublicFileContent relativePath={relative} />
+    </Suspense>
   );
 }

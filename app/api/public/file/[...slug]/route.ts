@@ -36,14 +36,26 @@ function buildHeaders(cached: Awaited<ReturnType<typeof getCachedFile>>): Header
   return headers;
 }
 
+function decodeSlug(slug: readonly string[]): string {
+  return slug.map((segment) => decodeURIComponent(segment)).join("/");
+}
+
 function notFoundResponse() {
   return NextResponse.json({ error: "File not found" }, { status: 404 });
 }
 
-export async function GET(request: NextRequest) {
+type RouteContext = {
+  params: Promise<{ slug?: string[] }>;
+};
+
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     noStore();
-    const key = normalizeFileKey(request.nextUrl.searchParams.get("key"));
+    const { slug } = await context.params;
+    if (!slug || slug.length === 0) {
+      return notFoundResponse();
+    }
+    const key = normalizeFileKey(decodeSlug(slug));
     const meta = await getFileMeta(key);
     if (!meta.public) {
       return notFoundResponse();

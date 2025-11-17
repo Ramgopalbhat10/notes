@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, isAllowedUser } from "@/lib/auth";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname === "/api/public/file") {
+    const key = request.nextUrl.searchParams.get("key");
+    if (key) {
+      const encoded = key
+        .split("/")
+        .filter(Boolean)
+        .map((segment) => encodeURIComponent(segment))
+        .join("/");
+      const targetPath = encoded ? `/api/public/file/${encoded}` : "/api/public/file";
+      return NextResponse.rewrite(new URL(targetPath, request.url));
+    }
+  }
   const bypass =
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/public") ||
@@ -41,6 +53,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  runtime: "nodejs",
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
