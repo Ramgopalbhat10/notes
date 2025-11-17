@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 
 import { requireApiUser } from "@/lib/auth";
 import {
@@ -7,8 +6,6 @@ import {
   loadLatestManifest,
   type ManifestRecord,
 } from "@/lib/manifest-store";
-
-export const runtime = "nodejs";
 
 const CACHE_CONTROL = "public, max-age=30, s-maxage=300, stale-while-revalidate=60";
 
@@ -56,21 +53,6 @@ function buildHeaders(etag?: string, source?: ManifestRecord["source"]): Headers
   return headers;
 }
 
-const getCachedManifest = unstable_cache(
-  async () => {
-    const record = await loadLatestManifest();
-    if (!record) {
-      throw new Error("Manifest unavailable");
-    }
-    return record;
-  },
-  ["file-tree-manifest"],
-  {
-    tags: [MANIFEST_CACHE_TAG],
-    revalidate: false,
-  },
-);
-
 export async function GET(request: NextRequest) {
   const authRes = await requireApiUser(request);
   if (!authRes.ok) {
@@ -81,20 +63,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const manifestRecord = await getCachedManifest();
-    const ifNoneMatch = request.headers.get("if-none-match");
+    const manifestRecord = await loadLatestManifest();
+    if (!manifestRecord) {
+      throw new Error("Manifest unavailable");
+    }
 
+    const ifNoneMatch = request.headers.get("if-none-match");
     if (etagMatches(ifNoneMatch, manifestRecord.etag)) {
-      const latest = await loadLatestManifest();
-      if (!latest || latest.etag === manifestRecord.etag) {
-        return new NextResponse(null, {
-          status: 304,
-          headers: buildHeaders(manifestRecord.etag, manifestRecord.source),
-        });
-      }
-      return new NextResponse(latest.body, {
-        status: 200,
-        headers: buildHeaders(latest.etag, latest.source),
+      return new NextResponse(null, {
+        status: 304,
+        headers: buildHeaders(manifestRecord.etag, manifestRecord.source),
       });
     }
 

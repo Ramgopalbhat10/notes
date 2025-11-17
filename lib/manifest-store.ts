@@ -1,4 +1,5 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { cacheLife, cacheTag } from "next/cache";
 
 import { getRedisClient } from "@/lib/redis-client";
 import { FILE_TREE_MANIFEST_FILENAME, validateFileTreeManifest, type FileTreeManifest } from "@/lib/file-tree-manifest";
@@ -129,6 +130,11 @@ export async function writeManifestToRedis(value: RedisManifestValue): Promise<v
 }
 
 export async function loadLatestManifest(): Promise<ManifestRecord | null> {
+  "use cache";
+
+  cacheTag(MANIFEST_CACHE_TAG);
+  cacheLife("minutes");
+
   const fromRedis = await readManifestFromRedis();
   if (fromRedis) {
     try {

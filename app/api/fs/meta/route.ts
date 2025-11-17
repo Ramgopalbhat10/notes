@@ -4,8 +4,6 @@ import { requireApiUser } from "@/lib/auth";
 import { normalizeFileKey } from "@/lib/fs-validation";
 import { deleteFileMeta, getFileMeta, setFileMeta } from "@/lib/file-meta";
 
-export const runtime = "nodejs";
-
 function invalidRequest(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }

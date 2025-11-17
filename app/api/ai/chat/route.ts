@@ -13,7 +13,6 @@ import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { s3BodyToString } from "@/lib/s3-body";
 import { normalizeFileKey } from "@/lib/fs-validation";
 
-export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_CONTEXT_CHARS = 6_000;

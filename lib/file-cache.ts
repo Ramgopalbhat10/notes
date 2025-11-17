@@ -1,15 +1,12 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { unstable_cache, revalidateTag } from "next/cache";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 
 import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/s3";
 import { s3BodyToString } from "@/lib/s3-body";
 import { getRedisClient } from "@/lib/redis-client";
 
 export const FILE_CACHE_TAG_PREFIX = "file:";
-const FILE_CACHE_KEY_PREFIX = "file-cache:";
 const REDIS_FILE_CACHE_PREFIX = "file-cache:v1:";
-
-const cacheMissTracker = new Set<string>();
 
 export interface CachedFileRecord {
   key: string;
@@ -79,12 +76,8 @@ async function fetchFileFromS3(key: string): Promise<Omit<CachedFileRecord, "cac
   };
 }
 
-function buildCacheTag(key: string): string {
+export function getFileCacheTag(key: string): string {
   return `${FILE_CACHE_TAG_PREFIX}${key}`;
-}
-
-function buildCacheKey(key: string): string {
-  return `${FILE_CACHE_KEY_PREFIX}${key}`;
 }
 
 function buildRedisKey(key: string): string {
@@ -131,33 +124,26 @@ export async function setFileCacheRecord(key: string, record: Omit<CachedFileRec
 }
 
 export async function getCachedFile(key: string): Promise<CachedFileRecord> {
-  const cacheKey = buildCacheKey(key);
-  const tag = buildCacheTag(key);
+  "use cache";
 
-  const loader = unstable_cache(
-    async () => {
-      const fromRedis = await readFromRedis(key);
-      if (fromRedis) {
-        cacheMissTracker.add(cacheKey);
-        return fromRedis;
-      }
-      const result = await fetchFileFromS3(key);
-      await writeToRedis(key, result);
-      cacheMissTracker.add(cacheKey);
-      return result;
-    },
-    [cacheKey],
-    {
-      tags: [tag],
-      revalidate: false,
-    },
-  );
+  const tag = getFileCacheTag(key);
 
-  const result = await loader();
-  const miss = cacheMissTracker.delete(cacheKey);
+  cacheTag(tag);
+  cacheLife("max");
+
+  const fromRedis = await readFromRedis(key);
+  if (fromRedis) {
+    return {
+      ...fromRedis,
+      cacheStatus: "hit",
+    };
+  }
+
+  const result = await fetchFileFromS3(key);
+  await writeToRedis(key, result);
   return {
     ...result,
-    cacheStatus: miss ? "miss" : "hit",
+    cacheStatus: "miss",
   };
 }
 
@@ -173,13 +159,13 @@ export async function revalidateFileTags(keys: string[]): Promise<void> {
     } catch {
       // ignore redis delete failures
     }
-    revalidateTag(buildCacheTag(key));
+    revalidateTag(getFileCacheTag(key), "max");
   }
 }
 
 export function revalidateFolderTag(prefix: string): void {
   const normalized = prefix.endsWith("/") ? prefix : `${prefix}/`;
-  revalidateTag(buildCacheTag(normalized));
+  revalidateTag(getFileCacheTag(normalized), "max");
 }
 
 export function toRelativeKeys(keys: string[]): string[] {

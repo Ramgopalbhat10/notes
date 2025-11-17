@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { refreshFileTree } from "@/lib/tree-refresh";
 
-export const runtime = "nodejs";
-
 const REFRESH_SECRET = process.env.TREE_REFRESH_SECRET;
 let warnedAboutMissingSecret = false;
 

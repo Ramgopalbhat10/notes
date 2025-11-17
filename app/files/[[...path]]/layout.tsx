@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import type { ReactNode } from "react";
+import { connection } from "next/server";
 
 import {
   absoluteUrl,
@@ -12,10 +14,9 @@ import {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ path?: string[] }>;
+  params: { path?: string[] };
 }): Promise<Metadata> {
-  const resolvedParams = await params;
-  const relativePath = decodePathSegments(resolvedParams.path);
+  const relativePath = decodePathSegments(params.path);
   const title = workspaceTitle(relativePath);
   const description = workspaceDescription(relativePath);
   const canonical = filesCanonicalPath(relativePath);
@@ -39,6 +40,23 @@ export async function generateMetadata({
   };
 }
 
-export default function FilesLayout({ children }: { children: ReactNode }) {
+async function FilesConnectionGate({ children }: { children: ReactNode }) {
+  await connection();
   return <>{children}</>;
+}
+
+function FilesSuspenseFallback() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
+      Loading workspace…
+    </div>
+  );
+}
+
+export default function FilesLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<FilesSuspenseFallback />}>
+      <FilesConnectionGate>{children}</FilesConnectionGate>
+    </Suspense>
+  );
 }

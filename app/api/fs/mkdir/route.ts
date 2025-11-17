@@ -13,8 +13,6 @@ type StatusError = Error & {
   };
 };
 
-export const runtime = "nodejs";
-
 function getStatus(error: unknown): number | undefined {
   if (error && typeof error === "object") {
     const status = (error as StatusError).status;
@@ -95,7 +93,7 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    revalidateTag(MANIFEST_CACHE_TAG);
+    revalidateTag(MANIFEST_CACHE_TAG, "max");
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {

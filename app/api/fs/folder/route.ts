@@ -12,8 +12,6 @@ import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 import { deleteFileMeta } from "@/lib/file-meta";
 
-export const runtime = "nodejs";
-
 type StatusError = Error & {
   status?: number;
   $metadata?: {
@@ -137,7 +135,7 @@ export async function DELETE(request: NextRequest) {
 
     if (keys.length === 0) {
       // Nothing to delete; treat as success.
-      revalidateTag(MANIFEST_CACHE_TAG);
+      revalidateTag(MANIFEST_CACHE_TAG, "max");
       return new NextResponse(null, { status: 204 });
     }
 
@@ -150,7 +148,7 @@ export async function DELETE(request: NextRequest) {
         void deleteFileMeta(key);
       }
     }
-    revalidateTag(MANIFEST_CACHE_TAG);
+    revalidateTag(MANIFEST_CACHE_TAG, "max");
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

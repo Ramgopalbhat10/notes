@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {
+    // Enable future Turbopack options here (e.g., resolveAlias, filesystem cache)
+  },
+  cacheComponents: process.env.NEXT_CACHE_COMPONENTS !== "false",
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+      },
+    ],
+    minimumCacheTTL: 60 * 60 * 4, // 4 hours (Next 16 default)
+  },
+  productionBrowserSourceMaps: false
 };
 
 export default nextConfig;

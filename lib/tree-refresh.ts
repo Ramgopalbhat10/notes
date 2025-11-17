@@ -32,7 +32,7 @@ export async function refreshFileTree(): Promise<RefreshResult> {
   };
 
   await writeManifestToRedis(redisValue);
-  await revalidateTag(MANIFEST_CACHE_TAG);
+  await revalidateTag(MANIFEST_CACHE_TAG, "max");
 
   return {
     manifest,

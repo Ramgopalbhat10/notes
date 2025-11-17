@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { loadLatestManifest } from "@/lib/manifest-store";
 
-export const runtime = "nodejs";
-
 export async function GET(request: NextRequest) {
   const authRes = await requireApiUser(request);
   if (!authRes.ok) {

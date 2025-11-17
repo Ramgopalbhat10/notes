@@ -9,8 +9,6 @@ import {
   stripVaultPrefix,
 } from "@/lib/s3";
 
-export const runtime = "nodejs";
-
 const INVALID_PREFIX_PATTERN = /(^|\/)\.\.(\/|$)/;
 
 function normalizeRequestPrefix(input: string | null): string {

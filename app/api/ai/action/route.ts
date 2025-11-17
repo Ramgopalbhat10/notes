@@ -10,8 +10,6 @@ const MAX_INPUT_CHARS = 8_000;
 
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
-export const runtime = "edge";
-
 export async function POST(request: NextRequest) {
   try {
     ensureEnv();

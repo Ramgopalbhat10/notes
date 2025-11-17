@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import type { EditorView } from "@codemirror/view";
+import { saveDocumentAction } from "@/app/actions/documents";
 import { useTreeStore } from "@/stores/tree";
 import {
   loadPersistentDocument,
@@ -450,35 +451,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ status: "saving", error: null, conflictMessage: null, errorSource: null });
 
     try {
-      const payload: Record<string, unknown> = {
+      const result = await saveDocumentAction({
         key,
         content: state.content,
-      };
-      if (state.etag) {
-        payload.ifMatchEtag = state.etag;
-      }
-
-      const response = await fetch("/api/fs/file", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
+        ifMatchEtag: state.etag,
       });
 
-      if (!response.ok) {
-        if (response.status === 409) {
-          const message = await parseErrorResponse(response);
-          set({ status: "conflict", conflictMessage: message || null, error: null, errorSource: "save" });
+      if (controller.signal.aborted) {
+        return false;
+      }
+
+      if (!result.ok) {
+        if (result.reason === "conflict") {
+          set({ status: "conflict", conflictMessage: result.message || null, error: null, errorSource: "save" });
           return false;
         }
-        const message = await parseErrorResponse(response);
+        const message = result.message || "Failed to save file";
         set({ status: "error", error: message, conflictMessage: null, errorSource: "save" });
         return false;
       }
 
-      const data = (await response.json().catch(() => ({}))) as { etag?: string };
-      const newEtag = data?.etag ?? state.etag;
-      const savedAt = new Date().toISOString();
+      const newEtag = result.etag ?? state.etag;
+      const savedAt = result.lastModified ?? new Date().toISOString();
 
       if (get().fileKey !== key) {
         return true;
