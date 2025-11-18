@@ -40,10 +40,23 @@ function notFoundResponse() {
   return NextResponse.json({ error: "File not found" }, { status: 404 });
 }
 
+function isPrerenderBailout(error: unknown): error is { digest: string } {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const digest = (error as { digest?: unknown }).digest;
+  return typeof digest === "string" && digest.startsWith("NEXT_PRERENDER");
+}
+
 export async function GET(request: NextRequest) {
+  noStore();
+  const keyParam = request.nextUrl.searchParams.get("key");
+  if (!keyParam) {
+    return NextResponse.json({ error: "Missing key" }, { status: 400 });
+  }
+
   try {
-    noStore();
-    const key = normalizeFileKey(request.nextUrl.searchParams.get("key"));
+    const key = normalizeFileKey(keyParam);
     const meta = await getFileMeta(key);
     if (!meta.public) {
       return notFoundResponse();
@@ -82,6 +95,9 @@ export async function GET(request: NextRequest) {
       { headers },
     );
   } catch (error) {
+    if (isPrerenderBailout(error)) {
+      throw error;
+    }
     console.error("Failed to serve public file", error);
     return notFoundResponse();
   }
