@@ -193,7 +193,6 @@ export async function POST(request: NextRequest) {
       const sourceRelatives = toRelativeKeys(sourceKeys);
       const targetRelatives = toRelativeKeys(copyResults);
       await revalidateFileTags([...sourceRelatives, ...targetRelatives]);
-      revalidateTag(MANIFEST_CACHE_TAG, "max");
       for (let index = 0; index < sourceKeys.length; index += 1) {
         const sourceKey = stripVaultPrefix(sourceKeys[index] ?? "");
         const targetKey = stripVaultPrefix(copyResults[index] ?? "");
@@ -206,6 +205,10 @@ export async function POST(request: NextRequest) {
           void renameFileMeta(sourceKey, targetKey);
         }
       }
+
+      // Incrementally update manifest instead of invalidating
+      const { moveFolder } = await import("@/lib/manifest-updater");
+      await moveFolder({ oldPrefix: fromPrefix, newPrefix: toPrefix });
 
       return NextResponse.json({ etag: undefined });
     }
@@ -264,8 +267,11 @@ export async function POST(request: NextRequest) {
     );
 
     await revalidateFileTags([fromKey, toKey]);
-    revalidateTag(MANIFEST_CACHE_TAG, "max");
     void renameFileMeta(fromKey, toKey);
+
+    // Incrementally update manifest instead of invalidating
+    const { moveFile } = await import("@/lib/manifest-updater");
+    await moveFile({ oldKey: fromKey, newKey: toKey });
 
     return NextResponse.json({ etag: copyResult.CopyObjectResult?.ETag ?? undefined });
   } catch (error) {

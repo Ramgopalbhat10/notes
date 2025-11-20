@@ -286,7 +286,13 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
   const { schedule: scheduleManifestRefresh, runImmediate: runManifestRefreshImmediate } =
     createManifestRefresher(loadManifest, set);
-  const enqueueMutation = createMutationQueue(set, get, scheduleManifestRefresh);
+  
+  // Simple manifest reload function that doesn't trigger full S3 refresh
+  const reloadManifestOnly = async () => {
+    await loadManifest({ force: true });
+  };
+  
+  const enqueueMutation = createMutationQueue(set, get, reloadManifestOnly);
 
   const queueMove = (nodeId: NodeId, targetPath: string) => {
     const state = get();
@@ -370,7 +376,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
         } else {
           await removePersistentDocument(node.path);
         }
-        await runManifestRefreshImmediate("mutation");
       },
       rollback: () => restoreTreeSnapshot(set, snapshot),
     });
@@ -585,7 +590,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
           if (!response.ok) {
             throw new Error(await extractTreeError(response));
           }
-          await runManifestRefreshImmediate("mutation");
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),
       });
@@ -631,7 +635,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
               },
             }));
           }
-          await runManifestRefreshImmediate("mutation");
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),
       });
@@ -674,7 +677,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
               throw new Error(await extractTreeError(response));
             }
             await removePersistentDocumentsWithPrefix(node.path);
-            await runManifestRefreshImmediate("mutation");
           } else {
             const response = await fetch("/api/fs/file", {
               method: "DELETE",
@@ -685,7 +687,6 @@ export const useTreeStore = create<TreeState>((set, get) => {
               throw new Error(await extractTreeError(response));
             }
             await removePersistentDocument(node.path);
-            await runManifestRefreshImmediate("mutation");
           }
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),

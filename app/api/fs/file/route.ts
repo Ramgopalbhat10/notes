@@ -184,7 +184,14 @@ export async function PUT(request: NextRequest) {
       fetchedAt: new Date().toISOString(),
     });
 
-    revalidateTag(MANIFEST_CACHE_TAG, "max");
+    // Incrementally update manifest instead of invalidating
+    const { addOrUpdateFile } = await import("@/lib/manifest-updater");
+    await addOrUpdateFile({
+      key,
+      etag: newEtag,
+      lastModified,
+      size: Buffer.byteLength(content, "utf-8"),
+    });
 
     return NextResponse.json({
       etag: newEtag,
@@ -220,8 +227,11 @@ export async function DELETE(request: NextRequest) {
     );
 
     await revalidateFileTags([key]);
-    revalidateTag(MANIFEST_CACHE_TAG, "max");
     void deleteFileMeta(key);
+
+    // Incrementally update manifest instead of invalidating
+    const { deleteFile } = await import("@/lib/manifest-updater");
+    await deleteFile({ key });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
