@@ -148,7 +148,10 @@ export async function DELETE(request: NextRequest) {
         void deleteFileMeta(key);
       }
     }
-    revalidateTag(MANIFEST_CACHE_TAG, "max");
+
+    // Incrementally update manifest instead of invalidating
+    const { deleteFolder } = await import("@/lib/manifest-updater");
+    await deleteFolder({ prefix });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

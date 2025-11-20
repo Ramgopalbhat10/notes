@@ -18,7 +18,7 @@ export function BlockNoteEditor({ value, onChange, readOnly, className }: BlockN
 	const setSelection = useEditorStore((state) => state.setSelection);
 
 	const editor = useCreateBlockNote({
-		initialContent: value ? undefined : [],
+		initialContent: undefined,
 	});
 
 	// Load initial markdown content
@@ -112,10 +112,12 @@ export function BlockNoteEditor({ value, onChange, readOnly, className }: BlockN
 	}
 
 	return (
-		<BlockNoteView
-			editor={editor}
-			onChange={handleChange}
-			className={className}
-		/>
+		<div className="flex-1 min-h-[calc(100vh-12rem)] w-full">
+			<BlockNoteView
+				editor={editor}
+				onChange={handleChange}
+				className={className}
+			/>
+		</div>
 	);
 }

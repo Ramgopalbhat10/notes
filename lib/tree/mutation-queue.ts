@@ -2,7 +2,7 @@ import type { RefreshState } from "./types";
 
 type StoreSetter<TState> = (updater: Partial<TState> | ((state: TState) => Partial<TState>)) => void;
 type StoreGetter<TState> = () => TState;
-type ScheduleRefresh = () => void;
+type ReloadManifest = () => Promise<void>;
 
 export type MutationJob = {
   description: string;
@@ -20,7 +20,7 @@ type MutationState = {
 export function createMutationQueue<TState extends MutationState>(
   set: StoreSetter<TState>,
   get: StoreGetter<TState>,
-  scheduleRefresh: ScheduleRefresh,
+  reloadManifest: ReloadManifest,
 ) {
   const queue: MutationJob[] = [];
   let processing = false;
@@ -35,7 +35,8 @@ export function createMutationQueue<TState extends MutationState>(
       try {
         await job.perform();
         set((state) => ({ pendingMutations: Math.max(0, state.pendingMutations - 1) } as Partial<TState>));
-        scheduleRefresh();
+        // Reload manifest from server (already updated by API endpoint via incremental update)
+        await reloadManifest();
       } catch (error) {
         job.rollback();
         const message = error instanceof Error ? error.message : "Failed to update file tree";

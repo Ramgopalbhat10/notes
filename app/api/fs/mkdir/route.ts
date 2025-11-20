@@ -93,7 +93,9 @@ export async function POST(request: NextRequest) {
       }),
     );
 
-    revalidateTag(MANIFEST_CACHE_TAG, "max");
+    // Incrementally update manifest instead of invalidating
+    const { addFolder } = await import("@/lib/manifest-updater");
+    await addFolder({ prefix });
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
