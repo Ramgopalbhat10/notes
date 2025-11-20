@@ -275,6 +275,10 @@ body {
   min-height: calc(100vh - 14rem);
 }
 
+.ProseMirror [data-content-type="codeBlock"] {
+  font-size: 14px !important;
+}
+
 /* Mobile optimizations - hide side menu on mobile only */
 @media (max-width: 768px) {
   .bn-side-menu {
