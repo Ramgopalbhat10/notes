@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { EditorView } from "@codemirror/view";
+import type { BlockNoteEditor } from "@blocknote/core";
 import { saveDocumentAction } from "@/app/actions/documents";
 import { useTreeStore } from "@/stores/tree";
 import {
@@ -13,10 +13,9 @@ import {
 type EditorMode = "preview" | "edit";
 type EditorStatus = "idle" | "loading" | "saving" | "error" | "conflict";
 
-type SelectionRange = {
-  from: number;
-  to: number;
-};
+// We use 'any' for now as BlockNote selection is complex and we don't strictly need to sync it to store
+// in the same way as CodeMirror.
+type SelectionRange = any;
 
 type CachedDocument = {
   content: string;
@@ -42,7 +41,7 @@ type EditorState = {
   setMode: (mode: EditorMode) => void;
   setContent: (value: string) => void;
   setSelection: (selection: SelectionRange | null) => void;
-  registerEditorView: (view: EditorView | null) => void;
+  registerEditorView: (view: BlockNoteEditor | null) => void;
   applyAiResult: (text: string, options?: { range?: SelectionRange | null; strategy?: "replace" | "insert" }) => void;
   save: (origin?: "manual" | "auto") => Promise<boolean>;
   reset: () => void;
@@ -70,7 +69,7 @@ const initialState: Omit<
 let currentAbort: AbortController | null = null;
 let loadSeq = 0;
 let currentSaveAbort: AbortController | null = null;
-let activeEditorView: EditorView | null = null;
+let activeEditorView: BlockNoteEditor | null = null;
 const documentCache = new Map<string, CachedDocument>();
 const firstOpenValidatedKeys = new Set<string>();
 
@@ -371,66 +370,49 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       set({ selection: null });
       return;
     }
-    const main = view.state.selection.main;
-    set({ selection: { from: main.from, to: main.to } });
+    // BlockNote handles selection internally, we might not need to sync it to store constantly
+    // or we can subscribe to selection changes if needed.
+    // For now, we'll just clear it or set a dummy if needed.
+    set({ selection: null });
   },
 
-  applyAiResult(text, options) {
+  async applyAiResult(text, options) {
     const state = get();
-    const strategy = options?.strategy ?? (options?.range && options.range.to !== options.range.from ? "replace" : "insert");
-    const range = options?.range ?? null;
-
-    const resolveRange = (docLength: number): SelectionRange => {
-      const clamp = (value: number) => Math.max(0, Math.min(docLength, value));
-      if (range) {
-        const from = clamp(range.from);
-        const to = clamp(range.to);
-        if (strategy === "insert") {
-          return { from, to: from };
-        }
-        return { from: Math.min(from, to), to: Math.max(from, to) };
-      }
-      const currentSelection = state.selection;
-      if (currentSelection) {
-        const from = clamp(currentSelection.from);
-        const to = clamp(currentSelection.to);
-        if (strategy === "insert") {
-          return { from, to: from };
-        }
-        if (from !== to) {
-          return { from: Math.min(from, to), to: Math.max(from, to) };
-        }
-        return { from, to };
-      }
-      if (strategy === "insert") {
-        return { from: docLength, to: docLength };
-      }
-      return { from: 0, to: docLength };
-    };
+    const strategy = options?.strategy ?? "insert";
 
     if (state.mode === "edit" && activeEditorView) {
-      const view = activeEditorView;
-      const { from, to } = resolveRange(view.state.doc.length);
-      const insertPos = from + text.length;
-      view.dispatch({
-        changes: {
-          from,
-          to,
-          insert: text,
-        },
-        selection: { anchor: insertPos },
-        scrollIntoView: true,
-      });
+      const editor = activeEditorView;
+
+      // Parse markdown to blocks
+      const blocks = await editor.tryParseMarkdownToBlocks(text);
+
+      if (strategy === "replace") {
+        // Replace current selection
+        const selection = editor.getSelection();
+        if (selection) {
+          const currentSelection = editor.getSelection();
+          if (currentSelection && currentSelection.blocks.length > 0) {
+            editor.replaceBlocks(currentSelection.blocks, blocks);
+          } else {
+            // Insert at cursor
+            const cursor = editor.getTextCursorPosition();
+            editor.insertBlocks(blocks, cursor.block, "after");
+          }
+        }
+      } else {
+        // Insert
+        const cursor = editor.getTextCursorPosition();
+        // insertBlocks(blocks, referenceBlock, placement)
+        editor.insertBlocks(blocks, cursor.block, "after");
+      }
       return;
     }
 
+    // Fallback for non-edit mode (append to content)
     const doc = state.content;
-    const { from, to } = resolveRange(doc.length);
-    const before = doc.slice(0, from);
-    const after = strategy === "insert" ? doc.slice(from) : doc.slice(to);
-    const next = `${before}${text}${after}`;
+    const next = `${doc}\n\n${text}`;
     get().setContent(next);
-    set({ selection: { from: from + text.length, to: from + text.length }, mode: "edit" });
+    set({ mode: "edit" });
   },
 
   async save(_origin?: "manual" | "auto") {

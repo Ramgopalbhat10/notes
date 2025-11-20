@@ -14,7 +14,8 @@ const nextConfig: NextConfig = {
     ],
     minimumCacheTTL: 60 * 60 * 4, // 4 hours (Next 16 default)
   },
-  productionBrowserSourceMaps: false
+  productionBrowserSourceMaps: false,
+  reactStrictMode: false,
 };
 
 export default nextConfig;

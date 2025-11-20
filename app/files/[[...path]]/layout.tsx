@@ -16,7 +16,8 @@ export async function generateMetadata({
 }: {
   params: { path?: string[] };
 }): Promise<Metadata> {
-  const relativePath = decodePathSegments(params.path);
+  const { path } = await params;
+  const relativePath = decodePathSegments(path);
   const title = workspaceTitle(relativePath);
   const description = workspaceDescription(relativePath);
   const canonical = filesCanonicalPath(relativePath);
