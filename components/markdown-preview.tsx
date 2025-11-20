@@ -1,7 +1,24 @@
 "use client";
 
-import { Children, isValidElement, useMemo } from "react";
-import type { ComponentPropsWithoutRef } from "react";
+import { Check, Copy } from "lucide-react";
+import { PrismAsyncLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import vscDarkPlus from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
+import vsLight from "react-syntax-highlighter/dist/esm/styles/prism/vs";
+import bash from "react-syntax-highlighter/dist/esm/languages/prism/bash";
+import css from "react-syntax-highlighter/dist/esm/languages/prism/css";
+import diff from "react-syntax-highlighter/dist/esm/languages/prism/diff";
+import go from "react-syntax-highlighter/dist/esm/languages/prism/go";
+import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
+import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
+import markdown from "react-syntax-highlighter/dist/esm/languages/prism/markdown";
+import markup from "react-syntax-highlighter/dist/esm/languages/prism/markup";
+import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
+import sql from "react-syntax-highlighter/dist/esm/languages/prism/sql";
+import tsx from "react-syntax-highlighter/dist/esm/languages/prism/tsx";
+import typescript from "react-syntax-highlighter/dist/esm/languages/prism/typescript";
+import yaml from "react-syntax-highlighter/dist/esm/languages/prism/yaml";
+import { Children, isValidElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,13 +34,76 @@ type CodeProps = ComponentPropsWithoutRef<"code"> & {
   inline?: boolean;
 };
 
-const CodeBlock: Components["code"] = ({ inline, className, children, ...props }: CodeProps) => {
+SyntaxHighlighter.registerLanguage("bash", bash);
+SyntaxHighlighter.registerLanguage("css", css);
+SyntaxHighlighter.registerLanguage("diff", diff);
+SyntaxHighlighter.registerLanguage("go", go);
+SyntaxHighlighter.registerLanguage("javascript", javascript);
+SyntaxHighlighter.registerLanguage("json", json);
+SyntaxHighlighter.registerLanguage("markdown", markdown);
+SyntaxHighlighter.registerLanguage("html", markup);
+SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("sql", sql);
+SyntaxHighlighter.registerLanguage("tsx", tsx);
+SyntaxHighlighter.registerLanguage("typescript", typescript);
+SyntaxHighlighter.registerLanguage("yaml", yaml);
+
+const CodeBlock: Components["code"] = ({ inline, className, children, style: _style, ...props }: CodeProps) => {
   const childArray = Children.toArray(children);
   const textContent = childArray
     .map((child) => (typeof child === "string" ? child : ""))
     .join("");
-  const hasLanguage = typeof className === "string" && className.includes("language-");
-  const isInline = inline === true || (!hasLanguage && !textContent.includes("\n"));
+
+  const language = useMemo(() => {
+    const match = typeof className === "string" ? className.match(/language-([\w-]+)/) : null;
+    return match?.[1] ?? "text";
+  }, [className]);
+
+  const codeText = useMemo(() => textContent.replace(/\n$/, ""), [textContent]);
+  const resolvedLanguage = useMemo(() => {
+    if (language && language !== "text") return language;
+    const lower = codeText.toLowerCase();
+    if (/^\s*#!/.test(codeText) || /import\s+\w+/.test(lower) || /\bdef\b|\bclass\b/.test(lower)) {
+      return "python";
+    }
+    if (/console\.log|\bfunction\b|\bconst\b|\blet\b|=>/.test(codeText)) return "javascript";
+    if (/select\s+.+\s+from/i.test(codeText)) return "sql";
+    if (/<[a-z][\s\S]*>/i.test(codeText)) return "markup";
+    return "plaintext";
+  }, [codeText, language]);
+
+  const isInline =
+    inline === true || ((!language || language === "text") && !codeText.includes("\n"));
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof document === "undefined") return true;
+    return document.documentElement.classList.contains("dark");
+  });
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    setIsDarkMode(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    if (!codeText) return;
+    try {
+      await navigator.clipboard.writeText(codeText);
+      setCopied(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 1600);
+    } catch (error) {
+      console.error("Failed to copy code", error);
+    }
+  }, [codeText]);
+
+  useEffect(
+    () => () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    },
+    [],
+  );
 
   if (isInline) {
     return (
@@ -35,12 +115,46 @@ const CodeBlock: Components["code"] = ({ inline, className, children, ...props }
       </code>
     );
   }
+
+  const themeStyles = useMemo<{ [key: string]: CSSProperties }>(
+    () => (isDarkMode ? (vscDarkPlus as { [key: string]: CSSProperties }) : (vsLight as { [key: string]: CSSProperties })),
+    [isDarkMode],
+  );
+
   return (
-    <pre className="my-4 md:my-6 w-full overflow-x-auto rounded-md border bg-muted/50 p-2 md:p-4 text-xs md:text-sm">
-      <code className={cn("font-mono text-xs leading-5", className)} {...props}>
-        {children}
-      </code>
-    </pre>
+    <div className="group relative my-4 md:my-6 w-full overflow-hidden rounded-md border border-border/60 bg-muted/60">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground opacity-0 shadow-sm transition hover:-translate-y-px hover:border-primary/60 hover:text-primary focus-visible:translate-y-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 group-hover:opacity-100"
+        aria-label={copied ? "Code copied" : "Copy code"}
+      >
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      </button>
+      <SyntaxHighlighter
+        language={resolvedLanguage}
+        style={themeStyles}
+        PreTag="pre"
+        wrapLines
+        wrapLongLines
+        useInlineStyles
+        className="text-xs md:text-sm"
+        customStyle={{
+          margin: 0,
+          padding: "1rem 1.25rem",
+          paddingRight: "3rem",
+          background: "transparent",
+          overflow: "auto",
+          lineHeight: 1.6,
+        }}
+        codeTagProps={{
+          className: cn("font-mono leading-6", className),
+        }}
+        {...props}
+      >
+        {codeText}
+      </SyntaxHighlighter>
+    </div>
   );
 };
 
