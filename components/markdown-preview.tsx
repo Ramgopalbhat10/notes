@@ -163,7 +163,7 @@ const components: Components = {
     <h1 className="scroll-m-20 text-3xl font-semibold tracking-tight" {...props} />
   ),
   h2: (props) => (
-    <h2 className="mt-6 md:mt-8 scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight first:mt-0" {...props} />
+    <h2 className="mt-4 md:mt-6 scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight" {...props} />
   ),
   h3: (props) => (
     <h3 className="mt-4 md:mt-6 scroll-m-20 text-xl font-semibold tracking-tight" {...props} />
@@ -229,7 +229,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
 
   if (!trimmed) {
     return (
-      <div className={cn("rounded-lg border border-dashed border-muted p-4 md:p-6 text-sm md:text-base text-muted-foreground", className)}>
+      <div className={cn("rounded-lg pt-4 md:pt-6 text-sm md:text-base text-muted-foreground", className)}>
         This note has no content yet. Switch to Edit mode to start writing.
       </div>
     );

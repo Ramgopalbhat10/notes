@@ -283,7 +283,7 @@ export function VaultWorkspace({
     }
     if (status === "loading") {
       return (
-        <div className="space-y-2">
+        <div className="space-y-2 pt-4 md:pt-6">
           <Skeleton className="h-6 w-2/5" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-11/12" />
@@ -307,7 +307,7 @@ export function VaultWorkspace({
     }
 
     return (
-      <div className="rounded-lg border bg-card p-3 md:p-6 w-full overflow-hidden">
+      <div className="rounded-lg w-full overflow-hidden">
         <MarkdownPreview content={content} />
       </div>
     );
