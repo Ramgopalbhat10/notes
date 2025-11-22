@@ -144,6 +144,7 @@ function FolderNode({
 }: FolderNodeProps) {
   const toggleFolder = useTreeStore((state) => state.toggleFolder);
   const isOpenState = useTreeStore((state) => state.openFolders[node.id] ?? false);
+  const selectedNode = useTreeStore((state) => state.selectedId ? state.nodes[state.selectedId] : null);
 
   const matches = filterActive && matchMap ? matchMap.get(node.id) : undefined;
   const shouldForceOpen = filterActive && Boolean(matches?.include);
@@ -152,6 +153,8 @@ function FolderNode({
     ? node.children.filter((childId) => matchMap.get(childId)?.include)
     : node.children;
   const isActive = node.id === activeId;
+  const prefix = node.path.endsWith("/") ? node.path : node.path + "/";
+  const isAncestor = selectedNode && selectedNode.path.startsWith(prefix);
   const selectionState = selectedId === node.id ? "selected" : null;
   const showActions = isActive;
   const connectorLeft = depth * INDENT_SIZE + 10;
@@ -190,6 +193,7 @@ function FolderNode({
               className={cn(
                 "peer flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 isActive ? "text-accent-foreground" : "",
+                isAncestor ? "text-foreground font-medium" : ""
               )}
               role="treeitem"
               aria-expanded={isOpen}
@@ -278,7 +282,7 @@ function FolderNode({
           {childIds.length > 0 ? (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 top-7 border-l border-border/40"
+              className="pointer-events-none absolute ml-1 bottom-0 top-0 z-10 border-l border-border/40"
               style={{ left: connectorLeft }}
             />
           ) : null}
