@@ -236,7 +236,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   }
 
   return (
-    <div className={cn("markdown-preview markdown-content text-sm md:text-base leading-7 w-full max-w-full", className)}>
+    <div className={cn("markdown-preview px-4 md:px-0 markdown-content text-sm md:text-base leading-7 w-full max-w-full", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeSanitize, schema]]}
