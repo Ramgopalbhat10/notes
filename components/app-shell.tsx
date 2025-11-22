@@ -249,9 +249,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1 min-h-0">
-          <ScrollArea className="h-full">
-            <div className="p-3 md:p-4">{left}</div>
-          </ScrollArea>
+          <div className="p-3 md:p-4">{left}</div>
         </SidebarContent>
         <SidebarFooter className="mt-auto p-0 sticky bottom-0">
           <LeftSidebarFooter />
