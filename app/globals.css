@@ -84,7 +84,7 @@
   --chart-3: oklch(0.7090 0.1592 293.5412);
   --chart-4: oklch(0.8369 0.1644 84.4286);
   --chart-5: oklch(0.7845 0.1325 181.9120);
-  --sidebar: oklch(0.1822 0 0);
+  --sidebar: oklch(0.17 0 0);
   --sidebar-foreground: oklch(0.6301 0 0);
   --sidebar-primary: oklch(0.4365 0.1044 156.7556);
   --sidebar-primary-foreground: oklch(0.9213 0.0135 167.1556);
@@ -254,6 +254,10 @@ body {
   .markdown-content [data-streamdown="table-body"] tr:last-child td {
     @apply border-b-0;
   }
+
+  .markdown-content {
+    line-height: 1.6;
+  }
 }
 
 .ProseMirror a {
@@ -292,4 +296,9 @@ body {
     padding-left: 12px !important;
     padding-right: 12px !important;
   }
+}
+
+/* First div of scroll-area-viewport */
+div [data-slot="scroll-area-viewport"] > div:first-child {
+  display: contents !important;
 }

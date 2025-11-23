@@ -25,7 +25,7 @@ import { useEditorStore } from "@/stores/editor";
 
 const FOOTER_HEIGHT_CLASS = "h-10 md:h-11";
 const FOOTER_SURFACE_CLASS =
-  "border-t border-dashed bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
+  "border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60";
 const ICON_BUTTON_BASE =
   "inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40";
 
@@ -202,9 +202,9 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
             )}
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "auto" } as CSSProperties}
           >
-            <SheetHeader className="px-3 py-2 md:px-4 md:py-2 border-b border-dashed">
+            <SheetHeader className="px-3 py-2 md:px-4 md:py-2 border-b border-border/40">
               <div className="flex items-center justify-between">
-                <SheetTitle className="text-sm md:text-base">Chat</SheetTitle>
+                <SheetTitle className="font-semibold text-sm md:text-base uppercase ml-1">Chat</SheetTitle>
                 <div className="flex items-center gap-0.5">
                   {/* Expand button - only on tablet (md) and above */}
                   <Button
@@ -228,10 +228,12 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                 </div>
               </div>
             </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col">
-              <ScrollArea className="flex-1">
-                <div className="p-3 md:p-4">{right}</div>
-              </ScrollArea>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden md:p-4">
+                <div className="h-full">
+                  {right}
+                </div>
+              </div>
               <RightSidebarFooter content={rightFooter} />
             </div>
           </SheetContent>
@@ -239,8 +241,8 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
       ) : null}
 
       {/* Left sidebar using shadcn primitives */}
-      <Sidebar side="left" variant="sidebar" className="max-h-svh">
-        <SidebarHeader className="h-10 md:h-11 shrink-0 border-b border-dashed">
+      <Sidebar side="left" variant="sidebar" className="max-h-svh border-r border-solid border-border/40">
+        <SidebarHeader className="h-10 md:h-11 shrink-0 border-b border-solid border-border/40">
           <div className="flex h-full items-center justify-between px-2.5 md:px-3">
             <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">
               Vault
@@ -261,7 +263,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
       <SidebarInset className="flex min-h-svh min-w-0 flex-col">
         <MainHeader header={header} />
         <div ref={mainScrollRef} className="flex-1 min-h-0 w-full overflow-auto">
-          <div className="space-y-3 sm:space-y-4 sm:p-4 sm:pt-0 pt-0 min-w-0">{renderedChildren}</div>
+          <div className="space-y-3 sm:space-y-4 sm:px-8 sm:py-4 pt-0 min-w-0">{renderedChildren}</div>
         </div>
         <MainFooter
           descriptor={statusDescriptor}
@@ -279,7 +281,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
       {hasRight ? (
         <div
           className={cn(
-            "hidden lg:block overflow-hidden transition-[width] duration-300 ease-in-out border-l border-dashed relative",
+            "hidden lg:block overflow-hidden transition-[width] duration-300 ease-in-out border-l border-solid border-border/40 relative",
             rightSidebarWidthClass,
           )}
           aria-hidden={!rightDesktopOpen}
@@ -295,7 +297,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                 "--sidebar-width": rightExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
               } as CSSProperties}
             >
-            <SidebarHeader className="h-10 md:h-11 border-b border-dashed">
+            <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
               <div className="flex h-full items-center justify-between px-2.5 md:px-3">
                 <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
                 <div className="flex items-center gap-0.5">
@@ -324,10 +326,12 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                 </div>
               </div>
             </SidebarHeader>
-            <SidebarContent className="min-h-0">
-              <ScrollArea className="h-full">
-                <div className="p-3 md:p-4">{right}</div>
-              </ScrollArea>
+            <SidebarContent className="min-h-0 overflow-hidden gap-0">
+              <div className="flex-1 min-h-0 overflow-hidden pl-3 md:py-4">
+                <div className="h-full">
+                  {right}
+                </div>
+              </div>
             </SidebarContent>
             <SidebarFooter className="mt-auto p-0 sticky bottom-0">
               <RightSidebarFooter content={rightFooter} />
@@ -611,7 +615,7 @@ function MainHeader({ header }: { header?: React.ReactNode }) {
   const { open } = useSidebar();
   return (
     <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-10 md:h-11 items-center gap-1 md:gap-1.5 px-3 md:px-4 border-b border-dashed">
+      <div className="flex h-10 md:h-11 items-center gap-1 md:gap-1.5 px-3 md:px-4 border-b border-border/40">
         {/* Show left toggle in main: always on mobile; on md+ only when sidebar is closed */}
         <SidebarTrigger
           className={cn(

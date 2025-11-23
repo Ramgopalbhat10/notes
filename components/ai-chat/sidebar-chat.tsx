@@ -5,6 +5,7 @@ import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
 import { ArrowDownLeft, Bot, Copy, Loader2, RefreshCcw, SendHorizontal, Square } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import {
   Conversation,
   ConversationContent,
@@ -18,11 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useEditorStore } from "@/stores/editor";
-import { useStickToBottomContext } from "use-stick-to-bottom";
 
 const MAX_EXCERPT_CHARS = 6_000;
-
-type StickContext = ReturnType<typeof useStickToBottomContext>;
 
 type FilePayload = {
   key: string;
@@ -60,8 +58,6 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
   useEffect(() => {
     latestPayloadRef.current = filePayload;
   }, [filePayload]);
-
-  const stickContextRef = useRef<StickContext | null>(null);
 
   const transport = useMemo(
     () =>
@@ -132,10 +128,6 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
         return;
       }
       clearError();
-      const context = stickContextRef.current;
-      if (context) {
-        context.scrollToBottom({ animation: "instant" });
-      }
       setDraft("");
       await sendMessage({ text });
     },
@@ -206,33 +198,7 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
 
   const composerDisabled = !canChat || isStreaming;
   const hasMessages = visibleMessages.length > 0;
-
-  const previousMessageCountRef = useRef(messages.length);
-
-  useEffect(() => {
-    const previous = previousMessageCountRef.current;
-    if (messages.length <= previous) {
-      previousMessageCountRef.current = messages.length;
-      return;
-    }
-
-    previousMessageCountRef.current = messages.length;
-    const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.role !== "user") {
-      return;
-    }
-
-    const context = stickContextRef.current;
-      if (!context) {
-        return;
-      }
-
-      requestAnimationFrame(() => {
-        context.scrollToBottom({
-          animation: { damping: 0.72, stiffness: 0.08, mass: 1.1 },
-        });
-      });
-  }, [messages]);
+  const showIntro = !hasMessages;
 
   const composer = useMemo(() => (
     <form onSubmit={handleSubmit} className="flex w-full items-center gap-1.5">
@@ -277,23 +243,25 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
   }, [onComposerChange]);
 
   return (
-    <div className="flex h-full flex-col gap-3 text-sm md:text-base">
-      <header className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
-        <div className="flex items-center gap-2 font-medium text-foreground">
-          <Bot className="h-4 w-4 text-primary" />
-          <span>AI Assistant</span>
-        </div>
-        {fileKey ? (
-          <p className="text-xs text-muted-foreground">
-            Grounded in <span className="font-medium">{fileKey}</span>
-            {truncated ? "; context truncated for token budget." : "."}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Select a Markdown file to chat with the assistant about its content.
-          </p>
-        )}
-      </header>
+    <div className={cn("flex h-full flex-col text-sm md:text-base", showIntro ? "gap-3" : "gap-2")}> 
+      {showIntro ? (
+        <header className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3 mx-4 md:mx-0 md:mr-3">
+          <div className="flex items-center gap-2 font-medium text-foreground">
+            <Bot className="h-4 w-4 text-primary" />
+            <span>AI Assistant</span>
+          </div>
+          {fileKey ? (
+            <p className="text-xs text-muted-foreground">
+              Grounded in <span className="font-medium">{fileKey}</span>
+              {truncated ? "; context truncated for token budget." : "."}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Select a Markdown file to chat with the assistant about its content.
+            </p>
+          )}
+        </header>
+      ) : null}
 
       {error ? (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-xs text-destructive">
@@ -308,12 +276,7 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
 
       <div className="relative flex min-h-0 flex-1">
         <Conversation className="flex size-full flex-col">
-          <StickToBottomWatcher
-            onContext={(ctx) => {
-              stickContextRef.current = ctx;
-            }}
-          />
-          <ConversationContent className="space-y-2 pb-6">
+          <ConversationContent className={cn("space-y-2 pb-6", hasMessages ? "pt-0" : "pt-4")}>
             {hasMessages ? (
               visibleMessages.map((message) => (
                 <ChatMessageRow
@@ -328,14 +291,46 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
                 />
               ))
             ) : (
-              <ConversationEmptyState
-                title={canChat ? "Ask your first question" : "No file selected"}
-                description={
-                  canChat
-                    ? "Start a conversation to get contextual guidance."
-                    : "Open a Markdown file to enable contextual chat."
-                }
-              />
+              <ConversationEmptyState>
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-sm">{canChat ? "Ask your first question" : "No file selected"}</h3>
+                    <p className="text-muted-foreground text-sm">
+                      {canChat
+                        ? "Start a conversation to get contextual guidance."
+                        : "Open a Markdown file to enable contextual chat."}
+                    </p>
+                  </div>
+                  {canChat ? (
+                    <div className="mt-2 flex flex-wrap justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs rounded-full bg-background hover:bg-accent"
+                        onClick={() => void sendMessage({ text: "Summarize this note" })}
+                      >
+                        Summarize
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs rounded-full bg-background hover:bg-accent"
+                        onClick={() => void sendMessage({ text: "Find related notes" })}
+                      >
+                        Related notes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs rounded-full bg-background hover:bg-accent"
+                        onClick={() => void sendMessage({ text: "Generate action items" })}
+                      >
+                        Action items
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </ConversationEmptyState>
             )}
           </ConversationContent>
           <ConversationScrollButton aria-label="Scroll to latest message" />
@@ -485,39 +480,3 @@ function messageToPlainText(message: UIMessage): string {
     .join("\n");
 }
 
-function StickToBottomWatcher({ onContext }: { onContext: (ctx: StickContext) => void }) {
-  const context = useStickToBottomContext();
-
-  useEffect(() => {
-    if (!context) {
-      return;
-    }
-
-    const update = () => {
-      onContext(context);
-    };
-
-    update();
-
-    const scrollElement = context.scrollRef.current;
-    scrollElement?.addEventListener("scroll", update, { passive: true });
-
-    const contentElement = context.contentRef.current;
-    let observer: MutationObserver | null = null;
-    if (contentElement) {
-      observer = new MutationObserver(update);
-      observer.observe(contentElement, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-    }
-
-    return () => {
-      scrollElement?.removeEventListener("scroll", update);
-      observer?.disconnect();
-    };
-  }, [context, onContext]);
-
-  return null;
-}
