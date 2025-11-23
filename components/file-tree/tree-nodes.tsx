@@ -192,7 +192,7 @@ function FolderNode({
               onClick={handleToggle}
               className={cn(
                 "peer flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                isActive ? "text-accent-foreground" : "",
+                isActive ? "text-foreground font-medium" : "text-muted-foreground/60",
                 isAncestor ? "text-foreground font-medium" : ""
               )}
               role="treeitem"
@@ -202,7 +202,7 @@ function FolderNode({
               aria-posinset={posInSet}
               aria-setsize={setSize}
             >
-              <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-90" : "")} />
+              <ChevronRight className={cn("h-3.5 w-3.5 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
               <span className="truncate">{node.name || "(untitled)"}</span>
             </button>
             <div
@@ -392,8 +392,8 @@ function FileNode({
           className={cn(
             "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
             isSelected
-              ? "bg-muted text-foreground"
-              : "hover:bg-muted/20",
+              ? "bg-muted text-foreground font-medium"
+              : "hover:bg-muted/20 text-muted-foreground/60",
           )}
           style={{ paddingLeft: depth * INDENT_SIZE + INDENT_SIZE }}
           role="treeitem"

@@ -64,7 +64,7 @@ export function WorkspaceHeader({
     hasFile && sharingState?.isPublic && sharingState.shareUrl && onCopyPublicLink && !sharingState.updating,
   );
   const iconButtonClass =
-    "size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40";
+    "size-7 inline-flex items-center justify-center rounded-md text-foreground/80 transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:bg-accent/40";
 
   useEffect(() => {
     const headerEl = headerRef.current;

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Copy, Eye, EyeOff, Loader2, Sparkles, X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { ACTION_LABEL } from "./constants";
 import type { AiSessionState } from "./types";
@@ -115,20 +116,24 @@ export function AiResultPanel({
           </>
         ) : null}
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           onClick={onCopy}
           disabled={!hasResult}
-          className="ml-auto"
+          className="ml-auto text-muted-foreground hover:text-foreground"
         >
           <Copy className="h-4 w-4" />
         </Button>
         <Button
-          variant={showPreview ? "secondary" : "outline"}
+          variant="ghost"
           size="icon"
           onClick={() => setShowPreview((value) => !value)}
           disabled={!hasResult}
           aria-label={showPreview ? "Show raw Markdown" : "Show rendered preview"}
+          className={cn(
+            "text-muted-foreground hover:text-foreground",
+            showPreview && "bg-muted text-foreground",
+          )}
         >
           {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </Button>
