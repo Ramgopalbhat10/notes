@@ -308,7 +308,7 @@ body {
 
 /* a <div> whose attribute 'data-slot=sidebar-content' */
 div [data-slot="sidebar-content"] table {
-  width: 650px !important;
+  min-width: 650px !important;
 }
 
 /* First div of scroll-area-viewport */
