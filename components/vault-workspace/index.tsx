@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editor";
 import { useTreeStore } from "@/stores/tree";
 import { usePublicStore } from "@/stores/public";
+import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useToast } from "@/hooks/use-toast";
 
 import { AiResultPanel } from "./ai-result-panel";
@@ -54,6 +55,8 @@ export function VaultWorkspace({
   const selection = useEditorStore((state) => state.selection);
   const applyAiResult = useEditorStore((state) => state.applyAiResult);
   const { toast } = useToast();
+  const centered = useWorkspaceLayoutStore((state) => state.centered);
+  const toggleCentered = useWorkspaceLayoutStore((state) => state.toggleCentered);
 
   const hasFile = Boolean(selectedPath);
   const hasDocumentContent = Boolean(content.trim().length);
@@ -231,13 +234,17 @@ export function VaultWorkspace({
         sharingState={hasFile ? sharingState : undefined}
         onTogglePublic={hasFile ? handleTogglePublic : undefined}
         onCopyPublicLink={hasFile ? handleCopyPublicLink : undefined}
+        centered={centered}
+        onToggleCentered={toggleCentered}
       />
     ),
     [
       aiStreaming,
+      centered,
       dirty,
       handleCopyPublicLink,
       handleSave,
+      toggleCentered,
       handleTogglePublic,
       hasDocumentContent,
       hasFile,
@@ -307,7 +314,7 @@ export function VaultWorkspace({
     }
 
     return (
-      <div className="rounded-lg w-full overflow-hidden">
+      <div className="rounded-lg w-full overflow-hidden px-4 md:px-0">
         <MarkdownPreview content={content} />
       </div>
     );
@@ -315,21 +322,28 @@ export function VaultWorkspace({
 
   const aiPanelVisible = hasFile && panelOpen && aiState.status !== "idle";
 
+  const contentMaxWidth = centered ? "64rem" : "100%";
+
   return (
-    <div className={cn("space-y-4 min-w-0 w-full max-w-full", className)}>
-      {aiPanelVisible ? (
-        <AiResultPanel
-          state={aiState}
-          onClose={closePanel}
-          onCancel={cancel}
-          onRetry={retry}
-          onCopy={copyResult}
-          onInsert={applyInsert}
-          onReplace={applyReplace}
-          canApply={canApply}
-        />
-      ) : null}
-      {body}
+    <div className={cn("min-w-0 w-full", className)}>
+      <div
+        className="space-y-4 w-full transition-[max-width] duration-300 ease-in-out mx-auto"
+        style={{ maxWidth: contentMaxWidth }}
+      >
+        {aiPanelVisible ? (
+          <AiResultPanel
+            state={aiState}
+            onClose={closePanel}
+            onCancel={cancel}
+            onRetry={retry}
+            onCopy={copyResult}
+            onInsert={applyInsert}
+            onReplace={applyReplace}
+            canApply={canApply}
+          />
+        ) : null}
+        {body}
+      </div>
     </div>
   );
 }

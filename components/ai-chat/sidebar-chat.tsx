@@ -223,12 +223,6 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
           <span className="sr-only">{isStreaming ? "Stop" : "Send"}</span>
         </Button>
       </div>
-      {isStreaming ? (
-        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Streaming…
-        </span>
-      ) : null}
     </form>
   ), [canChat, composerDisabled, draft, handleStop, handleSubmit, isStreaming]);
 
@@ -245,7 +239,7 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
   return (
     <div className={cn("flex h-full flex-col text-sm md:text-base", showIntro ? "gap-3" : "gap-2")}> 
       {showIntro ? (
-        <header className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3 mx-4 md:mx-0 md:mr-3">
+        <header className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3 mx-4 lg:mx-0 lg:mr-3">
           <div className="flex items-center gap-2 font-medium text-foreground">
             <Bot className="h-4 w-4 text-primary" />
             <span>AI Assistant</span>

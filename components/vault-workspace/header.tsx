@@ -1,7 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Eye, FilePenLine, Globe, Link, Loader2, Lock, MessageSquare, Save } from "lucide-react";
+import {
+  ChevronRight,
+  Eye,
+  FilePenLine,
+  Globe,
+  Link,
+  Loader2,
+  Lock,
+  MessageSquare,
+  Minimize,
+  Maximize,
+  Save,
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { AiActionDropdown } from "./ai-action-dropdown";
@@ -29,6 +41,8 @@ export type WorkspaceHeaderProps = {
   sharingState?: SharingState;
   onTogglePublic?: () => void;
   onCopyPublicLink?: () => void;
+  centered?: boolean;
+  onToggleCentered?: () => void;
 };
 
 export function WorkspaceHeader({
@@ -46,6 +60,8 @@ export function WorkspaceHeader({
   sharingState,
   onTogglePublic,
   onCopyPublicLink,
+  centered = false,
+  onToggleCentered,
 }: WorkspaceHeaderProps) {
   const headerRef = useRef<HTMLDivElement>(null);
   const [useCompactMode, setUseCompactMode] = useState(false);
@@ -124,6 +140,23 @@ export function WorkspaceHeader({
             {hasFile ? (
               <>
                 <div className="flex items-center gap-0.5 md:pr-4">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(iconButtonClass, "hidden lg:inline-flex")}
+                        onClick={onToggleCentered}
+                        disabled={!onToggleCentered}
+                        aria-label={centered ? "Expand content width" : "Center and narrow content"}
+                      >
+                        {centered ? <Maximize className="h-3.5 w-3.5" /> : <Minimize className="h-3.5 w-3.5" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {centered ? "Expand content width" : "Center and narrow content"}
+                    </TooltipContent>
+                  </Tooltip>
                   <Button
                     variant="ghost"
                     size="icon"

@@ -229,7 +229,7 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
               </div>
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-hidden md:p-4">
+              <div className="flex-1 min-h-0 overflow-hidden lg:p-4">
                 <div className="h-full">
                   {right}
                 </div>
