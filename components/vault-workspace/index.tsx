@@ -307,7 +307,7 @@ export function VaultWorkspace({
     }
 
     return (
-      <div className="rounded-lg w-full overflow-hidden">
+      <div className="rounded-lg w-full overflow-hidden px-4 md:px-0">
         <MarkdownPreview content={content} />
       </div>
     );

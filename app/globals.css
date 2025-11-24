@@ -260,6 +260,10 @@ body {
   }
 }
 
+.markdown-preview td {
+  line-height: 1.6;
+}
+
 .ProseMirror a {
   text-decoration: underline;
   color: var(--primary);
@@ -290,12 +294,21 @@ body {
     display: none !important;
   }
 
+  .markdown-preview {
+    padding: 0;
+  }
+
   .ProseMirror {
     margin: 12px !important;
     font-size: 12px !important;
     padding-left: 12px !important;
     padding-right: 12px !important;
   }
+}
+
+/* a <div> whose attribute 'data-slot=sidebar-content' */
+div [data-slot="sidebar-content"] table {
+  width: 650px !important;
 }
 
 /* First div of scroll-area-viewport */

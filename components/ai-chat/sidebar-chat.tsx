@@ -223,12 +223,6 @@ export function SidebarChat({ onComposerChange }: SidebarChatProps) {
           <span className="sr-only">{isStreaming ? "Stop" : "Send"}</span>
         </Button>
       </div>
-      {isStreaming ? (
-        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Streaming…
-        </span>
-      ) : null}
     </form>
   ), [canChat, composerDisabled, draft, handleStop, handleSubmit, isStreaming]);
 
