@@ -1,12 +1,13 @@
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { MarkdownPreview } from "@/components/markdown-preview";
-import { getCachedFile } from "@/lib/file-cache";
-import { getFileMeta } from "@/lib/file-meta";
+import { getCachedFile, getFileCacheTag } from "@/lib/file-cache";
+import { getFileMeta, getFileMetaCacheTag } from "@/lib/file-meta";
 import { normalizeFileKey } from "@/lib/fs-validation";
+import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 import {
   absoluteUrl,
   decodePathSegments,
@@ -44,6 +45,9 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
     return null;
   }
 
+  // Add manifest cache tag for slug resolution
+  cacheTag(MANIFEST_CACHE_TAG);
+
   // First try to resolve as a slug
   const { resolveSlugToKey } = await import("@/lib/slug-resolver");
   let key: string | null = await resolveSlugToKey(relativePath);
@@ -57,10 +61,17 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
     }
   }
 
+  // Add cache tag for this file's metadata (public status)
+  cacheTag(getFileMetaCacheTag(key));
+
   const meta = await getFileMeta(key);
   if (!meta.public) {
     return null;
   }
+
+  // Add cache tag for this file's content
+  cacheTag(getFileCacheTag(key));
+
   try {
     const cached = await getCachedFile(key);
     const title = deriveTitle(key, cached.content);
