@@ -85,6 +85,7 @@ type TreeState = {
   refreshSuccessAt: string | null;
   refreshLastSource: RefreshSource;
   pendingMutations: number;
+  viewHistory: NodeId[];
 
   initRoot: () => Promise<void>;
   toggleFolder: (id: NodeId) => void;
@@ -97,12 +98,31 @@ type TreeState = {
   renameNode: (id: NodeId, newName: string) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<void>;
   moveNode: (id: NodeId, targetParentId: NodeId | null) => Promise<void>;
+  pushToHistory: (id: NodeId) => void;
+  removeFromHistory: (id: NodeId) => void;
+  getPreviousInHistory: () => NodeId | null;
 };
 
 function parentKey(id: NodeId | null): string {
   return id ?? ROOT_PARENT_KEY;
 }
 
+/**
+ * Appends an ID to history if it's not already the last entry.
+ */
+function appendToHistoryIfNew(history: NodeId[], id: NodeId): NodeId[] {
+  const lastId = history.length > 0 ? history[history.length - 1] : null;
+  return lastId === id ? history : [...history, id];
+}
+
+/**
+ * Saves the last viewed file to persistent preferences.
+ */
+function persistLastViewedFile(id: NodeId): void {
+  void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
+    void saveLastViewedFile(id);
+  });
+}
 
 function createSnapshot(state: TreeState): TreeSnapshot {
   return {
@@ -263,6 +283,9 @@ export const useTreeStore = create<TreeState>((set, get) => {
           ? current.selectedId
           : null;
 
+        // Clean up viewHistory: remove IDs that no longer exist
+        const viewHistory = current.viewHistory.filter((id) => nodes[id] !== undefined);
+
         return {
           nodes,
           rootIds,
@@ -273,6 +296,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
           loadingByParent: { ...current.loadingByParent, [ROOT_PARENT_KEY]: false },
           slugToId,
           idToSlug,
+          viewHistory,
         };
       });
     } catch (error) {
@@ -408,6 +432,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
     refreshSuccessAt: null,
     refreshLastSource: null,
     pendingMutations: 0,
+    viewHistory: [],
 
     initRoot: async () => {
       const state = get();
@@ -449,7 +474,14 @@ export const useTreeStore = create<TreeState>((set, get) => {
           return;
         }
       }
-      set({ selectedId: id, selectionOrigin: "user", routeTarget: null });
+      set((state) => ({
+        selectedId: id,
+        selectionOrigin: "user",
+        routeTarget: null,
+        viewHistory: appendToHistoryIfNew(state.viewHistory, id),
+      }));
+
+      persistLastViewedFile(id);
     },
 
     selectByPath: (rawPath) => {
@@ -516,8 +548,12 @@ export const useTreeStore = create<TreeState>((set, get) => {
             openFolders,
             selectionOrigin: "route",
             routeTarget: null,
+            viewHistory: appendToHistoryIfNew(current.viewHistory, target!.id),
           };
         });
+
+        persistLastViewedFile(target!.id);
+
         return { status: "selected", nodeId: target.id } satisfies SelectByPathResult;
       }
 
@@ -540,7 +576,11 @@ export const useTreeStore = create<TreeState>((set, get) => {
             openFolders: openFoldersState,
             selectionOrigin: "route",
             routeTarget: null,
+            viewHistory: appendToHistoryIfNew(current.viewHistory, selectId),
           }));
+
+          persistLastViewedFile(selectId);
+
           return { status: "selected", nodeId: selectId } satisfies SelectByPathResult;
         }
       }
@@ -706,6 +746,35 @@ export const useTreeStore = create<TreeState>((set, get) => {
         : ensureFilePath(parentPath, node.name);
       queueMove(id, targetPath);
       return Promise.resolve();
+    },
+
+    pushToHistory: (id) => {
+      set((state) => {
+        const updated = appendToHistoryIfNew(state.viewHistory, id);
+        return updated === state.viewHistory ? state : { viewHistory: updated };
+      });
+
+      persistLastViewedFile(id);
+    },
+
+    removeFromHistory: (id) => {
+      set((state) => ({
+        viewHistory: state.viewHistory.filter((historyId) => historyId !== id),
+      }));
+    },
+
+    getPreviousInHistory: () => {
+      const state = get();
+      const history = state.viewHistory;
+      const currentId = state.selectedId;
+      // Find the last entry that's not the current selection and still exists
+      for (let i = history.length - 1; i >= 0; i--) {
+        const id = history[i];
+        if (id !== currentId && state.nodes[id]) {
+          return id;
+        }
+      }
+      return null;
     },
   };
 });

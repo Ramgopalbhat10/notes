@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FilePlus2, FolderPlus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROOT_PARENT_KEY, type NodeId, useTreeStore } from "@/stores/tree";
 import { normalizeFolderPrefix } from "@/lib/fs-validation";
+import { encodePath } from "@/lib/utils";
 import { ActionDialog } from "./action-dialog";
 import { TreeNode } from "./tree-nodes";
 import { type MatchMeta, type ModalState } from "./types";
@@ -16,6 +18,7 @@ import { useTreeKeyboardNavigation as useTreeKeyboardNavigationHook } from "./ho
 import { useToast } from "@/hooks/use-toast";
 
 export function FileTree() {
+  const router = useRouter();
   const initRoot = useTreeStore((state) => state.initRoot);
   const refreshTree = useTreeStore((state) => state.refreshTree);
   const rootIds = useTreeStore((state) => state.rootIds);
@@ -35,6 +38,9 @@ export function FileTree() {
   const renameNodeAction = useTreeStore((state) => state.renameNode);
   const deleteNodeAction = useTreeStore((state) => state.deleteNode);
   const moveNodeAction = useTreeStore((state) => state.moveNode);
+  const idToSlug = useTreeStore((state) => state.idToSlug);
+  const getPreviousInHistory = useTreeStore((state) => state.getPreviousInHistory);
+  const removeFromHistory = useTreeStore((state) => state.removeFromHistory);
 
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValueHook(query, 200);
@@ -207,10 +213,23 @@ export function FileTree() {
           break;
         }
         case "delete": {
+          const wasSelected = selectedId === modal.nodeId;
+          const previousId = wasSelected ? getPreviousInHistory() : null;
+
           await deleteNodeAction(modal.nodeId);
-          if (modal.type === "delete") {
-            toast({ title: "Deleted", description: `Deleted "${modal.name}"` });
+          removeFromHistory(modal.nodeId);
+
+          // If deleted file was currently selected, navigate to previous
+          if (wasSelected) {
+            if (previousId) {
+              const slug = idToSlug[previousId] ?? previousId;
+              router.push(`/files/${encodePath(slug)}`);
+            } else {
+              router.push("/files");
+            }
           }
+
+          toast({ title: "Deleted", description: `Deleted "${modal.name}"` });
           break;
         }
       }

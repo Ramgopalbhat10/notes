@@ -43,12 +43,20 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
   if (!relativePath) {
     return null;
   }
-  let key: string;
-  try {
-    key = normalizeFileKey(relativePath);
-  } catch {
-    return null;
+
+  // First try to resolve as a slug
+  const { resolveSlugToKey } = await import("@/lib/slug-resolver");
+  let key: string | null = await resolveSlugToKey(relativePath);
+
+  // If slug resolution failed, try as raw key
+  if (!key) {
+    try {
+      key = normalizeFileKey(relativePath);
+    } catch {
+      return null;
+    }
   }
+
   const meta = await getFileMeta(key);
   if (!meta.public) {
     return null;
