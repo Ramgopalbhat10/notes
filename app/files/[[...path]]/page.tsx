@@ -9,6 +9,7 @@ import { FileTree } from "@/components/file-tree";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth/client";
+import { encodePath } from "@/lib/utils";
 import { useTreeStore, type SelectByPathResult } from "@/stores/tree";
 
 function LeftSidebar() {
@@ -17,13 +18,6 @@ function LeftSidebar() {
 
 function RightSidebar({ onComposerChange }: { onComposerChange?: (node: ReactNode | null) => void }) {
   return <SidebarChat onComposerChange={onComposerChange} />;
-}
-
-function encodePath(path: string): string {
-  return path
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
 }
 
 function decodePathSegments(segments: readonly string[] | undefined): string | null {

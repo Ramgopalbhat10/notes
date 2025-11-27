@@ -9,19 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ROOT_PARENT_KEY, type NodeId, useTreeStore } from "@/stores/tree";
 import { normalizeFolderPrefix } from "@/lib/fs-validation";
+import { encodePath } from "@/lib/utils";
 import { ActionDialog } from "./action-dialog";
 import { TreeNode } from "./tree-nodes";
 import { type MatchMeta, type ModalState } from "./types";
 import { useDebouncedValue as useDebouncedValueHook } from "./hooks/use-debounced-value";
 import { useTreeKeyboardNavigation as useTreeKeyboardNavigationHook } from "./hooks/use-tree-keyboard-navigation";
 import { useToast } from "@/hooks/use-toast";
-
-function encodePath(path: string): string {
-  return path
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-}
 
 export function FileTree() {
   const router = useRouter();

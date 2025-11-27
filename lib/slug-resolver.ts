@@ -28,6 +28,7 @@ function buildSlugFromPath(path: string, isFile: boolean): string {
 
 function buildSlugToIdMap(manifest: FileTreeManifest): Record<string, string> {
   const slugToId: Record<string, string> = {};
+  const MAX_COLLISION_ATTEMPTS = 100;
 
   for (const node of manifest.nodes) {
     const isFile = !isFolderNode(node);
@@ -36,7 +37,7 @@ function buildSlugToIdMap(manifest: FileTreeManifest): Record<string, string> {
 
     let finalSlug = baseSlug;
     let counter = 2;
-    while (slugToId[finalSlug] && slugToId[finalSlug] !== node.id) {
+    while (slugToId[finalSlug] && slugToId[finalSlug] !== node.id && counter <= MAX_COLLISION_ATTEMPTS) {
       if (!isFile) {
         const folderSlug = baseSlug.replace(/\/$/, "");
         finalSlug = `${folderSlug}-${counter}/`;

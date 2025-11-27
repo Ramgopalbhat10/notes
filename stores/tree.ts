@@ -107,6 +107,22 @@ function parentKey(id: NodeId | null): string {
   return id ?? ROOT_PARENT_KEY;
 }
 
+/**
+ * Appends an ID to history if it's not already the last entry.
+ */
+function appendToHistoryIfNew(history: NodeId[], id: NodeId): NodeId[] {
+  const lastId = history.length > 0 ? history[history.length - 1] : null;
+  return lastId === id ? history : [...history, id];
+}
+
+/**
+ * Saves the last viewed file to persistent preferences.
+ */
+function persistLastViewedFile(id: NodeId): void {
+  void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
+    void saveLastViewedFile(id);
+  });
+}
 
 function createSnapshot(state: TreeState): TreeSnapshot {
   return {
@@ -458,18 +474,14 @@ export const useTreeStore = create<TreeState>((set, get) => {
           return;
         }
       }
-      set((state) => {
-        const history = state.viewHistory;
-        // Avoid duplicate consecutive entries
-        const lastId = history.length > 0 ? history[history.length - 1] : null;
-        const updatedHistory = lastId === id ? history : [...history, id];
-        return { selectedId: id, selectionOrigin: "user", routeTarget: null, viewHistory: updatedHistory };
-      });
+      set((state) => ({
+        selectedId: id,
+        selectionOrigin: "user",
+        routeTarget: null,
+        viewHistory: appendToHistoryIfNew(state.viewHistory, id),
+      }));
 
-      // Save to persistent preferences
-      void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
-        void saveLastViewedFile(id);
-      });
+      persistLastViewedFile(id);
     },
 
     selectByPath: (rawPath) => {
@@ -530,22 +542,17 @@ export const useTreeStore = create<TreeState>((set, get) => {
       if (target.type === "file") {
         set((current) => {
           const openFolders = openAncestorFolders(current.nodes, current.openFolders, target?.parentId ?? null);
-          const history = current.viewHistory;
-          const lastId = history.length > 0 ? history[history.length - 1] : null;
-          const updatedHistory = lastId === target!.id ? history : [...history, target!.id];
           return {
             ...current,
             selectedId: target!.id,
             openFolders,
             selectionOrigin: "route",
             routeTarget: null,
-            viewHistory: updatedHistory,
+            viewHistory: appendToHistoryIfNew(current.viewHistory, target!.id),
           };
         });
 
-        void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
-          void saveLastViewedFile(target!.id);
-        });
+        persistLastViewedFile(target!.id);
 
         return { status: "selected", nodeId: target.id } satisfies SelectByPathResult;
       }
@@ -563,23 +570,16 @@ export const useTreeStore = create<TreeState>((set, get) => {
         if (fileNode) {
           openFoldersState = openAncestorFolders(nodes, openFoldersState, fileNode.parentId ?? null);
           const selectId = fileNode.id;
-          set((current) => {
-            const history = current.viewHistory;
-            const lastId = history.length > 0 ? history[history.length - 1] : null;
-            const updatedHistory = lastId === selectId ? history : [...history, selectId];
-            return {
-              ...current,
-              selectedId: selectId,
-              openFolders: openFoldersState,
-              selectionOrigin: "route",
-              routeTarget: null,
-              viewHistory: updatedHistory,
-            };
-          });
+          set((current) => ({
+            ...current,
+            selectedId: selectId,
+            openFolders: openFoldersState,
+            selectionOrigin: "route",
+            routeTarget: null,
+            viewHistory: appendToHistoryIfNew(current.viewHistory, selectId),
+          }));
 
-          void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
-            void saveLastViewedFile(selectId);
-          });
+          persistLastViewedFile(selectId);
 
           return { status: "selected", nodeId: selectId } satisfies SelectByPathResult;
         }
@@ -750,17 +750,11 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
     pushToHistory: (id) => {
       set((state) => {
-        const history = state.viewHistory;
-        const lastId = history.length > 0 ? history[history.length - 1] : null;
-        if (lastId === id) {
-          return state;
-        }
-        return { viewHistory: [...history, id] };
+        const updated = appendToHistoryIfNew(state.viewHistory, id);
+        return updated === state.viewHistory ? state : { viewHistory: updated };
       });
 
-      void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
-        void saveLastViewedFile(id);
-      });
+      persistLastViewedFile(id);
     },
 
     removeFromHistory: (id) => {
