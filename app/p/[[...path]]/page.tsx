@@ -90,9 +90,10 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
 export async function generateMetadata({
   params,
 }: {
-  params: { path?: string[] };
+  params: Promise<{ path?: string[] }>;
 }): Promise<Metadata> {
-  const relative = decodePathSegments(params.path);
+  const { path } = await params;
+  const relative = decodePathSegments(path);
   const file = await loadPublicFile(relative);
   const canonical = publicCanonicalPath(relative);
   const canonicalUrl = absoluteUrl(canonical);
@@ -158,7 +159,9 @@ function PublicFileFallback() {
   );
 }
 
-async function PublicFileContent({ relativePath }: { relativePath: string | null }) {
+async function PublicFileContent({ paramsPromise }: { paramsPromise: Promise<{ path?: string[] }> }) {
+  const { path } = await paramsPromise;
+  const relativePath = decodePathSegments(path);
   const file = await loadPublicFile(relativePath);
   if (!file) {
     notFound();
@@ -189,13 +192,11 @@ async function PublicFileContent({ relativePath }: { relativePath: string | null
 export default function PublicFilePage({
   params,
 }: {
-  params: { path?: string[] };
+  params: Promise<{ path?: string[] }>;
 }) {
-  const relative = decodePathSegments(params.path);
-
   return (
     <Suspense fallback={<PublicFileFallback />}>
-      <PublicFileContent relativePath={relative} />
+      <PublicFileContent paramsPromise={params} />
     </Suspense>
   );
 }
