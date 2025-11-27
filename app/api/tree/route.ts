@@ -7,7 +7,7 @@ import {
   type ManifestRecord,
 } from "@/lib/manifest-store";
 
-const CACHE_CONTROL = "public, max-age=5, s-maxage=30, stale-while-revalidate=10";
+const CACHE_CONTROL = "private, no-cache, must-revalidate";
 
 function formatEtag(value: string | undefined): string | undefined {
   if (!value) {
