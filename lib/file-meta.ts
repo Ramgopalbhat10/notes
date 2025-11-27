@@ -1,6 +1,13 @@
+import { revalidateTag } from "next/cache";
+
 import { getRedisClient } from "@/lib/redis-client";
 
 export const FILE_META_REDIS_PREFIX = "file-meta:";
+export const FILE_META_CACHE_TAG_PREFIX = "file-meta-tag:";
+
+export function getFileMetaCacheTag(key: string): string {
+  return `${FILE_META_CACHE_TAG_PREFIX}${key}`;
+}
 
 export interface FileMeta {
   public: boolean;
@@ -45,6 +52,8 @@ export async function setFileMeta(key: string, meta: FileMeta): Promise<boolean>
   try {
     const redis = getRedisClient();
     await redis.set(buildRedisKey(key), meta);
+    // Invalidate cache for this file's metadata
+    revalidateTag(getFileMetaCacheTag(key), "seconds");
     return true;
   } catch (error) {
     console.error("Failed to write file metadata to Redis", error);
@@ -56,6 +65,8 @@ export async function deleteFileMeta(key: string): Promise<boolean> {
   try {
     const redis = getRedisClient();
     await redis.del(buildRedisKey(key));
+    // Invalidate cache for this file's metadata
+    revalidateTag(getFileMetaCacheTag(key), "seconds");
     return true;
   } catch (error) {
     console.error("Failed to delete file metadata from Redis", error);
@@ -73,6 +84,9 @@ export async function renameFileMeta(oldKey: string, newKey: string): Promise<bo
       await redis.set(newKeyRedis, value);
       await redis.del(oldKeyRedis);
     }
+    // Invalidate cache for both old and new keys
+    revalidateTag(getFileMetaCacheTag(oldKey), "seconds");
+    revalidateTag(getFileMetaCacheTag(newKey), "seconds");
     return true;
   } catch (error) {
     console.error("Failed to rename file metadata in Redis", error);
