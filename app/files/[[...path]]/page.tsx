@@ -52,6 +52,8 @@ function RouteSynchronizer() {
   });
   const selectByPath = useTreeStore((state) => state.selectByPath);
   const initialized = useTreeStore((state) => state.initialized);
+  const nodes = useTreeStore((state) => state.nodes);
+  const idToSlug = useTreeStore((state) => state.idToSlug);
   const manifestVersion = useTreeStore(
     (state) => state.manifestMetadata?.checksum
       ?? state.manifestMetadata?.generatedAt
@@ -60,6 +62,30 @@ function RouteSynchronizer() {
   const routeTarget = useTreeStore((state) => state.routeTarget);
 
   const lastAppliedRef = useRef<{ path: string | null; version: string } | null>(null);
+  const restoredRef = useRef(false);
+
+  // Restore last viewed file on initial load with no path
+  useEffect(() => {
+    if (!initialized || routePath || restoredRef.current) {
+      return;
+    }
+
+    restoredRef.current = true;
+
+    void (async () => {
+      try {
+        const { loadLastViewedFile } = await import("@/lib/persistent-preferences");
+        const lastViewed = await loadLastViewedFile();
+
+        if (lastViewed && nodes[lastViewed]) {
+          const slug = idToSlug[lastViewed] ?? lastViewed;
+          router.replace(`/files/${encodePath(slug)}`);
+        }
+      } catch {
+        // Silently fail if we can't load preferences
+      }
+    })();
+  }, [initialized, routePath, nodes, idToSlug, router]);
 
   useEffect(() => {
     if (!initialized) {
