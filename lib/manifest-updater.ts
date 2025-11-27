@@ -124,13 +124,11 @@ function addChildToParent(manifest: FileTreeManifest, childId: FileTreeNodeId): 
   }
 }
 
-function removeChildFromParent(manifest: FileTreeManifest, childId: FileTreeNodeId): void {
-  const childNode = manifest.nodes.find((n) => n.id === childId);
-  if (!childNode) {
-    return;
-  }
-
-  const parentId = childNode.parentId;
+function removeChildFromParent(
+  manifest: FileTreeManifest,
+  childId: FileTreeNodeId,
+  parentId: FileTreeNodeId | null
+): void {
   if (parentId === null) {
     // Remove from root
     manifest.rootIds = manifest.rootIds.filter((id) => id !== childId);
@@ -284,8 +282,9 @@ export async function deleteFile(params: DeleteFileParams): Promise<void> {
   }
 
   const fileNode = manifest.nodes[fileIndex];
+  const parentId = fileNode.parentId;  // Save parentId before removal
   manifest.nodes.splice(fileIndex, 1);
-  removeChildFromParent(manifest, key);
+  removeChildFromParent(manifest, key, parentId);  // Pass parentId
 
   sortManifest(manifest);
   await saveManifest(manifest);
@@ -304,6 +303,10 @@ export async function deleteFolder(params: DeleteFolderParams): Promise<void> {
   const manifest = manifestRecord.manifest;
   const folderId = ensureFolderPath(params.prefix);
 
+  // Find the folder to get its parentId before removal
+  const folderNode = manifest.nodes.find((n) => n.id === folderId);
+  const folderParentId = folderNode?.parentId ?? null;
+
   // Remove folder and all its children recursively
   const toRemove = new Set<FileTreeNodeId>();
   const queue: FileTreeNodeId[] = [folderId];
@@ -320,7 +323,7 @@ export async function deleteFolder(params: DeleteFolderParams): Promise<void> {
 
   // Remove all marked nodes
   manifest.nodes = manifest.nodes.filter((n) => !toRemove.has(n.id));
-  removeChildFromParent(manifest, folderId);
+  removeChildFromParent(manifest, folderId, folderParentId);  // Pass parentId
 
   sortManifest(manifest);
   await saveManifest(manifest);
@@ -347,7 +350,7 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
   }
 
   const fileNode = manifest.nodes[fileIndex] as FileTreeFileNode;
-  removeChildFromParent(manifest, oldKey);
+  removeChildFromParent(manifest, oldKey, fileNode.parentId);
 
   // Get updated metadata from S3
   const client = getS3Client();
@@ -423,8 +426,12 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
     return; // Nothing to move
   }
 
+  // Find the old folder node to get its parentId
+  const oldFolderNode = manifest.nodes.find((n) => n.id === oldFolderId);
+  const oldFolderParentId = oldFolderNode?.parentId ?? null;
+
   // Remove the old folder from its parent
-  removeChildFromParent(manifest, oldFolderId);
+  removeChildFromParent(manifest, oldFolderId, oldFolderParentId);
 
   // Update all affected nodes
   for (const node of toUpdate) {
