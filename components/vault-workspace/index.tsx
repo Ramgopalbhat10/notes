@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectedFilePlaceholder } from "@/components/selected-file-placeholder";
 import { cn } from "@/lib/utils";
+import { slugifySegment, pathSegmentsForSlug } from "@/lib/tree/utils";
 import { useEditorStore } from "@/stores/editor";
 import { useTreeStore } from "@/stores/tree";
 import { usePublicStore } from "@/stores/public";
@@ -349,8 +350,18 @@ export function VaultWorkspace({
 }
 
 function buildPublicPath(path: string): string {
-  const segments = path.split("/").map((segment) => encodeURIComponent(segment));
-  return `/p/${segments.join("/")}`;
+  const segments = pathSegmentsForSlug(path);
+  if (segments.length === 0) {
+    return "/p";
+  }
+
+  const slugSegments = segments.map((segment, index) => {
+    // Strip .md extension only from the last segment (the file name)
+    const isLastSegment = index === segments.length - 1;
+    return slugifySegment(segment, isLastSegment);
+  });
+
+  return `/p/${slugSegments.join("/")}`;
 }
 
 function buildSegments(path: string): BreadcrumbSegment[] {
