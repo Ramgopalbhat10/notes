@@ -89,6 +89,8 @@ type TreeState = {
 
   initRoot: () => Promise<void>;
   toggleFolder: (id: NodeId) => void;
+  expandAll: () => void;
+  collapseAll: () => void;
   select: (id: NodeId) => void;
   selectByPath: (path: string | null) => SelectByPathResult;
   acknowledgeSelectionOrigin: () => void;
@@ -452,6 +454,22 @@ export const useTreeStore = create<TreeState>((set, get) => {
       set((state) => ({
         openFolders: { ...state.openFolders, [id]: !isOpen },
       }));
+    },
+
+    expandAll: () => {
+      const { nodes } = get();
+      const openFolders: Record<NodeId, boolean> = {};
+      for (const id in nodes) {
+        const node = nodes[id];
+        if (node && node.type === "folder") {
+          openFolders[id] = true;
+        }
+      }
+      set({ openFolders });
+    },
+
+    collapseAll: () => {
+      set({ openFolders: {} });
     },
 
     select: (id) => {

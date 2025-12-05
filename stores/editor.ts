@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { BlockNoteEditor } from "@blocknote/core";
 import { saveDocumentAction } from "@/app/actions/documents";
 import { useTreeStore } from "@/stores/tree";
+import { useSettingsStore } from "@/stores/settings";
 import {
   loadPersistentDocument,
   savePersistentDocument,
@@ -12,6 +13,14 @@ import {
 
 type EditorMode = "preview" | "edit";
 type EditorStatus = "idle" | "loading" | "saving" | "error" | "conflict";
+
+function getDefaultMode(): EditorMode {
+  try {
+    return useSettingsStore.getState().settings.editor.defaultMode;
+  } catch {
+    return "preview";
+  }
+}
 
 // We use 'any' for now as BlockNote selection is complex and we don't strictly need to sync it to store
 // in the same way as CodeMirror.
@@ -168,7 +177,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         conflictMessage: null,
         errorSource: null,
         dirty: false,
-        mode: "preview",
+        mode: getDefaultMode(),
         selection: null,
       });
     } else {
@@ -183,7 +192,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         etag: null,
         lastModified: null,
         dirty: false,
-        mode: "preview",
+        mode: getDefaultMode(),
         selection: null,
       });
     }
@@ -237,7 +246,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           error: null,
           errorSource: null,
           conflictMessage: null,
-          mode: "preview",
+          mode: getDefaultMode(),
           selection: null,
         }));
 
@@ -298,7 +307,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         dirty: false,
         error: null,
         lastSavedAt: lastModified,
-        mode: "preview",
+        mode: getDefaultMode(),
         errorSource: null,
         selection: null,
       });

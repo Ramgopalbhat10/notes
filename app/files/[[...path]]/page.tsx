@@ -68,6 +68,15 @@ function RouteSynchronizer() {
 
     void (async () => {
       try {
+        // Check if user has "remember last file" setting enabled
+        const settingsRes = await fetch("/api/settings");
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          if (!settings.privacy?.rememberLastOpenedFile) {
+            return;
+          }
+        }
+
         const { loadLastViewedFile } = await import("@/lib/persistent-preferences");
         const lastViewed = await loadLastViewedFile();
 

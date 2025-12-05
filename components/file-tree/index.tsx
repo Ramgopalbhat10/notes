@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FilePlus2, FolderPlus, RefreshCw, Search } from "lucide-react";
+import { FilePlus2, FolderPlus, RefreshCw, Search, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,8 @@ export function FileTree() {
   const refreshError = useTreeStore((state) => state.refreshError);
   const refreshSuccessAt = useTreeStore((state) => state.refreshSuccessAt);
   const refreshLastSource = useTreeStore((state) => state.refreshLastSource);
+  const expandAll = useTreeStore((state) => state.expandAll);
+  const collapseAll = useTreeStore((state) => state.collapseAll);
   const createFolderAction = useTreeStore((state) => state.createFolder);
   const createFileAction = useTreeStore((state) => state.createFile);
   const renameNodeAction = useTreeStore((state) => state.renameNode);
@@ -48,6 +50,7 @@ export function FileTree() {
   const filterActive = normalizedQuery.length > 0;
 
   const [activeId, setActiveId] = useState<NodeId | null>(null);
+  const [allExpanded, setAllExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const refreshSuccessRef = useRef<string | null>(null);
   const refreshErrorRef = useRef<string | null>(null);
@@ -324,6 +327,27 @@ export function FileTree() {
             disabled={refreshState !== "idle"}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshState !== "idle" ? "animate-spin" : ""}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
+            aria-label={allExpanded ? "Collapse all folders" : "Expand all folders"}
+            title={allExpanded ? "Collapse all folders" : "Expand all folders"}
+            onClick={() => {
+              if (allExpanded) {
+                collapseAll();
+              } else {
+                expandAll();
+              }
+              setAllExpanded(!allExpanded);
+            }}
+          >
+            {allExpanded ? (
+              <ChevronsDownUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronsUpDown className="h-3.5 w-3.5" />
+            )}
           </Button>
           <Button
             variant="ghost"

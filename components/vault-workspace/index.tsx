@@ -13,6 +13,7 @@ import { useEditorStore } from "@/stores/editor";
 import { useTreeStore } from "@/stores/tree";
 import { usePublicStore } from "@/stores/public";
 import { useWorkspaceLayoutStore } from "@/stores/layout";
+import { useSettingsStore } from "@/stores/settings";
 import { useToast } from "@/hooks/use-toast";
 
 import { AiResultPanel } from "./ai-result-panel";
@@ -57,7 +58,25 @@ export function VaultWorkspace({
   const applyAiResult = useEditorStore((state) => state.applyAiResult);
   const { toast } = useToast();
   const centered = useWorkspaceLayoutStore((state) => state.centered);
+  const setCentered = useWorkspaceLayoutStore((state) => state.setCentered);
   const toggleCentered = useWorkspaceLayoutStore((state) => state.toggleCentered);
+  
+  // Settings
+  const settings = useSettingsStore((state) => state.settings);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+  const settingsInitialized = useSettingsStore((state) => state.initialized);
+
+  // Fetch settings on mount
+  useEffect(() => {
+    void fetchSettings();
+  }, [fetchSettings]);
+
+  // Apply settings when they change
+  useEffect(() => {
+    if (settingsInitialized) {
+      setCentered(settings.appearance.centeredLayout);
+    }
+  }, [settingsInitialized, settings.appearance.centeredLayout, setCentered]);
 
   const hasFile = Boolean(selectedPath);
   const hasDocumentContent = Boolean(content.trim().length);
@@ -216,6 +235,34 @@ export function VaultWorkspace({
     }
   }, [sharingState?.shareUrl, toast]);
 
+  const handleDownload = useCallback((format: "markdown" | "text" | "pdf") => {
+    if (!selectedPath || !content) {
+      return;
+    }
+    if (format !== "markdown") {
+      toast({
+        title: "Format not supported",
+        description: `${format.toUpperCase()} export is coming soon.`,
+      });
+      return;
+    }
+    // Get filename from path
+    const pathParts = selectedPath.split("/");
+    const fileName = pathParts[pathParts.length - 1] || "document.md";
+    
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({ title: "Downloaded", description: `Saved as ${fileName}` });
+  }, [content, selectedPath, toast]);
+
   const headerContent = useMemo(
     () => (
       <WorkspaceHeader
@@ -237,6 +284,7 @@ export function VaultWorkspace({
         onCopyPublicLink={hasFile ? handleCopyPublicLink : undefined}
         centered={centered}
         onToggleCentered={toggleCentered}
+        onDownload={hasFile ? handleDownload : undefined}
       />
     ),
     [
@@ -244,6 +292,7 @@ export function VaultWorkspace({
       centered,
       dirty,
       handleCopyPublicLink,
+      handleDownload,
       handleSave,
       toggleCentered,
       handleTogglePublic,

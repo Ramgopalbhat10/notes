@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { cn } from "@/lib/utils";
 import {
+  ChevronDown,
   ChevronRight,
+  Download,
   Eye,
+  FileText,
   FilePenLine,
   Globe,
   Link,
@@ -13,8 +17,17 @@ import {
   Minimize,
   Maximize,
   Save,
+  FileType,
+  FileIcon,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { AiActionDropdown } from "./ai-action-dropdown";
 import type { AiActionType, BreadcrumbSegment } from "./types";
@@ -43,6 +56,7 @@ export type WorkspaceHeaderProps = {
   onCopyPublicLink?: () => void;
   centered?: boolean;
   onToggleCentered?: () => void;
+  onDownload?: (format: "markdown" | "text" | "pdf") => void;
 };
 
 export function WorkspaceHeader({
@@ -62,6 +76,7 @@ export function WorkspaceHeader({
   onCopyPublicLink,
   centered = false,
   onToggleCentered,
+  onDownload,
 }: WorkspaceHeaderProps) {
   const headerRef = useRef<HTMLDivElement>(null);
   const [useCompactMode, setUseCompactMode] = useState(false);
@@ -136,10 +151,10 @@ export function WorkspaceHeader({
         )}
         </div>
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
-          <div className="flex items-center gap-0.5 md:pr-4">
+          <div className="flex items-center gap-0.5">
             {hasFile ? (
               <>
-                <div className="flex items-center gap-0.5 md:pr-4">
+                <div className="flex items-center gap-0.5">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -178,7 +193,55 @@ export function WorkspaceHeader({
                       {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     </Button>
                   ) : null}
+                  <ButtonGroup>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 rounded-r-none"
+                          onClick={() => onDownload?.("markdown")}
+                          disabled={!hasFile || !onDownload}
+                          aria-label="Download as Markdown"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">Download</TooltipContent>
+                    </Tooltip>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 w-6 px-0 rounded-l-none border-l-0"
+                          disabled={!hasFile}
+                          aria-label="Download options"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem 
+                          className="flex items-center gap-2"
+                          onClick={() => onDownload?.("markdown")}
+                        >
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">Markdown</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2" disabled>
+                          <FileType className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Plain Text</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2" disabled>
+                          <FileIcon className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">PDF</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </ButtonGroup>
                 </div>
+                <div className="h-4 w-px bg-border mx-1.5" aria-hidden="true" />
                 <div className="flex items-center gap-0.5">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -233,6 +296,7 @@ export function WorkspaceHeader({
               </>
             ) : null}
           </div>
+          <div className="h-4 w-px bg-border mx-1.5" aria-hidden="true" />
           <div className="flex items-center gap-0.5">
             <AiActionDropdown disabled={aiDisabled} busy={aiBusy} onSelect={onTriggerAction} />
             <Button
