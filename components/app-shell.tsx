@@ -8,8 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, X } from "lucide-react";
+import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, Settings, X } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
+import { useWorkspaceLayoutStore } from "@/stores/layout";
+import { SettingsModal } from "@/components/settings";
 import {
   Sidebar,
   SidebarContent,
@@ -349,6 +351,7 @@ function LeftSidebarFooter() {
   const sessionState = authClient.useSession();
   const user = sessionState.data?.user;
   const [signingOut, setSigningOut] = useState(false);
+  const { settingsOpen, setSettingsOpen, openSettings } = useWorkspaceLayoutStore();
 
   const displayName = user?.name || user?.email || "";
   const avatarImage = user?.image ?? undefined;
@@ -374,23 +377,48 @@ function LeftSidebarFooter() {
   }, [router, signingOut]);
 
   return (
-    <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex w-full items-center justify-between px-3 md:px-4")}>
-      <Avatar className="h-9 w-9">
-        {avatarImage ? <AvatarImage src={avatarImage} alt={displayName || "Profile"} /> : null}
-        <AvatarFallback>{avatarFallback}</AvatarFallback>
-      </Avatar>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className={cn("size-7", ICON_BUTTON_BASE)}
-        onClick={handleSignOut}
-        disabled={signingOut}
-        aria-label="Sign out"
-      >
-        {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
-      </Button>
-    </div>
+    <>
+      <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex w-full items-center justify-between px-3 md:px-4")}>
+        <Avatar className="h-9 w-9">
+          {avatarImage ? <AvatarImage src={avatarImage} alt={displayName || "Profile"} /> : null}
+          <AvatarFallback>{avatarFallback}</AvatarFallback>
+        </Avatar>
+        <div className="flex items-center gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn("size-7", ICON_BUTTON_BASE)}
+                onClick={openSettings}
+                aria-label="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Settings</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn("size-7", ICON_BUTTON_BASE)}
+                onClick={handleSignOut}
+                disabled={signingOut}
+                aria-label="Sign out"
+              >
+                {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Sign out</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 }
 
