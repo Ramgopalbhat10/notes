@@ -38,6 +38,8 @@ export function VaultWorkspace({
     const node = state.nodes[id];
     return node && node.type === "file" ? node.path : null;
   });
+  const selectedId = useTreeStore((state) => state.selectedId);
+  const deleteNode = useTreeStore((state) => state.deleteNode);
   const routeTarget = useTreeStore((state) => state.routeTarget);
   const refreshTree = useTreeStore((state) => state.refreshTree);
   const refreshState = useTreeStore((state) => state.refreshState);
@@ -263,6 +265,21 @@ export function VaultWorkspace({
     toast({ title: "Downloaded", description: `Saved as ${fileName}` });
   }, [content, selectedPath, toast]);
 
+  const handleDelete = useCallback(async () => {
+    if (!selectedId || !selectedPath) return;
+    const fileName = selectedPath.split("/").pop() ?? "file";
+    try {
+      await deleteNode(selectedId);
+      toast({ title: "Deleted", description: `Deleted "${fileName}"` });
+    } catch (err) {
+      toast({ 
+        title: "Error", 
+        description: err instanceof Error ? err.message : "Failed to delete",
+        variant: "destructive" 
+      });
+    }
+  }, [selectedId, selectedPath, deleteNode, toast]);
+
   const headerContent = useMemo(
     () => (
       <WorkspaceHeader
@@ -270,7 +287,7 @@ export function VaultWorkspace({
         mode={mode}
         onToggleMode={() => setMode(mode === "preview" ? "edit" : "preview")}
         onSave={handleSave}
-        canSave={mode === "edit" && dirty && status !== "saving" && status !== "conflict"}
+        canSave={dirty && status !== "saving" && status !== "conflict"}
         saving={status === "saving"}
         aiBusy={aiStreaming}
         aiDisabled={!hasFile || status === "loading" || !hasDocumentContent || aiStreaming}
@@ -285,6 +302,7 @@ export function VaultWorkspace({
         centered={centered}
         onToggleCentered={toggleCentered}
         onDownload={hasFile ? handleDownload : undefined}
+        onDelete={hasFile ? handleDelete : undefined}
       />
     ),
     [
@@ -292,6 +310,7 @@ export function VaultWorkspace({
       centered,
       dirty,
       handleCopyPublicLink,
+      handleDelete,
       handleDownload,
       handleSave,
       toggleCentered,
