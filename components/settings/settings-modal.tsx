@@ -370,16 +370,16 @@ function EditorSettings({
                 className="flex items-center gap-2"
                 onClick={() => updateDraft({ defaultMode: "preview" })}
               >
-                <Eye className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Preview</span>
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">Preview</span>
                 {currentMode === "preview" && <Check className="h-4 w-4 ml-auto" />}
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="flex items-center gap-2"
                 onClick={() => updateDraft({ defaultMode: "edit" })}
               >
-                <Pencil className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Edit</span>
+                <Pencil className="h-4 w-4" />
+                <span className="text-sm">Edit</span>
                 {currentMode === "edit" && <Check className="h-4 w-4 ml-auto" />}
               </DropdownMenuItem>
             </DropdownMenuContent>

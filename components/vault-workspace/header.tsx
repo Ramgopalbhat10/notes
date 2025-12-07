@@ -1,35 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
+import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import {
-  ChevronDown,
   ChevronRight,
   Download,
   Eye,
-  FileText,
   FilePenLine,
   Globe,
   Link,
   Loader2,
-  Lock,
   MessageSquare,
   Minimize,
   Maximize,
+  MoreHorizontal,
   Save,
-  FileType,
-  FileIcon,
+  Trash2,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { AiActionDropdown } from "./ai-action-dropdown";
+import { AI_ACTIONS } from "./constants";
 import type { AiActionType, BreadcrumbSegment } from "./types";
 
 type SharingState = {
@@ -57,6 +55,7 @@ export type WorkspaceHeaderProps = {
   centered?: boolean;
   onToggleCentered?: () => void;
   onDownload?: (format: "markdown" | "text" | "pdf") => void;
+  onDelete?: () => void;
 };
 
 export function WorkspaceHeader({
@@ -77,6 +76,7 @@ export function WorkspaceHeader({
   centered = false,
   onToggleCentered,
   onDownload,
+  onDelete,
 }: WorkspaceHeaderProps) {
   const headerRef = useRef<HTMLDivElement>(null);
   const [useCompactMode, setUseCompactMode] = useState(false);
@@ -151,165 +151,209 @@ export function WorkspaceHeader({
         )}
         </div>
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
-          <div className="flex items-center gap-0.5">
-            {hasFile ? (
-              <>
-                <div className="flex items-center gap-0.5">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(iconButtonClass, "hidden lg:inline-flex")}
-                        onClick={onToggleCentered}
-                        disabled={!onToggleCentered}
-                        aria-label={centered ? "Expand content width" : "Center and narrow content"}
-                      >
-                        {centered ? <Maximize className="h-3.5 w-3.5" /> : <Minimize className="h-3.5 w-3.5" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {centered ? "Expand content width" : "Center and narrow content"}
-                    </TooltipContent>
-                  </Tooltip>
+          {/* Desktop: Expand, Edit/Preview, Save icons */}
+          {hasFile && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={iconButtonClass}
+                    className={cn(iconButtonClass, "hidden lg:inline-flex")}
+                    onClick={onToggleCentered}
+                    disabled={!onToggleCentered}
+                    aria-label={centered ? "Expand content width" : "Center and narrow content"}
+                  >
+                    {centered ? <Maximize className="h-3.5 w-3.5" /> : <Minimize className="h-3.5 w-3.5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {centered ? "Expand content width" : "Center and narrow content"}
+                </TooltipContent>
+              </Tooltip>
+              {/* Desktop: Edit/Preview toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden md:inline-flex")}
                     onClick={onToggleMode}
                     aria-label={mode === "preview" ? "Switch to edit mode" : "Switch to preview mode"}
                   >
                     {mode === "preview" ? <FilePenLine className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </Button>
-                  {mode === "edit" ? (
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {mode === "preview" ? "Edit" : "Preview"}
+                </TooltipContent>
+              </Tooltip>
+              {/* Desktop: Save icon - shown when there are unsaved changes (any mode) */}
+              {canSave && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={iconButtonClass}
+                      className={cn(iconButtonClass, "hidden md:inline-flex")}
                       onClick={onSave}
-                      disabled={!canSave}
                       aria-label="Save changes"
                     >
                       {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     </Button>
-                  ) : null}
-                  <ButtonGroup>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 rounded-r-none"
-                          onClick={() => onDownload?.("markdown")}
-                          disabled={!hasFile || !onDownload}
-                          aria-label="Download as Markdown"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">Download</TooltipContent>
-                    </Tooltip>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-6 px-0 rounded-l-none border-l-0"
-                          disabled={!hasFile}
-                          aria-label="Download options"
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem 
-                          className="flex items-center gap-2"
-                          onClick={() => onDownload?.("markdown")}
-                        >
-                          <FileText className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium text-foreground">Markdown</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center gap-2" disabled>
-                          <FileType className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">Plain Text</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center gap-2" disabled>
-                          <FileIcon className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">PDF</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </ButtonGroup>
-                </div>
-                <div className="h-4 w-px bg-border mx-1.5" aria-hidden="true" />
-                <div className="flex items-center gap-0.5">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            iconButtonClass,
-                            sharingState?.isPublic ? "text-emerald-500" : undefined,
-                          )}
-                          onClick={() => {
-                            if (!shareButtonDisabled && sharingState) {
-                              onTogglePublic?.();
-                            }
-                          }}
-                          disabled={shareButtonDisabled}
-                          aria-pressed={sharingState?.isPublic ?? false}
-                          aria-label={sharingState?.isPublic ? "Disable public link" : "Enable public link"}
-                        >
-                          {sharingState?.loading || sharingState?.updating ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : sharingState?.isPublic ? (
-                            <Globe className="h-3.5 w-3.5" />
-                          ) : (
-                            <Lock className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">{shareTooltip}</TooltipContent>
-                  </Tooltip>
-                  {canCopyPublicLink ? (
-                    <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={iconButtonClass}
-                            onClick={onCopyPublicLink}
-                            aria-label="Copy public link"
-                          >
-                            <Link className="h-3.5 w-3.5" />
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">Copy public link</TooltipContent>
-                    </Tooltip>
-                  ) : null}
-                </div>
-              </>
-            ) : null}
-          </div>
-          <div className="h-4 w-px bg-border mx-1.5" aria-hidden="true" />
-          <div className="flex items-center gap-0.5">
-            <AiActionDropdown disabled={aiDisabled} busy={aiBusy} onSelect={onTriggerAction} />
-            <Button
-              variant="ghost"
-              size="icon"
-              className={iconButtonClass}
-              onClick={onToggleRight}
-              disabled={!onToggleRight}
-              aria-label="Open chat panel"
-            >
-              <MessageSquare className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Save</TooltipContent>
+                </Tooltip>
+              )}
+              <div className="hidden md:block h-4 w-px bg-border mx-1" aria-hidden="true" />
+            </>
+          )}
+
+          {/* Dropdown menu - all actions on mobile, fewer on desktop */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={iconButtonClass}
+                aria-label="Actions menu"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {hasFile && (
+                <>
+                  {/* Mobile only: Edit/Preview and Save */}
+                  <DropdownMenuItem
+                    className="flex md:hidden items-center gap-2"
+                    onClick={onToggleMode}
+                  >
+                    {mode === "preview" ? (
+                      <FilePenLine className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">{mode === "preview" ? "Edit" : "Preview"}</span>
+                    <Kbd className="ml-auto">E</Kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex md:hidden items-center gap-2"
+                    onClick={onSave}
+                    disabled={!canSave}
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">Save</span>
+                    <Kbd className="ml-auto">⌘S</Kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="md:hidden" />
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={() => onDownload?.("markdown")}
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="text-sm">Export</span>
+                    <Kbd className="ml-auto">⌘⇧E</Kbd>
+                  </DropdownMenuItem>
+                  {canCopyPublicLink && (
+                    <DropdownMenuItem
+                      className="flex items-center gap-2"
+                      onClick={onCopyPublicLink}
+                    >
+                      <Link className="h-4 w-4" />
+                      <span className="text-sm">Copy link</span>
+                      <Kbd className="ml-auto">⌘⇧C</Kbd>
+                    </DropdownMenuItem>
+                  )}
+
+                  <DropdownMenuSeparator />
+
+                  <div
+                    className={cn(
+                      "flex items-center justify-between px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer",
+                      shareButtonDisabled && "opacity-50 pointer-events-none"
+                    )}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!shareButtonDisabled && sharingState) {
+                        onTogglePublic?.();
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span className="text-sm">Public</span>
+                    </div>
+                    <Switch
+                      checked={sharingState?.isPublic ?? false}
+                      onCheckedChange={() => {
+                        if (!shareButtonDisabled && sharingState) {
+                          onTogglePublic?.();
+                        }
+                      }}
+                      disabled={shareButtonDisabled}
+                      className="scale-75"
+                    />
+                  </div>
+
+                  <DropdownMenuSeparator />
+
+                  {AI_ACTIONS.map((item) => (
+                    <DropdownMenuItem
+                      key={item.value}
+                      className="flex items-center gap-2"
+                      onSelect={() => onTriggerAction(item.value)}
+                      disabled={aiDisabled || aiBusy}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="text-sm">{item.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={onToggleRight}
+                    disabled={!onToggleRight}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="text-sm">Chat</span>
+                    <Kbd className="ml-auto">⌘⇧O</Kbd>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 rounded-md bg-destructive/80 text-destructive-foreground transition-colors hover:bg-destructive data-[highlighted]:bg-destructive data-[highlighted]:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground"
+                    onClick={onDelete}
+                    disabled={!onDelete}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="text-sm">Delete</span>
+                    <Kbd className="ml-auto">⌘⌫</Kbd>
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {!hasFile && (
+                <DropdownMenuItem
+                  className="flex items-center gap-2"
+                  onClick={onToggleRight}
+                  disabled={!onToggleRight}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-sm">Chat</span>
+                  <Kbd className="ml-auto">⌘⇧O</Kbd>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </TooltipProvider>

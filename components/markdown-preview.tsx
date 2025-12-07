@@ -160,7 +160,7 @@ const CodeBlock: Components["code"] = ({ inline, className, children, style: _st
 
 const components: Components = {
   h1: (props) => (
-    <h1 className="scroll-m-20 text-3xl font-semibold tracking-tight" {...props} />
+    <h1 className="mt-4 scroll-m-20 text-3xl font-semibold tracking-tight" {...props} />
   ),
   h2: (props) => (
     <h2 className="mt-4 md:mt-6 scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight" {...props} />
