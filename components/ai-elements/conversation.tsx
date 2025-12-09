@@ -6,9 +6,11 @@ import { ArrowDown } from "lucide-react";
 import type { ComponentProps } from "react";
 import {
   createContext,
+  forwardRef,
   useCallback,
   useContext,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -17,64 +19,116 @@ import {
 type ConversationScrollContextValue = {
   isAtBottom: boolean;
   scrollToBottom: () => void;
+  scrollToElement: (element: HTMLElement | null, options?: { position?: "top" | "center" }) => void;
 };
 
 const ConversationScrollContext = createContext<ConversationScrollContextValue | null>(null);
 
+export type ConversationHandle = {
+  getScrollPosition: () => number;
+  setScrollPosition: (position: number) => void;
+  scrollToBottom: (options?: { behavior?: ScrollBehavior }) => void;
+  scrollToElement: (element: HTMLElement | null, options?: { position?: "top" | "center" }) => void;
+  getScrollState: () => { scrollTop: number; scrollHeight: number; clientHeight: number };
+};
+
 export type ConversationProps = ComponentProps<"div">;
 
-export function Conversation({ className, children, ...props }: ConversationProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true);
+export const Conversation = forwardRef<ConversationHandle, ConversationProps>(
+  function Conversation({ className, children, ...props }, ref) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [isAtBottom, setIsAtBottom] = useState(true);
 
-  const scrollToBottom = useCallback(() => {
-    const node = scrollRef.current;
-    if (!node) {
-      return;
-    }
-    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
-  }, []);
+    const scrollToBottom = useCallback((options?: { behavior?: ScrollBehavior }) => {
+      const node = scrollRef.current;
+      if (!node) {
+        return;
+      }
+      node.scrollTo({ top: node.scrollHeight, behavior: options?.behavior ?? "smooth" });
+    }, []);
 
-  const handleScroll = useCallback(() => {
-    const node = scrollRef.current;
-    if (!node) {
-      return;
-    }
-    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    setIsAtBottom(distance <= 4);
-  }, []);
+    const scrollToElement = useCallback((element: HTMLElement | null, options?: { position?: "top" | "center" }) => {
+      const node = scrollRef.current;
+      if (!node || !element) {
+        return;
+      }
+      const containerRect = node.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const relativeTop = elementRect.top - containerRect.top + node.scrollTop;
+      
+      let targetScroll: number;
+      if (options?.position === "center") {
+        targetScroll = relativeTop - (containerRect.height / 2) + (elementRect.height / 2);
+      } else {
+        // Default: position at top with small padding
+        targetScroll = relativeTop - 16;
+      }
+      
+      node.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
+    }, []);
 
-  useEffect(() => {
-    const node = scrollRef.current;
-    if (!node) {
-      return;
-    }
-    handleScroll();
-    node.addEventListener("scroll", handleScroll, { passive: true });
-    return () => node.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+    const handleScroll = useCallback(() => {
+      const node = scrollRef.current;
+      if (!node) {
+        return;
+      }
+      const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
+      setIsAtBottom(distance <= 4);
+    }, []);
 
-  const value = useMemo(
-    () => ({
-      isAtBottom,
+    useEffect(() => {
+      const node = scrollRef.current;
+      if (!node) {
+        return;
+      }
+      handleScroll();
+      node.addEventListener("scroll", handleScroll, { passive: true });
+      return () => node.removeEventListener("scroll", handleScroll);
+    }, [handleScroll]);
+
+    useImperativeHandle(ref, () => ({
+      getScrollPosition: () => scrollRef.current?.scrollTop ?? 0,
+      setScrollPosition: (position: number) => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = position;
+        }
+      },
       scrollToBottom,
-    }),
-    [isAtBottom, scrollToBottom],
-  );
+      scrollToElement,
+      getScrollState: () => {
+        const node = scrollRef.current;
+        if (!node) return { scrollTop: 0, scrollHeight: 0, clientHeight: 0 };
+        return {
+          scrollTop: node.scrollTop,
+          scrollHeight: node.scrollHeight,
+          clientHeight: node.clientHeight,
+        };
+      },
+    }), [scrollToBottom, scrollToElement]);
 
-  return (
-    <ConversationScrollContext.Provider value={value}>
-      <div
-        ref={scrollRef}
-        className={cn("relative flex-1 min-w-0 overflow-y-auto overflow-x-hidden", className)}
-        role="log"
-        {...props}
-      >
-        {children}
-      </div>
-    </ConversationScrollContext.Provider>
-  );
-}
+    const value = useMemo(
+      () => ({
+        isAtBottom,
+        scrollToBottom,
+        scrollToElement,
+      }),
+      [isAtBottom, scrollToBottom, scrollToElement],
+    );
+
+    return (
+      <ConversationScrollContext.Provider value={value}>
+        <div
+          ref={scrollRef}
+          className={cn("relative flex-1 min-w-0 overflow-y-auto overflow-x-hidden", className)}
+          role="log"
+          {...props}
+        >
+          {children}
+        </div>
+      </ConversationScrollContext.Provider>
+    );
+  }
+);
 
 export type ConversationContentProps = ComponentProps<"div">;
 
