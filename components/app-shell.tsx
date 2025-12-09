@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { cn } from "../lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, Settings, X } from "lucide-react";
+import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, Plus, Settings, X } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
 import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { SettingsModal } from "@/components/settings";
@@ -38,10 +37,10 @@ type AppShellProps = {
   right?: React.ReactNode;
   children: AppShellChildren;
   header?: React.ReactNode;
-  rightFooter?: React.ReactNode | null;
+  onNewChat?: () => void;
 };
 
-export function AppShell({ left, right, children, header, rightFooter }: AppShellProps) {
+export function AppShell({ left, right, children, header, onNewChat }: AppShellProps) {
   const RIGHT_SIDEBAR_WIDTH_REM = 30;
   const LEFT_SIDEBAR_WIDTH_REM = 17.5;
   const REM_IN_PX = 16;
@@ -49,10 +48,16 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const [isMainScrollable, setIsMainScrollable] = useState(false);
 
-  // Right column visibility (desktop/mobile)
-  const [rightDesktopOpen, setRightDesktopOpen] = useState(false);
+  // Right sidebar state from global store (persists across route changes)
+  const rightSidebarOpen = useWorkspaceLayoutStore((state) => state.rightSidebarOpen);
+  const rightSidebarExpanded = useWorkspaceLayoutStore((state) => state.rightSidebarExpanded);
+  const setRightSidebarOpen = useWorkspaceLayoutStore((state) => state.setRightSidebarOpen);
+  const setRightSidebarExpanded = useWorkspaceLayoutStore((state) => state.setRightSidebarExpanded);
+  const toggleRightSidebar = useWorkspaceLayoutStore((state) => state.toggleRightSidebar);
+  const toggleRightSidebarExpansion = useWorkspaceLayoutStore((state) => state.toggleRightSidebarExpansion);
+
+  // Mobile-specific state (doesn't need to persist)
   const [rightMobileOpen, setRightMobileOpen] = useState(false);
-  const [rightExpanded, setRightExpanded] = useState(false);
   const [rightMobileExpanded, setRightMobileExpanded] = useState(false);
   const hasRight = Boolean(right);
 
@@ -69,21 +74,15 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
 
   const toggleRight = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-      setRightDesktopOpen((v) => {
-        const next = !v;
-        if (!next) {
-          setRightExpanded(false);
-        }
-        return next;
-      });
+      toggleRightSidebar();
     } else {
       setRightMobileOpen((v) => !v);
     }
-  }, []);
+  }, [toggleRightSidebar]);
 
   const toggleRightExpansion = useCallback(() => {
-    setRightExpanded((value) => !value);
-  }, []);
+    toggleRightSidebarExpansion();
+  }, [toggleRightSidebarExpansion]);
 
   const toggleRightMobileExpansion = useCallback(() => {
     setRightMobileExpanded((value) => !value);
@@ -133,9 +132,9 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
     el.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const rightSidebarWidthClass = !rightDesktopOpen
+  const rightSidebarWidthClass = !rightSidebarOpen
     ? "w-0 border-transparent"
-    : rightExpanded
+    : rightSidebarExpanded
       ? "w-1/2 border-border"
       : "w-[30rem] border-border";
   const updateMainScrollMetrics = useCallback(() => {
@@ -185,8 +184,8 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
         leftWidthPx={LEFT_SIDEBAR_WIDTH_REM * REM_IN_PX}
         rightWidthPx={RIGHT_SIDEBAR_WIDTH_REM * REM_IN_PX}
         minMainRatio={MIN_MAIN_CONTENT_RATIO}
-        rightDesktopOpen={rightDesktopOpen}
-        rightExpanded={rightExpanded}
+        rightSidebarOpen={rightSidebarOpen}
+        rightSidebarExpanded={rightSidebarExpanded}
       />
       {/* Right mobile sheet (left is handled by Sidebar internally) */}
       {hasRight ? (
@@ -207,7 +206,23 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
             <SheetHeader className="px-3 py-2 md:px-4 md:py-2 border-b border-border/40">
               <div className="flex items-center justify-between">
                 <SheetTitle className="font-semibold text-sm md:text-base uppercase ml-1">Chat</SheetTitle>
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
+                  {/* New Chat button */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                        onClick={onNewChat}
+                        aria-label="New chat"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">New chat</TooltipContent>
+                  </Tooltip>
+                  <div className="h-4 w-px bg-border/60 mx-1.5" />
                   {/* Expand button - only on tablet (md) and above */}
                   <Button
                     variant="ghost"
@@ -231,12 +246,11 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
               </div>
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-hidden lg:p-4">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 <div className="h-full">
                   {right}
                 </div>
               </div>
-              <RightSidebarFooter content={rightFooter} />
             </div>
           </SheetContent>
         </Sheet>
@@ -286,40 +300,55 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
             "hidden lg:block overflow-hidden transition-[width] duration-300 ease-in-out border-l border-solid border-border/40 relative",
             rightSidebarWidthClass,
           )}
-          aria-hidden={!rightDesktopOpen}
+          aria-hidden={!rightSidebarOpen}
         >
           <div className="absolute right-0 top-0 bottom-0 transition-[width] duration-300 ease-in-out" style={{
-            width: rightExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
+            width: rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
           } as CSSProperties}>
             <Sidebar
               side="right"
               collapsible="none"
               className="h-svh w-full"
               style={{
-                "--sidebar-width": rightExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
+                "--sidebar-width": rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
               } as CSSProperties}
             >
             <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
               <div className="flex h-full items-center justify-between px-2.5 md:px-3">
                 <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                        onClick={onNewChat}
+                        aria-label="New chat"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">New chat</TooltipContent>
+                  </Tooltip>
+                  <div className="h-4 w-px bg-border/60 mx-1.5" />
                   <Button
                     variant="ghost"
                     size="icon"
                     className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={toggleRightExpansion}
-                    aria-label={rightExpanded ? "Shrink details panel" : "Expand details panel"}
-                    disabled={!rightDesktopOpen}
+                    aria-label={rightSidebarExpanded ? "Shrink details panel" : "Expand details panel"}
+                    disabled={!rightSidebarOpen}
                   >
-                    {rightExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                    {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={() => {
-                      setRightDesktopOpen(false);
-                      setRightExpanded(false);
+                      setRightSidebarOpen(false);
+                      setRightSidebarExpanded(false);
                     }}
                     aria-label="Collapse right sidebar"
                   >
@@ -328,16 +357,9 @@ export function AppShell({ left, right, children, header, rightFooter }: AppShel
                 </div>
               </div>
             </SidebarHeader>
-            <SidebarContent className="min-h-0 overflow-hidden gap-0">
-              <div className="flex-1 min-h-0 overflow-hidden pl-3 md:py-4">
-                <div className="h-full">
-                  {right}
-                </div>
-              </div>
+            <SidebarContent className="min-h-0 gap-0 p-0">
+              {right}
             </SidebarContent>
-            <SidebarFooter className="mt-auto p-0 sticky bottom-0">
-              <RightSidebarFooter content={rightFooter} />
-            </SidebarFooter>
           </Sidebar>
           </div>
         </div>
@@ -503,14 +525,6 @@ function MainFooter({
   );
 }
 
-function RightSidebarFooter({ content }: { content?: React.ReactNode | null }) {
-  return (
-    <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex w-full items-center px-3 md:px-4")}>
-      {content ? content : <span className="text-xs text-muted-foreground">Chat unavailable</span>}
-    </div>
-  );
-}
-
 type StatusDescriptorInput = {
   status: string;
   dirty: boolean;
@@ -598,19 +612,19 @@ function SidebarAutoCollapse({
   leftWidthPx,
   rightWidthPx,
   minMainRatio,
-  rightDesktopOpen,
-  rightExpanded,
+  rightSidebarOpen,
+  rightSidebarExpanded,
 }: {
   leftWidthPx: number;
   rightWidthPx: number;
   minMainRatio: number;
-  rightDesktopOpen: boolean;
-  rightExpanded: boolean;
+  rightSidebarOpen: boolean;
+  rightSidebarExpanded: boolean;
 }) {
   const { open, setOpen } = useSidebar();
 
   useEffect(() => {
-    if (!rightDesktopOpen) {
+    if (!rightSidebarOpen) {
       return;
     }
 
@@ -624,7 +638,7 @@ function SidebarAutoCollapse({
       }
 
       const leftWidth = open ? leftWidthPx : 0;
-      const effectiveRightWidth = rightExpanded ? viewportWidth * 0.5 : rightWidthPx;
+      const effectiveRightWidth = rightSidebarExpanded ? viewportWidth * 0.5 : rightWidthPx;
       const mainWidth = viewportWidth - leftWidth - effectiveRightWidth;
       if (open && mainWidth / viewportWidth < minMainRatio) {
         setOpen(false);
@@ -634,7 +648,7 @@ function SidebarAutoCollapse({
     evaluate();
     window.addEventListener("resize", evaluate);
     return () => window.removeEventListener("resize", evaluate);
-  }, [leftWidthPx, minMainRatio, open, rightDesktopOpen, rightExpanded, rightWidthPx, setOpen]);
+  }, [leftWidthPx, minMainRatio, open, rightSidebarOpen, rightSidebarExpanded, rightWidthPx, setOpen]);
 
   return null;
 }

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
-import { SidebarChat } from "@/components/ai-chat/sidebar-chat";
+import { SidebarChat, type SidebarChatHandle } from "@/components/ai-chat/sidebar-chat";
 import { FileTree } from "@/components/file-tree";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
@@ -14,10 +14,6 @@ import { useTreeStore, type SelectByPathResult } from "@/stores/tree";
 
 function LeftSidebar() {
   return <FileTree />;
-}
-
-function RightSidebar({ onComposerChange }: { onComposerChange?: (node: ReactNode | null) => void }) {
-  return <SidebarChat onComposerChange={onComposerChange} />;
 }
 
 function decodePathSegments(segments: readonly string[] | undefined): string | null {
@@ -163,7 +159,21 @@ export default function FilesPage() {
   const session = sessionState?.data;
   const isPending = sessionState?.isPending;
   const [header, setHeader] = useState<ReactNode | null>(null);
-  const [rightFooter, setRightFooter] = useState<ReactNode | null>(null);
+  const chatHandleRef = useRef<SidebarChatHandle | null>(null);
+
+  const handleNewChatRef = useCallback((handle: SidebarChatHandle | null) => {
+    chatHandleRef.current = handle;
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    chatHandleRef.current?.clearChat();
+  }, []);
+
+  // Memoize the right sidebar to prevent re-mounting on file changes
+  const rightSidebar = useMemo(
+    () => <SidebarChat onNewChatRef={handleNewChatRef} />,
+    [handleNewChatRef]
+  );
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -180,9 +190,9 @@ export default function FilesPage() {
       <RouteSynchronizer />
       <AppShell
         left={<LeftSidebar />}
-        right={<RightSidebar onComposerChange={setRightFooter} />}
+        right={rightSidebar}
         header={header}
-        rightFooter={rightFooter}
+        onNewChat={handleNewChat}
       >
         {({ toggleRight }) => (
           <VaultWorkspace onHeaderChange={setHeader} onToggleRight={toggleRight} />
