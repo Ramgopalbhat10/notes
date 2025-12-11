@@ -226,9 +226,9 @@ export function FileTree() {
           if (wasSelected) {
             if (previousId) {
               const slug = idToSlug[previousId] ?? previousId;
-              router.push(`/files/${encodePath(slug)}`);
+              router.push(`/files/${encodePath(slug)}`, { scroll: false });
             } else {
-              router.push("/files");
+              router.push("/files", { scroll: false });
             }
           }
 

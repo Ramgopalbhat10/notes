@@ -227,6 +227,13 @@ body {
   *::-webkit-scrollbar-thumb:hover {
     background-color: color-mix(in srgb, var(--muted) 70%, transparent);
   }
+
+  /* Preserve scroll position during content updates */
+  [data-slot="sidebar-content"],
+  [data-slot="sidebar-inner"],
+  [role="log"] {
+    overflow-anchor: auto;
+  }
 }
 
 @layer components {

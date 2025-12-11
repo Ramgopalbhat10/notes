@@ -78,7 +78,7 @@ function RouteSynchronizer() {
 
         if (lastViewed && nodes[lastViewed]) {
           const slug = idToSlug[lastViewed] ?? lastViewed;
-          router.replace(`/files/${encodePath(slug)}`);
+          router.replace(`/files/${encodePath(slug)}`, { scroll: false });
         }
       } catch {
         // Silently fail if we can't load preferences
@@ -145,7 +145,8 @@ function RouteSynchronizer() {
       return;
     }
     if (selectionOrigin === "user" && targetPath !== pathname) {
-      router.push(targetPath);
+      // Use scroll: false to prevent Next.js from resetting sidebar scroll positions
+      router.push(targetPath, { scroll: false });
     }
     acknowledgeSelectionOrigin();
   }, [selectionOrigin, acknowledgeSelectionOrigin, router, targetPath, pathname]);

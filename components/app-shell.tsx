@@ -313,54 +313,54 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
                 "--sidebar-width": rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
               } as CSSProperties}
             >
-            <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
-              <div className="flex h-full items-center justify-between px-2.5 md:px-3">
-                <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
-                <div className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                        onClick={onNewChat}
-                        aria-label="New chat"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">New chat</TooltipContent>
-                  </Tooltip>
-                  <div className="h-4 w-px bg-border/60 mx-1.5" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                    onClick={toggleRightExpansion}
-                    aria-label={rightSidebarExpanded ? "Shrink details panel" : "Expand details panel"}
-                    disabled={!rightSidebarOpen}
-                  >
-                    {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                    onClick={() => {
-                      setRightSidebarOpen(false);
-                      setRightSidebarExpanded(false);
-                    }}
-                    aria-label="Collapse right sidebar"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
+                <div className="flex h-full items-center justify-between px-2.5 md:px-3">
+                  <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
+                  <div className="flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                          onClick={onNewChat}
+                          aria-label="New chat"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">New chat</TooltipContent>
+                    </Tooltip>
+                    <div className="h-4 w-px bg-border/60 mx-1.5" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                      onClick={toggleRightExpansion}
+                      aria-label={rightSidebarExpanded ? "Shrink details panel" : "Expand details panel"}
+                      disabled={!rightSidebarOpen}
+                    >
+                      {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                      onClick={() => {
+                        setRightSidebarOpen(false);
+                        setRightSidebarExpanded(false);
+                      }}
+                      aria-label="Collapse right sidebar"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </SidebarHeader>
-            <SidebarContent className="min-h-0 gap-0 p-0">
-              {right}
-            </SidebarContent>
-          </Sidebar>
+              </SidebarHeader>
+              <SidebarContent className="min-h-0 gap-0 p-0 overflow-hidden">
+                {right}
+              </SidebarContent>
+            </Sidebar>
           </div>
         </div>
       ) : null}
@@ -473,11 +473,11 @@ function MainFooter({
 }: MainFooterProps) {
   const toneClass = descriptor
     ? {
-        idle: "text-muted-foreground",
-        info: "text-foreground",
-        warning: "text-amber-500",
-        error: "text-destructive",
-      }[descriptor.tone]
+      idle: "text-muted-foreground",
+      info: "text-foreground",
+      warning: "text-amber-500",
+      error: "text-destructive",
+    }[descriptor.tone]
     : "text-muted-foreground";
 
   return (

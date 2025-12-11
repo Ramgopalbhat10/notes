@@ -11,6 +11,7 @@ import {
   useContext,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -30,9 +31,16 @@ export type ConversationHandle = {
   scrollToBottom: (options?: { behavior?: ScrollBehavior }) => void;
   scrollToElement: (element: HTMLElement | null, options?: { position?: "top" | "center" }) => void;
   getScrollState: () => { scrollTop: number; scrollHeight: number; clientHeight: number };
+  // Mark that the next scroll event(s) are programmatic, not user-initiated
+  markProgrammaticScroll: () => void;
 };
 
 export type ConversationProps = ComponentProps<"div">;
+
+// Module-level storage for scroll position - survives React remounts
+// Using same pattern as SidebarContent
+const conversationScrollPositions = new Map<string, number>();
+const CONVERSATION_KEY = "conversation-main";
 
 export const Conversation = forwardRef<ConversationHandle, ConversationProps>(
   function Conversation({ className, children, ...props }, ref) {
@@ -55,7 +63,7 @@ export const Conversation = forwardRef<ConversationHandle, ConversationProps>(
       const containerRect = node.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
       const relativeTop = elementRect.top - containerRect.top + node.scrollTop;
-      
+
       let targetScroll: number;
       if (options?.position === "center") {
         targetScroll = relativeTop - (containerRect.height / 2) + (elementRect.height / 2);
@@ -63,33 +71,57 @@ export const Conversation = forwardRef<ConversationHandle, ConversationProps>(
         // Default: position at top with small padding
         targetScroll = relativeTop - 16;
       }
-      
-      node.scrollTo({ top: Math.max(0, targetScroll), behavior: "smooth" });
+
+      const newPos = Math.max(0, targetScroll);
+      node.scrollTo({ top: newPos, behavior: "smooth" });
     }, []);
 
-    const handleScroll = useCallback(() => {
+    // On mount, restore scroll position - same pattern as SidebarContent
+    useLayoutEffect(() => {
       const node = scrollRef.current;
-      if (!node) {
-        return;
+      if (!node) return;
+
+      const savedPosition = conversationScrollPositions.get(CONVERSATION_KEY);
+      if (savedPosition !== undefined && savedPosition > 0) {
+        node.scrollTop = savedPosition;
       }
-      const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-      setIsAtBottom(distance <= 4);
     }, []);
 
+    // Track scroll position continuously - same pattern as SidebarContent
+    // Save ALL scroll events, just like SidebarContent does
     useEffect(() => {
       const node = scrollRef.current;
-      if (!node) {
-        return;
-      }
-      handleScroll();
+      if (!node) return;
+
+      const handleScroll = () => {
+        const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
+        setIsAtBottom(distance <= 4);
+        // Save scroll position - same as SidebarContent
+        conversationScrollPositions.set(CONVERSATION_KEY, node.scrollTop);
+      };
+
+      handleScroll(); // Initialize
       node.addEventListener("scroll", handleScroll, { passive: true });
       return () => node.removeEventListener("scroll", handleScroll);
-    }, [handleScroll]);
+    }, []);
+
+    // After every render, check if scroll was reset and restore it - same as SidebarContent
+    useLayoutEffect(() => {
+      const node = scrollRef.current;
+      if (!node) return;
+
+      const savedPosition = conversationScrollPositions.get(CONVERSATION_KEY);
+      // If we have a saved position and scroll was reset to 0, restore it
+      if (savedPosition !== undefined && savedPosition > 0 && node.scrollTop === 0) {
+        node.scrollTop = savedPosition;
+      }
+    });
 
     useImperativeHandle(ref, () => ({
       getScrollPosition: () => scrollRef.current?.scrollTop ?? 0,
       setScrollPosition: (position: number) => {
         if (scrollRef.current) {
+          conversationScrollPositions.set(CONVERSATION_KEY, position);
           scrollRef.current.scrollTop = position;
         }
       },
@@ -104,6 +136,9 @@ export const Conversation = forwardRef<ConversationHandle, ConversationProps>(
           clientHeight: node.clientHeight,
         };
       },
+      // No-op now - keeping for API compatibility but scroll preservation
+      // doesn't distinguish between programmatic and user scroll
+      markProgrammaticScroll: () => { },
     }), [scrollToBottom, scrollToElement]);
 
     const value = useMemo(
