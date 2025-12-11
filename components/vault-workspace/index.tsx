@@ -62,7 +62,7 @@ export function VaultWorkspace({
   const centered = useWorkspaceLayoutStore((state) => state.centered);
   const setCentered = useWorkspaceLayoutStore((state) => state.setCentered);
   const toggleCentered = useWorkspaceLayoutStore((state) => state.toggleCentered);
-  
+
   // Settings
   const settings = useSettingsStore((state) => state.settings);
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
@@ -107,7 +107,46 @@ export function VaultWorkspace({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [dirty]);
 
-  const segments = useMemo(() => (selectedPath ? buildSegments(selectedPath) : []), [selectedPath]);
+  // Resolve the display path: use selected file path if available, otherwise try to resolve routeTarget path
+  const nodes = useTreeStore((state) => state.nodes);
+  const rootIds = useTreeStore((state) => state.rootIds);
+
+  const resolvedPath = useMemo(() => {
+    if (selectedPath) return selectedPath;
+    if (!routeTarget?.path) return null;
+
+    // Try to resolve clean path from tree nodes if corresponding folders are loaded
+    const slugParts = routeTarget.path.split("/");
+    const resolvedParts: string[] = [];
+    let currentScopeIds = rootIds;
+
+    for (const slugPart of slugParts) {
+      let found = false;
+      for (const id of currentScopeIds) {
+        const node = nodes[id];
+        if (node) {
+          const slug = slugifySegment(node.name, node.type === "file");
+
+          // Allow loose match for now
+          if (slug === slugPart) {
+            resolvedParts.push(node.name);
+            if (node.type === "folder") {
+              currentScopeIds = node.children;
+            }
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found) {
+        // Fallback to title casing the slug part if not found in tree (e.g. not loaded yet)
+        resolvedParts.push(slugPart);
+      }
+    }
+    return resolvedParts.join("/");
+  }, [selectedPath, routeTarget?.path, nodes, rootIds]);
+
+  const segments = useMemo(() => (resolvedPath ? buildSegments(resolvedPath) : []), [resolvedPath]);
 
   const handleSave = useCallback(() => {
     if (!dirty || status === "saving" || status === "conflict") {
@@ -174,11 +213,11 @@ export function VaultWorkspace({
     () =>
       shareKey
         ? {
-            isPublic: shareRecordPublic,
-            loading: !shareRecordHasData || shareRecordLoading,
-            updating: shareRecordUpdating,
-            shareUrl: shareRecordPublic && publicUrl ? publicUrl : null,
-          }
+          isPublic: shareRecordPublic,
+          loading: !shareRecordHasData || shareRecordLoading,
+          updating: shareRecordUpdating,
+          shareUrl: shareRecordPublic && publicUrl ? publicUrl : null,
+        }
         : undefined,
     [shareKey, shareRecordPublic, shareRecordHasData, shareRecordLoading, shareRecordUpdating, publicUrl],
   );
@@ -251,7 +290,7 @@ export function VaultWorkspace({
     // Get filename from path
     const pathParts = selectedPath.split("/");
     const fileName = pathParts[pathParts.length - 1] || "document.md";
-    
+
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -261,7 +300,7 @@ export function VaultWorkspace({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
+
     toast({ title: "Downloaded", description: `Saved as ${fileName}` });
   }, [content, selectedPath, toast]);
 
@@ -272,10 +311,10 @@ export function VaultWorkspace({
       await deleteNode(selectedId);
       toast({ title: "Deleted", description: `Deleted "${fileName}"` });
     } catch (err) {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: err instanceof Error ? err.message : "Failed to delete",
-        variant: "destructive" 
+        variant: "destructive"
       });
     }
   }, [selectedId, selectedPath, deleteNode, toast]);
@@ -336,22 +375,27 @@ export function VaultWorkspace({
     if (!selectedPath) {
       if (routeTarget) {
         const isMissing = routeTarget.status === "missing";
-        const title = isMissing ? "File unavailable" : "Folder is empty";
+        const cleanPath = resolvedPath || routeTarget.path;
+
+        const title = isMissing ? "File unavailable" : "Select a file";
         const description = isMissing
-          ? `The path "${routeTarget.path}" could not be found. It may have been moved or deleted.`
-          : `Folder "${routeTarget.path.replace(/\/$/, "")}" does not contain any files yet.`;
+          ? `The path "${cleanPath}" could not be found. It may have been moved or deleted.`
+          : `You are viewing "${cleanPath}". Select a file from the sidebar to view its content and start editing.`;
+
         return (
           <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
             <div className="font-medium">{title}</div>
             <p className="text-muted-foreground">{description}</p>
-            <Button
-              size="sm"
-              className="w-fit"
-              onClick={() => void refreshTree()}
-              disabled={refreshState !== "idle"}
-            >
-              {refreshState === "idle" ? "Refresh tree" : "Refreshing..."}
-            </Button>
+            {isMissing && (
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={() => void refreshTree()}
+                disabled={refreshState !== "idle"}
+              >
+                {refreshState === "idle" ? "Refresh tree" : "Refreshing..."}
+              </Button>
+            )}
           </div>
         );
       }
@@ -437,5 +481,11 @@ function buildSegments(path: string): BreadcrumbSegment[] {
   if (!cleaned) {
     return [];
   }
-  return cleaned.split("/").map((label) => ({ label }));
+  const parts = cleaned.split("/");
+  return parts.map((label, index) => {
+    const isLast = index === parts.length - 1;
+    // Build cumulative path for parent folders (with trailing slash for folder navigation)
+    const cumulativePath = isLast ? null : parts.slice(0, index + 1).join("/") + "/";
+    return { label, path: cumulativePath };
+  });
 }

@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 export type BreadcrumbSegment = {
   label: string;
+  path: string | null; // null for the last segment (current file/folder), string for navigable parent folders
 };
 
 export type AiActionType = "improve" | "summarize" | "expand";

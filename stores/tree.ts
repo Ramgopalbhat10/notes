@@ -312,12 +312,12 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
   const { schedule: scheduleManifestRefresh, runImmediate: runManifestRefreshImmediate } =
     createManifestRefresher(loadManifest, set);
-  
+
   // Simple manifest reload function that doesn't trigger full S3 refresh
   const reloadManifestOnly = async () => {
     await loadManifest({ force: true });
   };
-  
+
   const enqueueMutation = createMutationQueue(set, get, reloadManifestOnly);
 
   const queueMove = (nodeId: NodeId, targetPath: string) => {
@@ -338,19 +338,19 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
     const updatedNode: TreeNode = node.type === "folder"
       ? {
-          ...node,
-          id: targetPath,
-          path: targetPath,
-          name: newName,
-          parentId: newParentId,
-        }
+        ...node,
+        id: targetPath,
+        path: targetPath,
+        name: newName,
+        parentId: newParentId,
+      }
       : {
-          ...node,
-          id: targetPath,
-          path: targetPath,
-          name: newName,
-          parentId: newParentId,
-        };
+        ...node,
+        id: targetPath,
+        path: targetPath,
+        name: newName,
+        parentId: newParentId,
+      };
 
     set((current) => {
       const without = removeNodeFromState(current, node.id);
@@ -474,7 +474,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
     select: (id) => {
       const node = get().nodes[id];
-      if (!node || node.type !== "file") {
+      if (!node) {
         return;
       }
       const editorStore = getEditorStore();
@@ -605,7 +605,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
       set((current) => ({
         ...current,
-        selectedId: null,
+        selectedId: folderNode.id, // Highlight the folder
         openFolders: openFoldersState,
         selectionOrigin: "route",
         routeTarget: { path: slugKey || folderNode.id, status: "folder-empty" },

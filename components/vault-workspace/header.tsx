@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { encodePath } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
@@ -8,7 +10,7 @@ import {
   Eye,
   FilePenLine,
   Globe,
-  Link,
+  Link as LinkIcon,
   Loader2,
   MessageSquare,
   Minimize,
@@ -16,7 +18,9 @@ import {
   MoreHorizontal,
   Save,
   Trash2,
+  CircleHelp,
 } from "lucide-react";
+import { ShortcutsDialog } from "../shortcuts-help-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -94,8 +98,12 @@ export function WorkspaceHeader({
   const canCopyPublicLink = Boolean(
     hasFile && sharingState?.isPublic && sharingState.shareUrl && onCopyPublicLink && !sharingState.updating,
   );
-  const iconButtonClass =
-    "size-7 inline-flex items-center justify-center rounded-md text-foreground/80 transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:bg-accent/40";
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  const iconButtonClass = cn(
+    "size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40",
+    { "opacity-50 pointer-events-none": aiBusy }
+  );
 
   useEffect(() => {
     const headerEl = headerRef.current;
@@ -108,7 +116,7 @@ export function WorkspaceHeader({
     };
 
     checkWidth();
-    
+
     const resizeObserver = new ResizeObserver(checkWidth);
     resizeObserver.observe(headerEl);
 
@@ -119,36 +127,50 @@ export function WorkspaceHeader({
     <TooltipProvider>
       <div ref={headerRef} className="flex w-full items-center gap-0.5">
         <div className="flex-1 min-w-0 text-sm text-muted-foreground" role="presentation">
-          {hasFile && segments.length > 0 ? (
-            <>
-              {/* Mobile: always show filename only */}
+          {segments.length > 0 ? (
+            <div className="flex items-center gap-2 min-w-0">
               <span className="block md:hidden truncate font-medium text-foreground" title={fileName}>
                 {fileName}
               </span>
-              {/* Desktop: show full breadcrumb or filename based on available width */}
+
               {useCompactMode ? (
                 <span className="hidden md:block truncate font-medium text-foreground" title={fileName}>
                   {fileName}
                 </span>
-            ) : (
-              <div className="hidden md:flex items-center gap-0.5 whitespace-nowrap">
-                {segments.map((segment, index) => {
-                  const isLast = index === segments.length - 1;
-                  return (
-                    <div key={`${segment.label}-${index}`} className="flex items-center gap-0.5 shrink-0">
-                      {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
-                      <span className={cn("shrink-0", isLast ? "font-medium text-foreground" : "text-muted-foreground")}>
-                        {segment.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        ) : (
-          <span className="truncate font-medium text-foreground">Select a file</span>
-        )}
+              ) : (
+                <div className="hidden md:flex items-center gap-0.5 whitespace-nowrap">
+                  <div className="flex items-center gap-0.5 text-sm overflow-hidden mask-fade-right">
+                    {segments.map((segment, index) => {
+                      const isLast = index === segments.length - 1;
+                      return (
+                        <div key={`${segment.label}-${index}`} className="flex items-center gap-0.5 shrink-0">
+                          {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />}
+                          {segment.path ? (
+                            <Link
+                              href={`/files/${encodePath(segment.path)}`}
+                              className="flex items-center gap-1.5 hover:text-foreground text-muted-foreground transition-colors group"
+                            >
+                              {index === 0 && <LinkIcon className="h-3 w-3 opacity-0 -ml-3 transition-all group-hover:opacity-100 group-hover:ml-0" />}
+                              <span>{segment.label}</span>
+                            </Link>
+                          ) : (
+                            <span className={cn("shrink-0", isLast ? "font-medium text-foreground" : "text-muted-foreground")}>
+                              {segment.label}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center">
+              <div className="h-4 w-px bg-border mx-1" aria-hidden="true" />
+              <span className="text-sm text-muted-foreground font-medium pl-1">Select a file</span>
+            </div>
+          )}
         </div>
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
           {/* Desktop: Expand, Edit/Preview, Save icons */}
@@ -206,6 +228,21 @@ export function WorkspaceHeader({
                 </Tooltip>
               )}
               <div className="hidden md:block h-4 w-px bg-border mx-1" aria-hidden="true" />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden md:inline-flex")}
+                    onClick={() => setShortcutsOpen(true)}
+                    aria-label="Keyboard shortcuts"
+                  >
+                    <CircleHelp className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Keyboard shortcuts</TooltipContent>
+              </Tooltip>
             </>
           )}
 
@@ -265,7 +302,7 @@ export function WorkspaceHeader({
                       className="flex items-center gap-2"
                       onClick={onCopyPublicLink}
                     >
-                      <Link className="h-4 w-4" />
+                      <LinkIcon className="h-4 w-4" />
                       <span className="text-sm">Copy link</span>
                       <Kbd className="ml-auto">⌘⇧C</Kbd>
                     </DropdownMenuItem>
@@ -324,7 +361,7 @@ export function WorkspaceHeader({
                   >
                     <MessageSquare className="h-4 w-4" />
                     <span className="text-sm">Chat</span>
-                    <Kbd className="ml-auto">⌘⇧O</Kbd>
+                    <Kbd className="ml-auto">⌘J</Kbd>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
@@ -349,11 +386,13 @@ export function WorkspaceHeader({
                 >
                   <MessageSquare className="h-4 w-4" />
                   <span className="text-sm">Chat</span>
-                  <Kbd className="ml-auto">⌘⇧O</Kbd>
+                  <Kbd className="ml-auto">⌘J</Kbd>
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
         </div>
       </div>
     </TooltipProvider>
