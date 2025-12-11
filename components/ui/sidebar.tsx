@@ -382,10 +382,61 @@ function SidebarSeparator({
     />
   )
 }
+// Module-level storage for scroll positions - survives React remounts
+const sidebarScrollPositions = new Map<string, number>();
 
 function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  // Generate a stable key based on the sidebar's position in the DOM
+  const keyRef = React.useRef<string>("");
+
+  // On mount, generate key and restore scroll position
+  React.useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    // Use parent's data-side attribute or fallback to className as key
+    const parent = el.closest("[data-side]");
+    const side = parent?.getAttribute("data-side") ?? "default";
+    keyRef.current = `sidebar-${side}`;
+
+    // Restore saved scroll position
+    const savedPosition = sidebarScrollPositions.get(keyRef.current);
+    if (savedPosition !== undefined && savedPosition > 0) {
+      el.scrollTop = savedPosition;
+    }
+  }, []);
+
+  // Track scroll position continuously and save to module-level storage
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      if (keyRef.current) {
+        sidebarScrollPositions.set(keyRef.current, el.scrollTop);
+      }
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // After every render, check if scroll was reset and restore it
+  React.useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !keyRef.current) return;
+
+    const savedPosition = sidebarScrollPositions.get(keyRef.current);
+    // If we have a saved position and scroll was reset to 0, restore it
+    if (savedPosition !== undefined && savedPosition > 0 && el.scrollTop === 0) {
+      el.scrollTop = savedPosition;
+    }
+  });
+
   return (
     <div
+      ref={scrollRef}
       data-slot="sidebar-content"
       data-sidebar="content"
       className={cn(
@@ -584,7 +635,7 @@ function SidebarMenuAction({
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+        "peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
         className
       )}
       {...props}

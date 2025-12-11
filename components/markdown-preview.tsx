@@ -105,6 +105,12 @@ const CodeBlock: Components["code"] = ({ inline, className, children, style: _st
     [],
   );
 
+  // Move this BEFORE the early return to ensure hooks are called unconditionally
+  const themeStyles = useMemo<{ [key: string]: CSSProperties }>(
+    () => (isDarkMode ? (vscDarkPlus as { [key: string]: CSSProperties }) : (vsLight as { [key: string]: CSSProperties })),
+    [isDarkMode],
+  );
+
   if (isInline) {
     return (
       <code
@@ -115,11 +121,6 @@ const CodeBlock: Components["code"] = ({ inline, className, children, style: _st
       </code>
     );
   }
-
-  const themeStyles = useMemo<{ [key: string]: CSSProperties }>(
-    () => (isDarkMode ? (vscDarkPlus as { [key: string]: CSSProperties }) : (vsLight as { [key: string]: CSSProperties })),
-    [isDarkMode],
-  );
 
   return (
     <div className="group relative my-4 md:my-6 w-full overflow-hidden rounded-md border border-border/60 bg-muted/60">
