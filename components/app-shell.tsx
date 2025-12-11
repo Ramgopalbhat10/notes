@@ -61,16 +61,40 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   const [rightMobileExpanded, setRightMobileExpanded] = useState(false);
   const hasRight = Boolean(right);
 
-  // Close overlays on Escape
+  // Global keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Close overlays on Escape
       if (e.key === "Escape") {
         setRightMobileOpen(false);
+        return;
+      }
+
+      // Ctrl/Cmd+J: Toggle right sidebar
+      if (e.key === "j" && (e.metaKey || e.ctrlKey) && hasRight) {
+        e.preventDefault();
+        if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+          toggleRightSidebar();
+        } else {
+          setRightMobileOpen((v) => !v);
+        }
+        return;
+      }
+
+      // Ctrl/Cmd+S: Save current file
+      if (e.key === "s" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        // Get latest editor state directly to avoid stale closure
+        const editorState = useEditorStore.getState();
+        if (editorState.fileKey && editorState.dirty && editorState.status !== "saving" && editorState.status !== "conflict") {
+          void editorState.save("manual");
+        }
+        return;
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [hasRight, toggleRightSidebar]);
 
   const toggleRight = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {

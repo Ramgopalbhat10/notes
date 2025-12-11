@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ROOT_PARENT_KEY, type NodeId, useTreeStore } from "@/stores/tree";
 import { normalizeFolderPrefix } from "@/lib/fs-validation";
 import { encodePath } from "@/lib/utils";
@@ -289,6 +290,44 @@ export function FileTree() {
     select,
     filteredRootIds,
     selectedId,
+    onRename: (id) => {
+      const node = nodes[id];
+      if (node) {
+        openModal({
+          type: "rename",
+          nodeId: id,
+          initialName: node.name,
+          path: node.path,
+          isFolder: node.type === "folder"
+        });
+      }
+    },
+    onDelete: (id) => {
+      const node = nodes[id];
+      if (node) {
+        openModal({
+          type: "delete",
+          nodeId: id,
+          name: node.name,
+          path: node.path,
+          isFolder: node.type === "folder"
+        });
+      }
+    },
+    onCreateFile: (parentId) => openModal({ type: "create-file", parentId }),
+    onCreateFolder: (parentId) => openModal({ type: "create-folder", parentId }),
+    onMove: (id) => {
+      const node = nodes[id];
+      if (node) {
+        openModal({
+          type: "move",
+          nodeId: id,
+          currentParentId: node.parentId,
+          path: node.path,
+          isFolder: node.type === "folder"
+        });
+      }
+    },
   });
 
   const renderEmptyState = () => {
@@ -316,58 +355,80 @@ export function FileTree() {
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
-        <div className="mb-2 flex justify-end gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
-            aria-label="Refresh tree"
-            title="Refresh file tree"
-            onClick={() => void refreshTree()}
-            disabled={refreshState !== "idle"}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshState !== "idle" ? "animate-spin" : ""}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
-            aria-label={allExpanded ? "Collapse all folders" : "Expand all folders"}
-            title={allExpanded ? "Collapse all folders" : "Expand all folders"}
-            onClick={() => {
-              if (allExpanded) {
-                collapseAll();
-              } else {
-                expandAll();
-              }
-              setAllExpanded(!allExpanded);
-            }}
-          >
-            {allExpanded ? (
-              <ChevronsDownUp className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronsUpDown className="h-3.5 w-3.5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
-            aria-label="New folder"
-            onClick={() => openModal({ type: "create-folder", parentId: null })}
-          >
-            <FolderPlus className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
-            aria-label="New file"
-            onClick={() => openModal({ type: "create-file", parentId: null })}
-          >
-            <FilePlus2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+        <TooltipProvider>
+          <div className="mb-2 flex justify-end gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
+                  aria-label="Refresh tree"
+                  onClick={() => void refreshTree()}
+                  disabled={refreshState !== "idle"}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${refreshState !== "idle" ? "animate-spin" : ""}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Refresh file tree</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
+                  aria-label={allExpanded ? "Collapse all folders" : "Expand all folders"}
+                  onClick={() => {
+                    if (allExpanded) {
+                      collapseAll();
+                    } else {
+                      expandAll();
+                    }
+                    setAllExpanded(!allExpanded);
+                  }}
+                >
+                  {allExpanded ? (
+                    <ChevronsDownUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronsUpDown className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {allExpanded ? "Collapse all folders" : "Expand all folders"}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
+                  aria-label="New folder"
+                  onClick={() => openModal({ type: "create-folder", parentId: null })}
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">New folder</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40"
+                  aria-label="New file"
+                  onClick={() => openModal({ type: "create-file", parentId: null })}
+                >
+                  <FilePlus2 className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">New file</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
 
         <div
           ref={containerRef}

@@ -179,7 +179,7 @@ function FolderNode({
             className={cn(
               "group/folder flex items-center rounded-md px-1 transition-colors",
               selectionState === "selected"
-                ? "bg-muted text-foreground"
+                ? "bg-muted/20 text-foreground"
                 : isActive
                   ? "bg-muted/20"
                   : "hover:bg-muted/15 focus-within:bg-muted/15",
@@ -192,7 +192,7 @@ function FolderNode({
               onClick={handleToggle}
               className={cn(
                 "peer flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-                isActive ? "text-foreground font-medium" : "text-muted-foreground/60",
+                isActive || selectionState === "selected" ? "text-foreground font-medium" : "text-muted-foreground/60",
                 isAncestor ? "text-foreground font-medium" : ""
               )}
               role="treeitem"

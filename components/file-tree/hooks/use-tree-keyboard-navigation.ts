@@ -17,8 +17,30 @@ export function useTreeKeyboardNavigation(params: {
   select: (id: NodeId) => void;
   filteredRootIds: NodeId[];
   selectedId: NodeId | null;
+  onRename?: (id: NodeId) => void;
+  onDelete?: (id: NodeId) => void;
+  onCreateFile?: (parentId: NodeId | null) => void;
+  onCreateFolder?: (parentId: NodeId | null) => void;
+  onMove?: (id: NodeId) => void;
 }) {
-  const { containerRef, activeId, setActiveId, nodes, openFolders, filterActive, matchMap, toggleFolder, select, filteredRootIds, selectedId } = params;
+  const {
+    containerRef,
+    activeId,
+    setActiveId,
+    nodes,
+    openFolders,
+    filterActive,
+    matchMap,
+    toggleFolder,
+    select,
+    filteredRootIds,
+    selectedId,
+    onRename,
+    onDelete,
+    onCreateFile,
+    onCreateFolder,
+    onMove
+  } = params;
 
   useEffect(() => {
     const items = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-node-id]");
@@ -125,6 +147,49 @@ export function useTreeKeyboardNavigation(params: {
           select(activeNode.id);
         }
         event.preventDefault();
+        break;
+      }
+      case "F2": {
+        if (activeNode && onRename) {
+          onRename(activeNode.id);
+          event.preventDefault();
+        }
+        break;
+      }
+      case "Delete":
+      case "Backspace": {
+        // Cmd+Backspace on Mac is mostly standard for delete, generic Delete key otherwise
+        if (activeNode && onDelete) {
+          if (event.key === "Delete" || (event.key === "Backspace" && (event.metaKey || event.ctrlKey))) {
+            onDelete(activeNode.id);
+            event.preventDefault();
+          }
+        }
+        break;
+      }
+      case "n": {
+        if ((event.metaKey || event.ctrlKey) && !event.shiftKey) {
+          // Cmd+N: New File
+          event.preventDefault();
+          event.stopPropagation();
+          const parentId = activeNode ? (activeNode.type === "folder" ? activeNode.id : activeNode.parentId) : null;
+          onCreateFile?.(parentId);
+        } else if ((event.metaKey || event.ctrlKey) && event.shiftKey) {
+          // Cmd+Shift+N: New Folder
+          event.preventDefault();
+          event.stopPropagation();
+          const parentId = activeNode ? (activeNode.type === "folder" ? activeNode.id : activeNode.parentId) : null;
+          onCreateFolder?.(parentId);
+        }
+        break;
+      }
+      case "m": {
+        if ((event.metaKey || event.ctrlKey) && event.shiftKey && onMove && activeNode) {
+          // Cmd+Shift+M: Move
+          event.preventDefault();
+          event.stopPropagation();
+          onMove(activeNode.id);
+        }
         break;
       }
       default:
