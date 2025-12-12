@@ -201,6 +201,7 @@ function FolderNode({
               aria-level={depth + 1}
               aria-posinset={posInSet}
               aria-setsize={setSize}
+              title={node.name}
             >
               <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
               <span className="truncate">{node.name || "(untitled)"}</span>
@@ -401,6 +402,7 @@ function FileNode({
           aria-level={depth + 1}
           aria-posinset={posInSet}
           aria-setsize={setSize}
+          title={node.name}
         >
           <span className="truncate">{displayName}</span>
         </button>
