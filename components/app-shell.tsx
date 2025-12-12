@@ -242,7 +242,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
           <SheetContent
             side="right"
             className={cn(
-              "lg:hidden p-0 transition-[width,max-width] duration-300 ease-in-out [&>button]:hidden w-full max-w-full flex flex-col",
+              "lg:hidden p-0 [&>button]:hidden w-full max-w-full flex flex-col transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width]",
               rightMobileExpanded ? "md:w-full md:max-w-full" : "md:w-1/2 md:max-w-md"
             )}
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "auto" } as CSSProperties}
