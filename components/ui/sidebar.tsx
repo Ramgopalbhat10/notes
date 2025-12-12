@@ -187,8 +187,13 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden transition-[width] duration-200 ease-in-out"
-          style={props.style}
+          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden transition-[width] duration-300 ease-in-out will-change-[transform,width]"
+          style={
+            {
+              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              ...props.style,
+            } as React.CSSProperties
+          }
           side={side}
         >
           <SheetHeader className="sr-only">
@@ -270,7 +275,6 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      {/* Smooth icon toggle: open -> PanelLeft, closed -> PanelRight */}
       <PanelRight
         className={cn(
           "h-4 w-4 absolute inset-0 m-auto transition-all duration-200",
