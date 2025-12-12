@@ -43,6 +43,7 @@ type AppShellProps = {
 export function AppShell({ left, right, children, header, onNewChat }: AppShellProps) {
   const RIGHT_SIDEBAR_WIDTH_REM = 30;
   const LEFT_SIDEBAR_WIDTH_REM = 17.5;
+  const LEFT_SIDEBAR_EXPANDED_REM = 28; // ~448px expanded width
   const REM_IN_PX = 16;
   const MIN_MAIN_CONTENT_RATIO = 0.45;
   const mainScrollRef = useRef<HTMLDivElement>(null);
@@ -55,6 +56,25 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   const setRightSidebarExpanded = useWorkspaceLayoutStore((state) => state.setRightSidebarExpanded);
   const toggleRightSidebar = useWorkspaceLayoutStore((state) => state.toggleRightSidebar);
   const toggleRightSidebarExpansion = useWorkspaceLayoutStore((state) => state.toggleRightSidebarExpansion);
+
+  // Left sidebar expansion state
+  const leftSidebarExpanded = useWorkspaceLayoutStore((state) => state.leftSidebarExpanded);
+  const toggleLeftSidebarExpansion = useWorkspaceLayoutStore((state) => state.toggleLeftSidebarExpansion);
+  // Track mobile state for sidebar width calculation
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768); // md breakpoint
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  // On mobile, expanded means full width; on desktop, use expanded rem value
+  const leftSidebarWidthValue = leftSidebarExpanded
+    ? (isMobile ? '100%' : `${LEFT_SIDEBAR_EXPANDED_REM}rem`)
+    : `${LEFT_SIDEBAR_WIDTH_REM}rem`;
+  const leftSidebarWidthPx = leftSidebarExpanded
+    ? (isMobile ? window.innerWidth : LEFT_SIDEBAR_EXPANDED_REM * REM_IN_PX)
+    : LEFT_SIDEBAR_WIDTH_REM * REM_IN_PX;
 
   // Mobile-specific state (doesn't need to persist)
   const [rightMobileOpen, setRightMobileOpen] = useState(false);
@@ -202,10 +222,10 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   return (
     <SidebarProvider
       className="bg-background text-foreground h-svh w-full"
-      style={{ "--sidebar-width": `${LEFT_SIDEBAR_WIDTH_REM}rem` } as CSSProperties}
+      style={{ "--sidebar-width": leftSidebarWidthValue } as CSSProperties}
     >
       <SidebarAutoCollapse
-        leftWidthPx={LEFT_SIDEBAR_WIDTH_REM * REM_IN_PX}
+        leftWidthPx={leftSidebarWidthPx}
         rightWidthPx={RIGHT_SIDEBAR_WIDTH_REM * REM_IN_PX}
         minMainRatio={MIN_MAIN_CONTENT_RATIO}
         rightSidebarOpen={rightSidebarOpen}
@@ -281,13 +301,34 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
       ) : null}
 
       {/* Left sidebar using shadcn primitives */}
-      <Sidebar side="left" variant="sidebar" className="max-h-svh border-r border-solid border-border/40">
+      <Sidebar
+        side="left"
+        variant="sidebar"
+        className="max-h-svh border-r border-solid border-border/40"
+        style={{ "--sidebar-width": leftSidebarWidthValue } as CSSProperties}
+      >
         <SidebarHeader className="h-10 md:h-11 shrink-0 border-b border-solid border-border/40">
           <div className="flex h-full items-center justify-between px-2.5 md:px-3">
             <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">
               Vault
             </div>
-            <SidebarTrigger className={cn("size-7", ICON_BUTTON_BASE)} />
+            <div className="flex items-center gap-0.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                    onClick={toggleLeftSidebarExpansion}
+                    aria-label={leftSidebarExpanded ? "Shrink sidebar" : "Expand sidebar"}
+                  >
+                    {leftSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{leftSidebarExpanded ? "Shrink sidebar" : "Expand sidebar"}</TooltipContent>
+              </Tooltip>
+              <SidebarTrigger className={cn("size-7", ICON_BUTTON_BASE)} />
+            </div>
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1 min-h-0">

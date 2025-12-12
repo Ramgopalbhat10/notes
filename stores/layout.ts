@@ -16,6 +16,9 @@ type WorkspaceLayoutState = {
   toggleRightSidebar: () => void;
   toggleRightSidebarExpansion: () => void;
   closeRightSidebar: () => void;
+  // Left sidebar expansion
+  leftSidebarExpanded: boolean;
+  toggleLeftSidebarExpansion: () => void;
 };
 
 export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>((set) => ({
@@ -44,4 +47,11 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>((set) => ({
       rightSidebarExpanded: !state.rightSidebarExpanded,
     })),
   closeRightSidebar: () => set({ rightSidebarOpen: false, rightSidebarExpanded: false }),
+  // Left sidebar expansion
+  leftSidebarExpanded: false,
+  toggleLeftSidebarExpansion: () =>
+    set((state) => ({
+      leftSidebarExpanded: !state.leftSidebarExpanded,
+    })),
 }));
+

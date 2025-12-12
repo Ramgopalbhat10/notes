@@ -177,7 +177,7 @@ function FolderNode({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group/folder flex items-center rounded-md px-1 transition-colors",
+              "group/folder flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
               selectionState === "selected"
                 ? "bg-muted/20 text-foreground"
                 : isActive
@@ -191,7 +191,7 @@ function FolderNode({
               data-node-id={node.id}
               onClick={handleToggle}
               className={cn(
-                "peer flex flex-1 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                "peer flex flex-1 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 isActive || selectionState === "selected" ? "text-foreground font-medium" : "text-muted-foreground/60",
                 isAncestor ? "text-foreground font-medium" : ""
               )}
@@ -202,12 +202,12 @@ function FolderNode({
               aria-posinset={posInSet}
               aria-setsize={setSize}
             >
-              <ChevronRight className={cn("h-3.5 w-3.5 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
+              <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
               <span className="truncate">{node.name || "(untitled)"}</span>
             </button>
             <div
               className={cn(
-                "flex items-center gap-1 pl-1 opacity-0 transition-opacity",
+                "flex shrink-0 items-center gap-1 pl-1 opacity-0 transition-opacity",
                 "peer-hover:opacity-100 peer-focus-visible:opacity-100 group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
                 showActions && "opacity-100",
               )}

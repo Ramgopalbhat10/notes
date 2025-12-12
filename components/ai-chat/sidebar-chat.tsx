@@ -408,9 +408,6 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
             ) : (
               <ConversationEmptyState>
                 <div className="flex flex-col items-center gap-3 text-center px-4">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                    <Bot className="h-5 w-5 text-primary" />
-                  </div>
                   <div className="space-y-1">
                     <h3 className="font-medium text-sm">How can I help you today?</h3>
                     <p className="text-muted-foreground text-xs">
