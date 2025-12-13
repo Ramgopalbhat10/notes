@@ -80,6 +80,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     : LEFT_SIDEBAR_WIDTH_REM * REM_IN_PX;
 
   // Mobile-specific state (doesn't need to persist)
+  const [leftMobileOpen, setLeftMobileOpen] = useState(false);
   const [rightMobileOpen, setRightMobileOpen] = useState(false);
   const [rightMobileExpanded, setRightMobileExpanded] = useState(false);
   const hasRight = Boolean(right);
@@ -234,7 +235,39 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
         rightSidebarOpen={rightSidebarOpen}
         rightSidebarExpanded={rightSidebarExpanded}
       />
-      {/* Right mobile sheet (left is handled by Sidebar internally) */}
+      {/* Left mobile sheet */}
+      <Sheet open={leftMobileOpen} onOpenChange={setLeftMobileOpen}>
+        <SheetContent
+          side="left"
+          className="w-auto bg-transparent shadow-none border-none p-0 [&>button]:hidden"
+          style={{ "--sidebar-width": "100vw" } as CSSProperties}
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Vault</SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground w-[100vw] max-w-[100vw] shadow-lg">
+            <div className="h-10 shrink-0 border-b border-solid border-border/40 flex items-center justify-between px-2.5">
+              <div className="font-semibold text-sm h-7 flex items-center uppercase tracking-wide">
+                Vault
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                onClick={() => setLeftMobileOpen(false)}
+                aria-label="Close sidebar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto p-3">
+              {left}
+            </div>
+            <LeftSidebarFooter />
+          </div>
+        </SheetContent>
+      </Sheet>
+      {/* Right mobile sheet */}
       {hasRight ? (
         <Sheet open={rightMobileOpen} onOpenChange={(open) => {
           setRightMobileOpen(open);
@@ -247,11 +280,8 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
             className="w-auto bg-transparent shadow-none border-none p-0 [&>button]:hidden"
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "100vw" } as CSSProperties}
           >
-            <SheetHeader className="px-3 py-2 md:px-4 md:py-2 border-b border-border/40 bg-background transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width] w-full max-w-full hidden">
-              {/* Header content moved or hidden - actually we need to preserve the header. The header needs to be inside the internal container.
-                   Wait, the original code had SheetHeader direct child.
-                   I need to move the header INSIDE the new container div to animate with it. 
-               */}
+            <SheetHeader className="sr-only">
+              <SheetTitle>Chat</SheetTitle>
             </SheetHeader>
             <div className={cn(
               "flex flex-col h-full bg-background border-l shadow-lg transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width]",
@@ -259,48 +289,48 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
               rightMobileExpanded ? "md:w-full md:max-w-full" : "md:w-1/2 md:max-w-md",
               "w-[100vw] max-w-[100vw]"
             )}>
-              <SheetHeader className="px-3 py-2 md:px-4 md:py-2 border-b border-border/40">
-                <div className="flex items-center justify-between">
-                  <SheetTitle className="font-semibold text-sm md:text-base uppercase ml-1">Chat</SheetTitle>
-                  <div className="flex items-center gap-1">
-                    {/* New Chat button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                          onClick={onNewChat}
-                          aria-label="New chat"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="hidden md:block">New chat</TooltipContent>
-                    </Tooltip>
-                    <div className="h-4 w-px bg-border/60 mx-1.5" />
-                    {/* Expand button - only on tablet (md) and above */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(ICON_BUTTON_BASE, "hidden md:inline-flex size-7")}
-                      onClick={toggleRightMobileExpansion}
-                      aria-label={rightMobileExpanded ? "Shrink chat panel" : "Expand chat panel"}
-                    >
-                      {rightMobileExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                    </Button>
-                    {/* Close button - always visible */}
-                    <Button
-                      variant="ghost"
-                      className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                      onClick={() => setRightMobileOpen(false)}
-                      aria-label="Close chat panel"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+              <div className="h-10 shrink-0 border-b border-solid border-border/40 flex items-center justify-between px-2.5">
+                <div className="font-semibold text-sm h-7 flex items-center uppercase tracking-wide">
+                  Chat
                 </div>
-              </SheetHeader>
+                <div className="flex items-center gap-1">
+                  {/* New Chat button */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                        onClick={onNewChat}
+                        aria-label="New chat"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="hidden md:block">New chat</TooltipContent>
+                  </Tooltip>
+                  <div className="h-4 w-px bg-border/60 mx-1.5" />
+                  {/* Expand button - only on tablet (md) and above */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(ICON_BUTTON_BASE, "hidden md:inline-flex size-7")}
+                    onClick={toggleRightMobileExpansion}
+                    aria-label={rightMobileExpanded ? "Shrink chat panel" : "Expand chat panel"}
+                  >
+                    {rightMobileExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </Button>
+                  {/* Close button - always visible */}
+                  <Button
+                    variant="ghost"
+                    className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                    onClick={() => setRightMobileOpen(false)}
+                    aria-label="Close chat panel"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <div className="h-full">
@@ -386,7 +416,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
 
       {/* Main content inset */}
       <SidebarInset className="flex min-h-svh min-w-0 flex-col">
-        <MainHeader header={header} leftSidebarOpen={leftSidebarOpen} toggleLeftSidebar={toggleLeftSidebar} />
+        <MainHeader header={header} leftSidebarOpen={leftSidebarOpen} toggleLeftSidebar={toggleLeftSidebar} leftMobileOpen={leftMobileOpen} setLeftMobileOpen={setLeftMobileOpen} />
         <div ref={mainScrollRef} className="flex-1 min-h-0 w-full overflow-auto">
           <div className="space-y-3 sm:space-y-4 sm:px-8 sm:py-4 pt-0 min-w-0">{renderedChildren}</div>
         </div>
@@ -403,77 +433,79 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
       </SidebarInset>
 
       {/* Right sidebar container with smooth width animation (desktop only) */}
-      {hasRight ? (
-        <div
-          className={cn(
-            "hidden lg:block overflow-hidden transition-[width] duration-300 ease-in-out border-l border-solid border-border/40 relative",
-            rightSidebarWidthClass,
-          )}
-          aria-hidden={!rightSidebarOpen}
-        >
-          <div className="absolute right-0 top-0 bottom-0 transition-[width] duration-300 ease-in-out" style={{
-            width: rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
-          } as CSSProperties}>
-            <Sidebar
-              side="right"
-              collapsible="none"
-              className="h-svh w-full"
-              style={{
-                "--sidebar-width": rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
-              } as CSSProperties}
-            >
-              <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
-                <div className="flex h-full items-center justify-between px-2.5 md:px-3">
-                  <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
-                  <div className="flex items-center gap-1">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                          onClick={onNewChat}
-                          aria-label="New chat"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">New chat</TooltipContent>
-                    </Tooltip>
-                    <div className="h-4 w-px bg-border/60 mx-1.5" />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                      onClick={toggleRightExpansion}
-                      aria-label={rightSidebarExpanded ? "Shrink details panel" : "Expand details panel"}
-                      disabled={!rightSidebarOpen}
-                    >
-                      {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                      onClick={() => {
-                        setRightSidebarOpen(false);
-                        setRightSidebarExpanded(false);
-                      }}
-                      aria-label="Collapse right sidebar"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+      {
+        hasRight ? (
+          <div
+            className={cn(
+              "hidden lg:block overflow-hidden transition-[width] duration-300 ease-in-out border-l border-solid border-border/40 relative",
+              rightSidebarWidthClass,
+            )}
+            aria-hidden={!rightSidebarOpen}
+          >
+            <div className="absolute right-0 top-0 bottom-0 transition-[width] duration-300 ease-in-out" style={{
+              width: rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
+            } as CSSProperties}>
+              <Sidebar
+                side="right"
+                collapsible="none"
+                className="h-svh w-full"
+                style={{
+                  "--sidebar-width": rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
+                } as CSSProperties}
+              >
+                <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
+                  <div className="flex h-full items-center justify-between px-2.5 md:px-3">
+                    <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
+                    <div className="flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                            onClick={onNewChat}
+                            aria-label="New chat"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">New chat</TooltipContent>
+                      </Tooltip>
+                      <div className="h-4 w-px bg-border/60 mx-1.5" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                        onClick={toggleRightExpansion}
+                        aria-label={rightSidebarExpanded ? "Shrink details panel" : "Expand details panel"}
+                        disabled={!rightSidebarOpen}
+                      >
+                        {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                        onClick={() => {
+                          setRightSidebarOpen(false);
+                          setRightSidebarExpanded(false);
+                        }}
+                        aria-label="Collapse right sidebar"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </SidebarHeader>
-              <SidebarContent className="min-h-0 gap-0 p-0 overflow-hidden">
-                {right}
-              </SidebarContent>
-            </Sidebar>
+                </SidebarHeader>
+                <SidebarContent className="min-h-0 gap-0 p-0 overflow-hidden">
+                  {right}
+                </SidebarContent>
+              </Sidebar>
+            </div>
           </div>
-        </div>
-      ) : null}
-    </SidebarProvider>
+        ) : null
+      }
+    </SidebarProvider >
   );
 }
 
@@ -762,8 +794,14 @@ function SidebarAutoCollapse({
   return null;
 }
 
-function MainHeader({ header, leftSidebarOpen, toggleLeftSidebar }: { header?: React.ReactNode; leftSidebarOpen: boolean; toggleLeftSidebar: () => void }) {
-  const { openMobile, setOpenMobile, isMobile } = useSidebar();
+function MainHeader({ header, leftSidebarOpen, toggleLeftSidebar, leftMobileOpen, setLeftMobileOpen }: {
+  header?: React.ReactNode;
+  leftSidebarOpen: boolean;
+  toggleLeftSidebar: () => void;
+  leftMobileOpen: boolean;
+  setLeftMobileOpen: (open: boolean) => void;
+}) {
+  const { isMobile } = useSidebar();
 
   return (
     <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -781,7 +819,7 @@ function MainHeader({ header, leftSidebarOpen, toggleLeftSidebar }: { header?: R
           )}
           onClick={() => {
             if (isMobile) {
-              setOpenMobile(!openMobile);
+              setLeftMobileOpen(!leftMobileOpen);
             } else {
               toggleLeftSidebar();
             }
