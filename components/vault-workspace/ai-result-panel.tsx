@@ -29,9 +29,9 @@ export function AiResultPanel({
   onReplace,
   canApply,
 }: AiResultPanelProps) {
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
   useEffect(() => {
-    setShowPreview(false);
+    setShowPreview(true);
   }, [state.action, state.status]);
 
   const isStreaming = state.status === "streaming";
@@ -50,8 +50,8 @@ export function AiResultPanel({
   const statusClass = isError ? "text-destructive" : "text-muted-foreground";
 
   return (
-    <div className="rounded-lg border border-border/70 bg-card/80 p-4 shadow-sm w-full">
-      <div className="flex items-start justify-between gap-3">
+    <div className="md:rounded-lg border border-border/70 bg-card/80 p-4 shadow-sm w-full">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -67,8 +67,8 @@ export function AiResultPanel({
                 Streaming
               </span>
             ) : null}
+            <p className={`mt-0.5 text-xs ${statusClass}`}>{statusMessage}</p>
           </div>
-          <p className={`mt-1 text-xs ${statusClass}`}>{statusMessage}</p>
         </div>
         <Button
           variant="ghost"
@@ -80,7 +80,7 @@ export function AiResultPanel({
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="mt-3 max-h-64 overflow-auto rounded-md border border-border/60 bg-background p-3 text-sm leading-relaxed">
+      <div className="mt-3 max-h-64 overflow-auto rounded-md border border-border/60 bg-background px-3 text-sm leading-relaxed">
         {hasResult ? (
           showPreview ? (
             <MarkdownPreview content={state.result} />
@@ -120,7 +120,7 @@ export function AiResultPanel({
           size="icon"
           onClick={onCopy}
           disabled={!hasResult}
-          className="ml-auto text-muted-foreground hover:text-foreground"
+          className="h-7 w-7 ml-auto text-muted-foreground hover:text-foreground"
         >
           <Copy className="h-4 w-4" />
         </Button>
@@ -131,7 +131,7 @@ export function AiResultPanel({
           disabled={!hasResult}
           aria-label={showPreview ? "Show raw Markdown" : "Show rendered preview"}
           className={cn(
-            "text-muted-foreground hover:text-foreground",
+            "h-7 w-7 text-muted-foreground hover:text-foreground",
             showPreview && "bg-muted text-foreground",
           )}
         >

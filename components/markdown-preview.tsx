@@ -127,7 +127,7 @@ const CodeBlock: Components["code"] = ({ inline, className, children, style: _st
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground opacity-0 shadow-sm transition hover:-translate-y-px hover:border-primary/60 hover:text-primary focus-visible:translate-y-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 group-hover:opacity-100"
+        className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground opacity-0 shadow-sm transition hover:-translate-y-px hover:border-primary/60 hover:text-primary focus-visible:translate-y-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 group-hover:opacity-100"
         aria-label={copied ? "Code copied" : "Copy code"}
       >
         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -142,7 +142,7 @@ const CodeBlock: Components["code"] = ({ inline, className, children, style: _st
         className="text-xs md:text-sm"
         customStyle={{
           margin: 0,
-          padding: "1rem 1.25rem",
+          padding: "0.5rem 1rem",
           paddingRight: "3rem",
           background: "transparent",
           overflow: "auto",
@@ -201,7 +201,7 @@ const components: Components = {
   ),
   code: CodeBlock,
   table: (props) => (
-    <div className="my-4 md:my-6 overflow-x-auto">
+    <div className="my-4 md:my-6 overflow-x-auto border border-border/60 rounded-md">
       <table
         className="w-full border-collapse text-left text-xs md:text-sm [&_th]:border-b [&_th]:px-2 md:[&_th]:px-3 [&_th]:py-2 [&_th]:align-top [&_td]:border-b [&_td]:px-2 md:[&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_td]:break-words [&_td]:whitespace-pre-wrap"
         {...props}

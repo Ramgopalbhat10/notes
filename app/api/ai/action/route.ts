@@ -6,7 +6,7 @@ type ActionType = "improve" | "summarize" | "expand";
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 10;
-const MAX_INPUT_CHARS = 8_000;
+const MAX_INPUT_CHARS = 100_000;
 
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
