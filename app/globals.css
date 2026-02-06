@@ -303,6 +303,7 @@ body {
 
   .markdown-preview [data-streamdown="code-block-header"] {
     @apply border-none text-[11px] text-muted-foreground;
+    background: var(--popover) !important;
     padding: 6px !important;
   }
 
@@ -311,7 +312,8 @@ body {
   }
 
   .markdown-preview [data-streamdown="code-block-body"] {
-    padding: 0.625rem 0.875rem !important;
+    background: var(--card) !important;
+    padding: 1rem !important;
   }
 
   /* Streamdown line numbers are injected via ::before on each code line span. */
