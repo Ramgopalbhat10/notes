@@ -1,4 +1,6 @@
-const DEFAULT_MARKDOWN_IMAGE_HOSTS = ["avatars.githubusercontent.com"];
+const DEFAULT_MARKDOWN_IMAGE_HOSTS = [
+  "r2-images.mrgb.in",
+];
 
 function normalizeHost(value: string): string | null {
   const trimmed = value.trim().toLowerCase();

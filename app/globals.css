@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@source "../node_modules/streamdown/dist/index.js";
+@source "../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -277,107 +277,37 @@ body {
     @apply h-auto max-w-full rounded-lg border border-border/40;
   }
 
-  .markdown-content [data-streamdown="mermaid-block"],
-  .markdown-content [data-streamdown="mermaid-renderer"] {
+  .markdown-content [data-streamdown="mermaid-block"] {
     @apply my-4 w-full overflow-hidden rounded-[var(--radius)] border border-border/60 p-3;
     background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
   }
 
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-viewport"] {
-    @apply w-full overflow-auto rounded-[calc(var(--radius)-2px)] border border-border/60;
-    max-height: min(24rem, 70vh);
-    background: color-mix(in srgb, var(--muted) 56%, var(--background) 44%);
+  .markdown-content [data-streamdown="mermaid"] {
+    @apply w-full;
   }
 
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-canvas"] {
-    @apply p-3;
-    display: grid;
-    width: max-content;
-    min-width: 100%;
-    place-items: center;
-  }
-
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-visual"] {
-    @apply min-w-max;
-    width: fit-content;
-  }
-
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-visual"] svg {
-    @apply block h-auto;
-    width: auto;
-    min-width: 0;
-    max-width: none;
-    margin-inline: auto;
-  }
-
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-unicode"] {
-    @apply m-0 p-0 text-[12px];
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "DejaVu Sans Mono", monospace;
-    line-height: 1.2;
-    width: max-content;
-    margin-inline: auto;
-    text-align: left;
-    white-space: pre;
-    overflow-wrap: normal;
-    word-break: normal;
-    tab-size: 2;
-    letter-spacing: 0;
-    font-variant-ligatures: none;
-    font-feature-settings: "liga" 0, "calt" 0;
-    text-size-adjust: 100%;
-    -webkit-text-size-adjust: 100%;
-  }
-
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-unicode"] > code {
-    @apply inline-block min-w-max;
-    white-space: inherit;
-  }
-
-  .markdown-content [data-code-block-container="true"] {
+  .markdown-content [data-streamdown="code-block"] {
     @apply my-4 overflow-hidden rounded-[var(--radius)] border border-border/60;
     background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
+    border-top: 0 !important;
   }
 
-  .markdown-content [data-code-block-header="true"] {
+  .markdown-content [data-streamdown="code-block-header"] {
     @apply border-none px-3 py-2 text-[11px] text-muted-foreground;
     background: transparent !important;
   }
 
-  .markdown-content [data-code-block-header="true"] > span {
+  .markdown-content [data-streamdown="code-block-header"] > span {
     @apply uppercase tracking-wide;
   }
 
-  .markdown-content [data-streamdown="code-block"] {
-    border-top: 0 !important;
-    background: transparent !important;
-  }
-
-  .markdown-content [data-code-block="true"] {
-    background: transparent !important;
-  }
-
-  .markdown-content [data-code-block="true"] pre {
+  .markdown-content [data-streamdown="code-block-body"] {
     padding: 0.625rem 0.875rem !important;
     background: transparent !important;
   }
 
   .markdown-content {
     line-height: 1.6;
-  }
-}
-
-@media (max-width: 640px) {
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-viewport"] {
-    max-height: min(20rem, 65vh);
-  }
-
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-canvas"] {
-    padding: 0.625rem;
-  }
-
-  .markdown-content [data-streamdown="mermaid-renderer"] [data-streamdown="mermaid-unicode"] {
-    font-size: 11px;
-    line-height: 1.2;
   }
 }
 

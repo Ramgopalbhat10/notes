@@ -1,18 +1,18 @@
-# Story 13 — Streamdown Markdown Rendering + CDN Images + Beautiful Mermaid
+# Story 13 — Streamdown Markdown Rendering + CDN Images + Streamdown Mermaid Plugin
 
-Goal: Replace `react-markdown` with `streamdown` for markdown rendering while preserving current UX, enabling secure CDN-hosted images, and rendering Mermaid diagrams via `beautiful-mermaid`.
+Goal: Replace `react-markdown` with `streamdown` for markdown rendering while preserving current UX, enabling secure CDN-hosted images, and rendering Mermaid diagrams via Streamdown's Mermaid plugin.
 
 ## Scope
--- In: migrate `MarkdownPreview` rendering pipeline to `Streamdown`; preserve existing markdown usage in workspace/public/AI surfaces; add CDN image rendering policy; render fenced `mermaid` blocks with `beautiful-mermaid`; keep existing editing flows unchanged.
+-- In: migrate `MarkdownPreview` rendering pipeline to `Streamdown`; preserve existing markdown usage in workspace/public/AI surfaces; add CDN image rendering policy; render fenced `mermaid` blocks with `@streamdown/mermaid`; keep existing editing flows unchanged.
 -- Out: image upload/storage workflows, non-markdown binary asset management, Mermaid authoring UI, diagram editing tools, major editor architecture changes.
 
 ## Deliverables
 - `components/markdown-preview.tsx` uses `Streamdown` as the renderer instead of `ReactMarkdown`.
-- New Mermaid renderer helper/component for `beautiful-mermaid` SVG output with loading + error fallback states.
+- Streamdown plugin wiring for Mermaid (`@streamdown/mermaid`) with theme-aware config.
 - Markdown image URL policy (allowlist for CDN hosts + protocol validation) applied during markdown render.
 - Updated markdown styling for Streamdown output in `app/globals.css`.
 - Documentation updates in `README.md` (image host config, mermaid support, markdown rendering notes).
-- Dependency updates in `package.json` (`beautiful-mermaid` added; `react-markdown` stack removed when no longer used).
+- Dependency updates in `package.json` (`streamdown@2.x`, `@streamdown/mermaid`, `@streamdown/code`; remove old markdown stack when no longer used).
 
 ## Acceptance Criteria
 - All existing markdown surfaces render correctly after migration:
@@ -22,7 +22,7 @@ Goal: Replace `react-markdown` with `streamdown` for markdown rendering while pr
   - any AI response components using `MarkdownPreview`
 - Markdown images with allowed CDN URLs render correctly (responsive, lazy loading, no layout breakage).
 - Disallowed/unsafe image URLs are blocked and do not render active content.
-- Fenced Mermaid blocks (`\`\`\`mermaid`) render via `beautiful-mermaid` with a graceful fallback when parsing/rendering fails.
+- Fenced Mermaid blocks (`\`\`\`mermaid`) render via Streamdown Mermaid plugin with graceful fallback behavior.
 - Non-Mermaid code blocks and tables keep existing visual quality and behavior.
 - No regression in streaming markdown behavior for AI-generated partial output.
 
@@ -41,11 +41,11 @@ Goal: Replace `react-markdown` with `streamdown` for markdown rendering while pr
   - Support both static and streaming markdown usage without fragmenting component APIs.
 
 Sub-tasks
-- [x] Align Streamdown package version with planned API surface (stay on `1.5.x` compatibility path or upgrade to `2.x` before migration).
+- [x] Align Streamdown package version with planned API surface (upgrade to `2.x` plugin architecture).
 - [x] Replace `ReactMarkdown` usage with `Streamdown` inside `MarkdownPreview`.
 - [ ] Port current markdown component overrides (headings, links, blockquote, table wrappers, code styling) to Streamdown-compatible overrides.
 - [x] Keep existing code-block copy behavior and language highlighting parity for non-mermaid code blocks.
-- [x] Add/verify Streamdown style source integration in global styles (`@source ../node_modules/streamdown/dist/index.js` when needed by Tailwind scanning).
+- [x] Add/verify Streamdown style source integration in global styles (`@source ../node_modules/streamdown/dist/*.js` for Tailwind scanning).
 - [x] Remove now-unused `react-markdown`/`remark-gfm`/`rehype-sanitize` logic from `MarkdownPreview`.
 
 Test Plan
@@ -80,22 +80,21 @@ Test Plan
 
 ---
 
-## Story 13.3 — Mermaid Diagrams via `beautiful-mermaid`
+## Story 13.3 — Mermaid Diagrams via `@streamdown/mermaid`
 - Components
-  - `components/markdown/beautiful-mermaid-diagram.tsx` (new)
   - `components/markdown-preview.tsx`
   - `package.json`
 - Behavior
-  - Detect fenced Mermaid code blocks and render diagrams using `beautiful-mermaid`.
-  - Apply theme-aware diagram colors compatible with current light/dark UI tokens.
-  - Provide render fallback: show original Mermaid code block + error hint when rendering fails.
+  - Render fenced Mermaid blocks through Streamdown plugin-based Mermaid support.
+  - Apply theme-aware Mermaid config compatible with current light/dark UI tokens.
+  - Keep built-in Mermaid controls (copy/download/fullscreen/pan-zoom) enabled.
 
 Sub-tasks
-- [x] Add `beautiful-mermaid` dependency and wire rendering utility (`renderMermaid`).
-- [x] Implement Mermaid diagram component with async render lifecycle and cleanup.
-- [x] Integrate Mermaid detection in markdown code renderer (`language-mermaid`).
-- [x] Map current app theme tokens to `beautiful-mermaid` render options (`bg`, `fg`, `accent`, etc.).
-- [x] Add fallback UX for invalid Mermaid syntax and loading states for large diagrams.
+- [x] Upgrade to `streamdown@2.x` and add `@streamdown/mermaid`.
+- [x] Enable plugin wiring in `MarkdownPreview` via `plugins={{ code, mermaid }}`.
+- [x] Pass theme-aware Mermaid config through Streamdown `mermaid.config`.
+- [x] Enable Mermaid controls (`copy`, `download`, `fullscreen`, `panZoom`).
+- [x] Remove custom Mermaid renderer implementation and obsolete dependency.
 - [ ] Ensure Mermaid rendering works in both normal note preview and streaming AI output.
 
 Test Plan
@@ -118,7 +117,7 @@ Sub-tasks
 - [x] Run dependency cleanup for removed markdown libs after migration (only if no remaining usage).
 - [ ] Execute full markdown regression checklist on representative notes (content-heavy, code-heavy, table-heavy, diagram-heavy).
 - [ ] Confirm no performance regressions during rapid AI streaming updates.
-- [x] Update story docs and architecture notes to reflect Streamdown + beautiful-mermaid design decisions.
+- [x] Update story docs and architecture notes to reflect Streamdown + Mermaid plugin design decisions.
 
 Test Plan
 - `pnpm lint`
@@ -130,10 +129,10 @@ Test Plan
 ## Definition of Done
 - Streamdown fully replaces `react-markdown` in active markdown rendering paths.
 - Markdown images from approved CDN hosts render safely and consistently.
-- Mermaid fenced blocks render through `beautiful-mermaid` with clear fallback behavior.
+- Mermaid fenced blocks render through Streamdown Mermaid plugin with clear fallback behavior.
 - Existing markdown UX quality is preserved or improved across workspace, AI panel, and public reader.
 - Docs updated with configuration and usage guidance.
 
 ## References
 - Streamdown docs: https://streamdown.ai/docs
-- Beautiful Mermaid: https://github.com/lukilabs/beautiful-mermaid
+- Streamdown Mermaid docs: https://streamdown.ai/docs/mermaid

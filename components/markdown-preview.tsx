@@ -1,11 +1,12 @@
 "use client";
 
-import type { ComponentProps, ImgHTMLAttributes } from "react";
-import { useCallback } from "react";
-import { Block, defaultUrlTransform, Streamdown } from "streamdown";
+import { code } from "@streamdown/code";
+import { mermaid as mermaidPlugin } from "@streamdown/mermaid";
+import type { ImgHTMLAttributes } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Streamdown } from "streamdown";
 import type { StreamdownProps } from "streamdown";
 
-import { BeautifulMermaidDiagram } from "@/components/markdown/beautiful-mermaid-diagram";
 import { isAllowedMarkdownImageUrl } from "@/lib/markdown-image-policy";
 import { cn } from "@/lib/utils";
 
@@ -14,28 +15,104 @@ type MarkdownPreviewProps = {
   className?: string;
 };
 
-const MERMAID_FENCE_PATTERN = /^\s*```mermaid[^\n]*\n([\s\S]*?)\n?```\s*$/i;
+type ThemeMode = "light" | "dark";
+type MermaidConfig = NonNullable<NonNullable<StreamdownProps["mermaid"]>["config"]>;
 
-function extractMermaidFence(content: string): string | null {
-  const match = content.match(MERMAID_FENCE_PATTERN);
-  if (!match) {
-    return null;
+const STREAMDOWN_PLUGINS: NonNullable<StreamdownProps["plugins"]> = {
+  code,
+  mermaid: mermaidPlugin,
+};
+
+function getThemeMode(): ThemeMode {
+  if (typeof document === "undefined") {
+    return "light";
   }
 
-  const diagram = match[1]?.trim();
-  return diagram ? diagram : null;
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
-type StreamdownBlockProps = ComponentProps<typeof Block>;
+function cssVar(style: CSSStyleDeclaration, name: string, fallback: string): string {
+  const value = style.getPropertyValue(name).trim();
+  return value || fallback;
+}
 
-function MermaidAwareBlock(props: StreamdownBlockProps) {
-  const diagram = extractMermaidFence(props.content);
-
-  if (!diagram) {
-    return <Block {...props} />;
+function toHexColor(input: string, fallback: string): string {
+  if (typeof document === "undefined") {
+    return fallback;
   }
 
-  return <BeautifulMermaidDiagram chart={diagram} />;
+  const probe = document.createElement("span");
+  probe.style.color = input;
+  probe.style.position = "absolute";
+  probe.style.opacity = "0";
+  probe.style.pointerEvents = "none";
+  probe.style.inset = "-9999px";
+  document.body.appendChild(probe);
+  const resolved = getComputedStyle(probe).color;
+  probe.remove();
+
+  const match = resolved.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if (!match) {
+    return fallback;
+  }
+
+  const [r, g, b] = [match[1], match[2], match[3]].map((value) =>
+    Number.parseInt(value, 10).toString(16).padStart(2, "0"),
+  );
+  return `#${r}${g}${b}`;
+}
+
+function buildMermaidConfig(mode: ThemeMode): MermaidConfig {
+  if (typeof document === "undefined") {
+    return {
+      startOnLoad: false,
+      securityLevel: "strict",
+      suppressErrorRendering: true,
+      theme: mode === "dark" ? "dark" : "default",
+    };
+  }
+
+  const style = getComputedStyle(document.documentElement);
+  const background = toHexColor(cssVar(style, "--background", mode === "dark" ? "#171717" : "#ffffff"), mode === "dark" ? "#171717" : "#ffffff");
+  const foreground = toHexColor(cssVar(style, "--foreground", mode === "dark" ? "#e5e7eb" : "#18181b"), mode === "dark" ? "#e5e7eb" : "#18181b");
+  const border = toHexColor(cssVar(style, "--border", mode === "dark" ? "#3f3f46" : "#d4d4d8"), mode === "dark" ? "#3f3f46" : "#d4d4d8");
+  const muted = toHexColor(cssVar(style, "--muted", mode === "dark" ? "#27272a" : "#f4f4f5"), mode === "dark" ? "#27272a" : "#f4f4f5");
+  const accent = toHexColor(cssVar(style, "--primary", mode === "dark" ? "#6ee7b7" : "#0f766e"), mode === "dark" ? "#6ee7b7" : "#0f766e");
+
+  return {
+    startOnLoad: false,
+    securityLevel: "strict",
+    suppressErrorRendering: true,
+    theme: "base",
+    fontFamily: "var(--font-family-sans, var(--font-family-sans-fallback))",
+    themeVariables: {
+      darkMode: mode === "dark",
+      background,
+      primaryColor: muted,
+      secondaryColor: muted,
+      tertiaryColor: background,
+      primaryBorderColor: border,
+      secondaryBorderColor: border,
+      tertiaryBorderColor: border,
+      primaryTextColor: foreground,
+      secondaryTextColor: foreground,
+      tertiaryTextColor: foreground,
+      textColor: foreground,
+      lineColor: border,
+      mainBkg: muted,
+      nodeBorder: border,
+      clusterBkg: background,
+      clusterBorder: border,
+      edgeLabelBackground: background,
+      actorBkg: muted,
+      actorBorder: border,
+      actorTextColor: foreground,
+      signalColor: border,
+      signalTextColor: foreground,
+      cScale0: accent,
+      cScaleLabel0: foreground,
+    },
+  };
 }
 
 type MarkdownImageProps = ImgHTMLAttributes<HTMLImageElement> & {
@@ -43,7 +120,7 @@ type MarkdownImageProps = ImgHTMLAttributes<HTMLImageElement> & {
 };
 
 function MarkdownImage({ className, alt, src, ...props }: MarkdownImageProps) {
-  if (!src) {
+  if (typeof src !== "string" || !src || !isAllowedMarkdownImageUrl(src)) {
     return null;
   }
 
@@ -60,22 +137,28 @@ function MarkdownImage({ className, alt, src, ...props }: MarkdownImageProps) {
 }
 
 export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
-  const secureUrlTransform: NonNullable<StreamdownProps["urlTransform"]> = useCallback((url, key, node) => {
-    const safeUrl = defaultUrlTransform(url);
-    if (!safeUrl) {
-      return "";
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => getThemeMode());
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
     }
 
-    const nodeTag = typeof node === "object" && node && "tagName" in node
-      ? String((node as { tagName?: unknown }).tagName ?? "")
-      : "";
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      setThemeMode(getThemeMode());
+    });
+    observer.observe(root, { attributeFilter: ["class"] });
 
-    if (key === "src" && nodeTag === "img" && !isAllowedMarkdownImageUrl(safeUrl)) {
-      return "";
-    }
-
-    return safeUrl;
+    return () => {
+      observer.disconnect();
+    };
   }, []);
+
+  const mermaidOptions = useMemo<NonNullable<StreamdownProps["mermaid"]>>(
+    () => ({ config: buildMermaidConfig(themeMode) }),
+    [themeMode],
+  );
 
   const trimmed = content.trim();
 
@@ -90,12 +173,12 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   return (
     <div className={cn("markdown-preview px-4 md:px-0 markdown-content text-sm md:text-base leading-7 w-full max-w-full", className)}>
       <Streamdown
-        BlockComponent={MermaidAwareBlock}
         className="space-y-4"
         components={{ img: MarkdownImage }}
-        controls={{ code: true, mermaid: false, table: true }}
+        controls={{ code: true, mermaid: { copy: true, download: true, fullscreen: true, panZoom: true }, table: true }}
+        mermaid={mermaidOptions}
         parseIncompleteMarkdown
-        urlTransform={secureUrlTransform}
+        plugins={STREAMDOWN_PLUGINS}
       >
         {content}
       </Streamdown>

@@ -105,12 +105,13 @@ pnpm tree:refresh -- --push-redis
 
 ## Markdown Rendering
 - Markdown previews now render through `streamdown` (streaming-friendly markdown renderer).
-- Mermaid fenced blocks (`\`\`\`mermaid`) are rendered with `beautiful-mermaid`.
+- Mermaid fenced blocks (`\`\`\`mermaid`) are rendered with `@streamdown/mermaid`.
 - Markdown images are restricted to:
   - relative URLs (same-origin assets), and
   - HTTPS hosts listed in `NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS`.
 - If `NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS` is omitted, the default allowlist is:
   - `avatars.githubusercontent.com`
+  - `nordicapis.com` (includes `www.nordicapis.com`)
 
 ## Development Notes
 - Friendly URLs: `/files/...` render using slugified paths (lowercase, hyphenated, no `.md`). Deep links are resolved back to canonical keys and folders fall back gracefully when empty or missing.

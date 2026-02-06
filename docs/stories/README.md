@@ -16,4 +16,4 @@ Use this index to quickly find implementation stories.
 | 10 | Shared Manifest & Snappy Tree Mutations | `docs/stories/story-10.md` |
 | 11 | Public Sharing Links | `docs/stories/story-11.md` |
 | 12 | Next.js 16 Upgrade | `docs/stories/story-12.md` |
-| 13 | Streamdown Markdown Rendering + CDN Images + Beautiful Mermaid | `docs/stories/story-13.md` |
+| 13 | Streamdown Markdown Rendering + CDN Images + Streamdown Mermaid Plugin | `docs/stories/story-13.md` |
