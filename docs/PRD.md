@@ -232,6 +232,7 @@ M1: Storage & Tree (Backend + UI)
 M2: Editor/Preview
 - React-markdown preview with GFM and sanitize.
 - CodeMirror editor, edit/preview toggle, save (manual + autosave), status bar, dirty guard.
+- Planned follow-up migration to Streamdown + Mermaid rendering: `docs/stories/story-13.md`.
 
 M3: AI Actions + Chat
 - `/api/ai/action` and `/api/ai/chat` using Vercel AI SDK + Elements.
@@ -265,4 +266,3 @@ Action prompts
 - Improve Writing: “Rewrite the following markdown for clarity and style. Preserve structure and code blocks. Content:\n…”.
 - Summarize: “Provide a concise summary (bulleted) of this markdown. Content:\n…”.
 - Expand: “Expand this section into a more detailed explanation. If nothing is selected, expand the whole document. Content/Selection:\n…”.
-

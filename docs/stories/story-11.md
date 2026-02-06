@@ -32,11 +32,11 @@ Goal: Let the private vault selectively expose individual markdown files through
 - Emit toast notifications on optimistic failures and surface a share URL copier once a file is public.
 
 Sub-tasks
-- [ ] Implement Redis metadata helpers with runtime validation.
-- [ ] Expose authenticated metadata API (`GET`/`PUT`) returning `{ public: boolean }`.
-- [ ] Hydrate editor store with sharing state and expose actions for toggling.
-- [ ] Wire metadata deletion into delete flows and rename handling into move flows.
-- [ ] Add UI primitives (toggle + tooltip + copy button) in the workspace header.
+- [x] Implement Redis metadata helpers with runtime validation.
+- [x] Expose authenticated metadata API (`GET`/`PUT`) returning `{ public: boolean }`.
+- [x] Hydrate sharing state store with file sharing state and expose actions for toggling.
+- [x] Wire metadata deletion into delete flows and rename handling into move flows.
+- [ ] Promote sharing UI primitives (toggle + tooltip + copy button) into primary workspace header controls.
 
 Test Plan
 - Toggle sharing on/off for a file and confirm Redis reflects the flag; reload the workspace and ensure UI state persists.
@@ -53,10 +53,10 @@ Test Plan
 - Ensure SSG/ISR stays disabled (use dynamic rendering) and public responses respect `etag`/`last-modified` semantics.
 
 Sub-tasks
-- [ ] Implement anonymous public file handler guarded by metadata lookup.
-- [ ] Create minimalist layout for `/p/...` that renders markdown and basic metadata (title, last updated).
-- [ ] Add copy/share helpers in the private UI that point to the new route.
-- [ ] Cover edge cases: private file access → 404, deleted file → 404 with friendly message.
+- [x] Implement anonymous public file handler guarded by metadata lookup.
+- [x] Create minimalist layout for `/p/...` that renders markdown and basic metadata (title, last updated).
+- [x] Add copy/share helpers in the private UI that point to the new route.
+- [x] Cover edge cases: private file access → 404, deleted file → 404 with friendly message.
 
 Test Plan
 - Visit a newly shared link in an incognito window and confirm the markdown renders without navigation UI.

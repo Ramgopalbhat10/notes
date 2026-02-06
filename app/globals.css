@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@source "../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -242,7 +243,8 @@ body {
   }
 
   .markdown-content [data-streamdown="table-wrapper"]>div:last-child {
-    @apply overflow-x-auto;
+    @apply overflow-x-auto rounded-[var(--radius)] border border-border/60;
+    background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
   }
 
   .markdown-content table {
@@ -265,6 +267,43 @@ body {
 
   .markdown-content table tr:last-child td {
     border-bottom: none !important;
+  }
+
+  .markdown-content [data-streamdown="image-wrapper"] {
+    @apply my-4;
+  }
+
+  .markdown-content [data-streamdown="image"] {
+    @apply h-auto max-w-full rounded-lg border border-border/40;
+  }
+
+  .markdown-content [data-streamdown="mermaid-block"] {
+    @apply my-4 w-full overflow-hidden rounded-[var(--radius)] border border-border/60 p-3;
+    background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
+  }
+
+  .markdown-content [data-streamdown="mermaid"] {
+    @apply w-full;
+  }
+
+  .markdown-content [data-streamdown="code-block"] {
+    @apply my-4 overflow-hidden rounded-[var(--radius)] border border-border/60;
+    background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
+    border-top: 0 !important;
+  }
+
+  .markdown-content [data-streamdown="code-block-header"] {
+    @apply border-none px-3 py-2 text-[11px] text-muted-foreground;
+    background: transparent !important;
+  }
+
+  .markdown-content [data-streamdown="code-block-header"] > span {
+    @apply uppercase tracking-wide;
+  }
+
+  .markdown-content [data-streamdown="code-block-body"] {
+    padding: 0.625rem 0.875rem !important;
+    background: transparent !important;
   }
 
   .markdown-content {

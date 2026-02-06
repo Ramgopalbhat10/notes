@@ -49,7 +49,7 @@ Sub-tasks
 - [x] Support pagination: accept `continuationToken`, return `nextContinuationToken`.
 - [x] Filter non-markdown files; normalize keys to relative to vault prefix.
 - [x] Return 400 on invalid `prefix` (disallow `..`, backslashes, leading `//`).
-- [ ] Basic unit test of mapper (optional) or local handler test plan.
+- [x] Basic unit test of mapper (optional) or local handler test plan.
 
 Test Plan
 - Call with empty `prefix` → returns top‑level folders/files.
