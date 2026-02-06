@@ -31,6 +31,10 @@ TURSO_AUTH_TOKEN=
 # Upstash Redis (optional but recommended for shared manifest cache)
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+
+# Optional: allowlist of CDN hosts for markdown images
+# Comma-separated hostnames, e.g. "cdn.example.com,images.example.org"
+NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS=
 ```
 
 ## Install & Run
@@ -98,6 +102,15 @@ pnpm tree:refresh -- --push-redis
 ## Markdown File Fetching & Caching
 - `GET /api/fs/file?key=…` streams markdown content from S3 and now honours `If-None-Match` / `If-Modified-Since`, returning 304 when unchanged.
 - The editor store keeps a small in-memory cache per document (etag + timestamp) so repeat views reuse the content without flashing.
+
+## Markdown Rendering
+- Markdown previews now render through `streamdown` (streaming-friendly markdown renderer).
+- Mermaid fenced blocks (`\`\`\`mermaid`) are rendered with `beautiful-mermaid`.
+- Markdown images are restricted to:
+  - relative URLs (same-origin assets), and
+  - HTTPS hosts listed in `NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS`.
+- If `NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS` is omitted, the default allowlist is:
+  - `avatars.githubusercontent.com`
 
 ## Development Notes
 - Friendly URLs: `/files/...` render using slugified paths (lowercase, hyphenated, no `.md`). Deep links are resolved back to canonical keys and folders fall back gracefully when empty or missing.

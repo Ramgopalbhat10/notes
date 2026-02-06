@@ -41,12 +41,12 @@ Goal: Replace `react-markdown` with `streamdown` for markdown rendering while pr
   - Support both static and streaming markdown usage without fragmenting component APIs.
 
 Sub-tasks
-- [ ] Align Streamdown package version with planned API surface (stay on `1.5.x` compatibility path or upgrade to `2.x` before migration).
-- [ ] Replace `ReactMarkdown` usage with `Streamdown` inside `MarkdownPreview`.
+- [x] Align Streamdown package version with planned API surface (stay on `1.5.x` compatibility path or upgrade to `2.x` before migration).
+- [x] Replace `ReactMarkdown` usage with `Streamdown` inside `MarkdownPreview`.
 - [ ] Port current markdown component overrides (headings, links, blockquote, table wrappers, code styling) to Streamdown-compatible overrides.
-- [ ] Keep existing code-block copy behavior and language highlighting parity for non-mermaid code blocks.
-- [ ] Add/verify Streamdown style source integration in global styles (`@source ../node_modules/streamdown/dist/index.js` when needed by Tailwind scanning).
-- [ ] Remove now-unused `react-markdown`/`remark-gfm`/`rehype-sanitize` logic from `MarkdownPreview`.
+- [x] Keep existing code-block copy behavior and language highlighting parity for non-mermaid code blocks.
+- [x] Add/verify Streamdown style source integration in global styles (`@source ../node_modules/streamdown/dist/index.js` when needed by Tailwind scanning).
+- [x] Remove now-unused `react-markdown`/`remark-gfm`/`rehype-sanitize` logic from `MarkdownPreview`.
 
 Test Plan
 - Open a representative markdown file with headings/lists/tables/code and compare before/after visually.
@@ -67,11 +67,11 @@ Test Plan
   - Keep rendering resilient when images fail to load (fallback alt text + no UI breakage).
 
 Sub-tasks
-- [ ] Introduce centralized URL policy helper for markdown asset URLs (protocol + hostname allowlist checks).
-- [ ] Apply policy via Streamdown URL transform and/or custom image renderer path.
-- [ ] Add project-level config for allowed markdown image hosts (env-backed list + sane defaults).
-- [ ] Add responsive image styles for markdown context (`max-width: 100%`, rounded edges, spacing, dark-mode compatibility).
-- [ ] Document image host configuration and examples in `README.md`.
+- [x] Introduce centralized URL policy helper for markdown asset URLs (protocol + hostname allowlist checks).
+- [x] Apply policy via Streamdown URL transform and/or custom image renderer path.
+- [x] Add project-level config for allowed markdown image hosts (env-backed list + sane defaults).
+- [x] Add responsive image styles for markdown context (`max-width: 100%`, rounded edges, spacing, dark-mode compatibility).
+- [x] Document image host configuration and examples in `README.md`.
 
 Test Plan
 - Render allowed CDN images (PNG/JPG/SVG/WebP) and verify they display across all markdown surfaces.
@@ -91,11 +91,11 @@ Test Plan
   - Provide render fallback: show original Mermaid code block + error hint when rendering fails.
 
 Sub-tasks
-- [ ] Add `beautiful-mermaid` dependency and wire rendering utility (`renderMermaid`).
-- [ ] Implement Mermaid diagram component with async render lifecycle and cleanup.
-- [ ] Integrate Mermaid detection in markdown code renderer (`language-mermaid`).
-- [ ] Map current app theme tokens to `beautiful-mermaid` render options (`bg`, `fg`, `accent`, etc.).
-- [ ] Add fallback UX for invalid Mermaid syntax and loading states for large diagrams.
+- [x] Add `beautiful-mermaid` dependency and wire rendering utility (`renderMermaid`).
+- [x] Implement Mermaid diagram component with async render lifecycle and cleanup.
+- [x] Integrate Mermaid detection in markdown code renderer (`language-mermaid`).
+- [x] Map current app theme tokens to `beautiful-mermaid` render options (`bg`, `fg`, `accent`, etc.).
+- [x] Add fallback UX for invalid Mermaid syntax and loading states for large diagrams.
 - [ ] Ensure Mermaid rendering works in both normal note preview and streaming AI output.
 
 Test Plan
@@ -115,10 +115,10 @@ Test Plan
   - Remove obsolete dependencies only after verifying no remaining imports.
 
 Sub-tasks
-- [ ] Run dependency cleanup for removed markdown libs after migration (only if no remaining usage).
+- [x] Run dependency cleanup for removed markdown libs after migration (only if no remaining usage).
 - [ ] Execute full markdown regression checklist on representative notes (content-heavy, code-heavy, table-heavy, diagram-heavy).
 - [ ] Confirm no performance regressions during rapid AI streaming updates.
-- [ ] Update story docs and architecture notes to reflect Streamdown + beautiful-mermaid design decisions.
+- [x] Update story docs and architecture notes to reflect Streamdown + beautiful-mermaid design decisions.
 
 Test Plan
 - `pnpm lint`
