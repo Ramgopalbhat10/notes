@@ -46,7 +46,7 @@ Test Plan
 Sub‑tasks
 - [x] Install deps: `@uiw/react-codemirror`, `@codemirror/lang-markdown`.
 - [x] Implement controlled editor with `value`, `onChange`.
-- [ ] Add keymap for Ctrl/Cmd+S (prevent default, call save).
+- [x] Add keymap for Ctrl/Cmd+S (prevent default, call save).
 - [ ] Debounced autosave with cancellation on rapid edits.
 
 Test Plan

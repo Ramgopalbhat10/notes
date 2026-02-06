@@ -49,7 +49,7 @@ Test Plan
   - Ensure every consumer awaits `params`/`searchParams`, add missing `default.tsx` for parallel routes, update metadata/image/sitemap handlers to async id patterns.
 
 Sub‑tasks
-- [ ] Run `npx next typegen` (optional) and update types.
+- [x] Run `npx next typegen` (optional) and update types.
 - [x] Fix `generateMetadata`, `generateImageMetadata`, `sitemap`, etc., to await promises.
 - [x] Audit `app/@*` slots for required `default.tsx` files (none needed; no `@` directories in current tree).
 
@@ -92,9 +92,9 @@ Test Plan
   - Migrate `images.domains`→`remotePatterns`, adjust TTL/quality defaults, ensure `eslint.config.mjs` invoked directly.
 
 Sub‑tasks
-- [ ] Configure `images.remotePatterns`, `minimumCacheTTL`, `imageSizes`, `qualities` as needed.
-- [ ] Remove deprecated config fields (`images.domains`, `experimental.dynamicIO`, `eslint`).
-- [ ] Update README/docs to explain new scripts + Node requirement.
+- [x] Configure `images.remotePatterns`, `minimumCacheTTL`, `imageSizes`, `qualities` as needed.
+- [x] Remove deprecated config fields (`images.domains`, `experimental.dynamicIO`, `eslint`).
+- [x] Update README/docs to explain new scripts + Node requirement.
 
 Test Plan
 - `pnpm lint`

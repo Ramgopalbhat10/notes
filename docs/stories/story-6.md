@@ -43,7 +43,7 @@ Test Plan
 Sub‑tasks
 - [x] Implement right sidebar toggle shortcut.
 - [x] Add tree scoped handlers; ensure no conflicts with editor keymaps.
-- [ ] Document shortcuts in a quick help dialog (optional).
+- [x] Document shortcuts in a quick help dialog (optional).
 
 Test Plan
 - Shortcuts work and don't interfere with browser defaults unexpectedly.
@@ -68,4 +68,3 @@ Test Plan
 ## Definition of Done
 - Breadcrumbs, shortcuts, and states are implemented and accessible.
 - Basic keyboard and screen-reader flows are validated.
-
