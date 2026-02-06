@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { groq } from "@ai-sdk/groq";
 import {
   convertToModelMessages,
   streamText,
@@ -9,6 +8,7 @@ import {
   type UIMessage,
 } from "ai";
 
+import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
 import { s3BodyToString } from "@/lib/s3-body";
 import { normalizeFileKey } from "@/lib/fs-validation";
@@ -44,8 +44,6 @@ type FileContext = {
 
 export async function POST(request: NextRequest) {
   try {
-    ensureEnv();
-
     const { messages: rawMessages, file: rawFile, model: requestedModel } = await parseRequest(request);
 
     if (rawMessages.length === 0) {
@@ -78,7 +76,7 @@ export async function POST(request: NextRequest) {
       : convertedMessages;
 
     const result = await streamText({
-      model: groq(modelName),
+      model: modelName,
       system: systemPrompt,
       messages: orderedMessages,
       temperature: 0.4,
@@ -117,18 +115,8 @@ function clampMessages(messages: UIMessage[], max: number): UIMessage[] {
 }
 
 function resolveModel(requested: string | null): string {
-  const fallback = process.env.AI_CHAT_MODEL?.trim() || process.env.AI_MODEL?.trim() || "llama3-70b-8192";
-  if (!requested) {
-    return fallback;
-  }
-  const cleaned = requested.trim();
-  if (!cleaned) {
-    return fallback;
-  }
-  if (!/^[-a-zA-Z0-9_.:+\/]+$/.test(cleaned)) {
-    return fallback;
-  }
-  return cleaned;
+  const fallback = parseModelId(process.env.AI_CHAT_MODEL) || parseModelId(process.env.AI_MODEL) || DEFAULT_CHAT_MODEL;
+  return parseModelId(requested) || fallback;
 }
 
 async function resolveFileContext(file: ChatRequestBody["file"]): Promise<FileContext> {
@@ -291,12 +279,6 @@ function clampText(text: string, maxChars: number): { text: string; truncated: b
     return { text, truncated: false };
   }
   return { text: `${text.slice(0, maxChars)}\n…`, truncated: true };
-}
-
-function ensureEnv() {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY is not configured");
-  }
 }
 
 function normalizeError(error: unknown): string {

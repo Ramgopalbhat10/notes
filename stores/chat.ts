@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { UIMessage } from "ai";
 
+import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+
 type ChatState = {
   messages: UIMessage[];
   setMessages: (messages: UIMessage[] | ((prev: UIMessage[]) => UIMessage[])) => void;
@@ -16,8 +18,6 @@ type ChatState = {
   setScrollPosition: (position: number) => void;
 };
 
-const DEFAULT_MODEL = "openai/gpt-oss-120b";
-
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   setMessages: (messages) =>
@@ -31,7 +31,7 @@ export const useChatStore = create<ChatState>((set) => ({
   clearMessages: () => set({ messages: [], draft: "" }),
   draft: "",
   setDraft: (draft) => set({ draft }),
-  selectedModel: DEFAULT_MODEL,
+  selectedModel: DEFAULT_CHAT_MODEL,
   setSelectedModel: (selectedModel) => set({ selectedModel }),
   contextFile: null,
   setContextFile: (contextFile) => set({ contextFile }),

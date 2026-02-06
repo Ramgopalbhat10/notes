@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { groq } from "@ai-sdk/groq";
 import { streamText } from "ai";
+
+import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 
 type ActionType = "improve" | "summarize" | "expand";
 
@@ -12,8 +13,6 @@ const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 export async function POST(request: NextRequest) {
   try {
-    ensureEnv();
-
     const ip = getClientIdentifier(request);
     if (!consumeRateLimit(ip)) {
       return json({ error: "Too many requests. Please wait and try again." }, { status: 429 });
@@ -41,9 +40,9 @@ export async function POST(request: NextRequest) {
 
     const { text: truncatedText, truncated } = clampText(sourceText, MAX_INPUT_CHARS);
 
-    const modelName = process.env.AI_MODEL?.trim() || "llama3-70b-8192";
+    const modelName = parseModelId(process.env.AI_MODEL) || DEFAULT_CHAT_MODEL;
     const result = await streamText({
-      model: groq(modelName),
+      model: modelName,
       system: buildSystemPrompt(action),
       prompt: buildUserPrompt({
         action,
@@ -63,12 +62,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("/api/ai/action failed", error);
     return json({ error: "Failed to process AI action" }, { status: 500 });
-  }
-}
-
-function ensureEnv() {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY is not configured");
   }
 }
 
