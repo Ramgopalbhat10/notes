@@ -3,8 +3,9 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
-import { ArrowDownLeft, Bot, Copy, File, Loader2, Paperclip, RefreshCcw, SendHorizontal, Square, X } from "lucide-react";
+import { ArrowDownLeft, Copy, File, Loader2, Paperclip, RefreshCcw, SendHorizontal, Square, X } from "lucide-react";
 
+import { DEFAULT_CHAT_MODEL, FALLBACK_LANGUAGE_MODELS, parseModelId, type GatewayLanguageModelOption } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
 import {
   Conversation,
@@ -30,30 +31,11 @@ import { useChatStore } from "@/stores/chat";
 
 const MAX_EXCERPT_CHARS = 6_000;
 
-const MODEL_GROUPS = [
-  {
-    provider: "OpenAI",
-    models: [
-      { id: "openai/gpt-oss-120b", name: "GPT OSS 120B" },
-      { id: "openai/gpt-4o", name: "GPT-4o" },
-      { id: "openai/gpt-4o-mini", name: "GPT-4o Mini" },
-    ],
-  },
-  {
-    provider: "Anthropic",
-    models: [
-      { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet" },
-      { id: "anthropic/claude-3.5-haiku", name: "Claude 3.5 Haiku" },
-    ],
-  },
-  {
-    provider: "Google",
-    models: [
-      { id: "google/gemini-2.0-flash", name: "Gemini 2.0 Flash" },
-      { id: "google/gemini-1.5-pro", name: "Gemini 1.5 Pro" },
-    ],
-  },
-] as const;
+type GatewayModelsResponse = {
+  defaultModel?: string;
+  source?: "gateway" | "fallback";
+  models?: GatewayLanguageModelOption[];
+};
 
 type FilePayload = {
   key: string;
@@ -72,7 +54,7 @@ type SidebarChatProps = {
 // Create stable transport and chat instances outside the component
 // This ensures they persist across component remounts
 const latestContextRef: { current: { file: FilePayload | null; model: string } } = {
-  current: { file: null, model: "openai/gpt-oss-120b" },
+  current: { file: null, model: DEFAULT_CHAT_MODEL },
 };
 
 const globalTransport = new TextStreamChatTransport<UIMessage>({
@@ -88,10 +70,19 @@ const globalTransport = new TextStreamChatTransport<UIMessage>({
   }),
 });
 
-const globalChat = new Chat<UIMessage>({
-  id: "vault-sidebar-chat",
-  transport: globalTransport,
-});
+function createChatSession(): Chat<UIMessage> {
+  return new Chat<UIMessage>({
+    id: `vault-sidebar-chat-${createChatSessionId()}`,
+    transport: globalTransport,
+  });
+}
+
+function createChatSessionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const fileKey = useEditorStore((state) => state.fileKey);
@@ -107,6 +98,10 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const setSelectedModel = useChatStore((state) => state.setSelectedModel);
   const draft = useChatStore((state) => state.draft);
   const setDraft = useChatStore((state) => state.setDraft);
+  const [availableModels, setAvailableModels] = useState<GatewayLanguageModelOption[]>(FALLBACK_LANGUAGE_MODELS);
+  const [gatewayDefaultModel, setGatewayDefaultModel] = useState(DEFAULT_CHAT_MODEL);
+  const [modelsLoading, setModelsLoading] = useState(true);
+  const [chatSession, setChatSession] = useState<Chat<UIMessage>>(() => createChatSession());
 
   // Ref to conversation for scroll control
   const conversationRef = useRef<ConversationHandle>(null);
@@ -121,6 +116,69 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
 
   const excerpt = useMemo(() => computeExcerpt(content), [content]);
   const digest = useMemo(() => computeDigest(content), [content]);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    let mounted = true;
+
+    const loadModels = async () => {
+      try {
+        const response = await fetch("/api/ai/models", {
+          cache: "no-store",
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load models (${response.status})`);
+        }
+
+        const payload = (await response.json()) as GatewayModelsResponse;
+        const models = normalizeAvailableModels(payload.models);
+        const normalizedDefault = parseModelId(payload.defaultModel) || DEFAULT_CHAT_MODEL;
+
+        if (!mounted) {
+          return;
+        }
+
+        setAvailableModels(models.length > 0 ? models : FALLBACK_LANGUAGE_MODELS);
+        setGatewayDefaultModel(normalizedDefault);
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.error("Failed to fetch AI Gateway models", error);
+        setAvailableModels(FALLBACK_LANGUAGE_MODELS);
+        setGatewayDefaultModel(DEFAULT_CHAT_MODEL);
+      } finally {
+        if (mounted) {
+          setModelsLoading(false);
+        }
+      }
+    };
+
+    void loadModels();
+
+    return () => {
+      mounted = false;
+      abortController.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (availableModels.some((model) => model.id === selectedModel)) {
+      return;
+    }
+
+    const fallback = resolveDefaultModel(availableModels, gatewayDefaultModel);
+    if (fallback !== selectedModel) {
+      setSelectedModel(fallback);
+    }
+  }, [availableModels, gatewayDefaultModel, selectedModel, setSelectedModel]);
 
   // Update context file when a new file is opened (but keep chat session)
   useEffect(() => {
@@ -140,6 +198,8 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     };
   }, [contextFile, digest, excerpt]);
 
+  const modelGroups = useMemo(() => groupModelsByProvider(availableModels), [availableModels]);
+
   // Keep the global context ref updated
   useEffect(() => {
     latestContextRef.current = {
@@ -148,21 +208,26 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     };
   }, [filePayload, selectedModel]);
 
-  // Use the global chat instance
+  // Use a dedicated chat session instance that can be rotated for "New Chat".
   const { messages, sendMessage, stop, regenerate, status, error, clearError, setMessages } = useChat({
-    chat: globalChat,
+    chat: chatSession,
   });
 
   const [copyingId, setCopyingId] = useState<string | null>(null);
 
   // Clear chat function exposed to parent
   const clearChat = useCallback(() => {
-    void stop();
+    void stop().catch((stopError) => {
+      console.error("Failed to stop chat stream", stopError);
+    });
     clearError();
     setDraft("");
     setCopyingId(null);
     setMessages([]);
+    setChatSession(createChatSession());
     shouldAutoScrollRef.current = false;
+    lastMessageCountRef.current = 0;
+    conversationRef.current?.setScrollPosition(0);
   }, [clearError, setDraft, setMessages, stop]);
 
   // Expose clearChat via callback
@@ -359,7 +424,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
 
   const handleRemoveContext = useCallback(() => {
     setContextFile(null);
-  }, []);
+  }, [setContextFile]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -512,11 +577,17 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent align="start">
-                  {MODEL_GROUPS.map((group, groupIndex) => (
+                  {modelsLoading ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading models...</div>
+                  ) : null}
+                  {!modelsLoading && modelGroups.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No models available</div>
+                  ) : null}
+                  {modelGroups.map((group, groupIndex) => (
                     <div key={group.provider}>
                       {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
                       <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                        {group.provider}
+                        {toProviderLabel(group.provider)}
                       </div>
                       {group.models.map((model) => (
                         <SelectItem key={model.id} value={model.id} className="text-xs">
@@ -654,6 +725,75 @@ const ChatMessageRow = forwardRef<HTMLDivElement, ChatMessageRowProps>(
   }
 );
 
+function normalizeAvailableModels(models: GatewayModelsResponse["models"]): GatewayLanguageModelOption[] {
+  if (!Array.isArray(models)) {
+    return [];
+  }
+
+  const deduped = new Map<string, GatewayLanguageModelOption>();
+  for (const model of models) {
+    if (!model || model.type !== "language" || !parseModelId(model.id)) {
+      continue;
+    }
+    if (!deduped.has(model.id)) {
+      deduped.set(model.id, model);
+    }
+  }
+
+  return [...deduped.values()].sort((left, right) => {
+    const byProvider = left.provider.localeCompare(right.provider, undefined, { sensitivity: "base" });
+    if (byProvider !== 0) {
+      return byProvider;
+    }
+    return left.name.localeCompare(right.name, undefined, { sensitivity: "base", numeric: true });
+  });
+}
+
+function resolveDefaultModel(models: GatewayLanguageModelOption[], preferredModel: string): string {
+  if (models.some((model) => model.id === preferredModel)) {
+    return preferredModel;
+  }
+  if (models.some((model) => model.id === DEFAULT_CHAT_MODEL)) {
+    return DEFAULT_CHAT_MODEL;
+  }
+  if (models.length > 0) {
+    return models[0].id;
+  }
+  return DEFAULT_CHAT_MODEL;
+}
+
+function groupModelsByProvider(
+  models: GatewayLanguageModelOption[],
+): Array<{ provider: string; models: GatewayLanguageModelOption[] }> {
+  const grouped = new Map<string, GatewayLanguageModelOption[]>();
+
+  for (const model of models) {
+    const provider = model.provider || "unknown";
+    const group = grouped.get(provider) || [];
+    group.push(model);
+    grouped.set(provider, group);
+  }
+
+  return [...grouped.entries()].map(([provider, providerModels]) => ({
+    provider,
+    models: providerModels,
+  }));
+}
+
+function toProviderLabel(provider: string): string {
+  if (!provider) {
+    return "Unknown";
+  }
+  const normalized = provider.toLowerCase();
+  if (normalized === "openai") {
+    return "OpenAI";
+  }
+  if (normalized === "xai") {
+    return "xAI";
+  }
+  return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
+
 function computeExcerpt(value: string): string {
   if (!value) {
     return "";
@@ -691,4 +831,3 @@ function messageToPlainText(message: UIMessage): string {
     .filter(Boolean)
     .join("\n");
 }
-

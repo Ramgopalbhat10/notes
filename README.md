@@ -32,6 +32,12 @@ TURSO_AUTH_TOKEN=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 
+# AI Gateway (used by /api/ai/chat and /api/ai/action)
+AI_GATEWAY_API_KEY=
+# Optional model overrides (defaults to google/gemini-3-flash)
+AI_MODEL=
+AI_CHAT_MODEL=
+
 # Optional: allowlist of CDN hosts for markdown images
 # Comma-separated hostnames, e.g. "cdn.example.com,images.example.org"
 NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS=
