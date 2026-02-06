@@ -238,75 +238,94 @@ body {
 }
 
 @layer components {
-  .markdown-content [data-streamdown="table-wrapper"] {
+  .markdown-preview [data-streamdown="table-wrapper"] {
     @apply my-4 space-y-2;
   }
 
-  .markdown-content [data-streamdown="table-wrapper"]>div:last-child {
+  .markdown-preview [data-streamdown="table-wrapper"]>div:last-child {
     @apply overflow-x-auto rounded-[var(--radius)] border border-border/60;
     background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
   }
 
-  .markdown-content table {
+  .markdown-preview table {
     @apply w-full max-w-full border-collapse text-left text-xs md:text-sm;
+    border: 0 !important;
   }
 
-  .markdown-content table th,
-  .markdown-content table td {
+  .markdown-preview table th,
+  .markdown-preview table td {
     @apply border-b border-r border-border/60 px-2 md:px-3 py-2 align-top break-words text-[13px] md:text-sm;
   }
 
-  .markdown-content table th {
+  .markdown-preview table th {
     @apply text-muted-foreground font-medium bg-popover;
   }
 
-  .markdown-content table th:last-child,
-  .markdown-content table td:last-child {
+  .markdown-preview [data-streamdown="table-row"] {
+    @apply bg-card;
+  }
+
+  .markdown-preview table th:last-child,
+  .markdown-preview table td:last-child {
     @apply border-r-0;
   }
 
-  .markdown-content table tr:last-child td {
+  .markdown-preview table tr:last-child td {
     border-bottom: none !important;
   }
 
-  .markdown-content [data-streamdown="image-wrapper"] {
+  .markdown-preview [data-streamdown="table-row"]:last-child,
+  .markdown-preview table tr:last-child {
+    border-bottom: 0 !important;
+  }
+
+  .markdown-preview [data-streamdown="image-wrapper"] {
     @apply my-4;
   }
 
-  .markdown-content [data-streamdown="image"] {
+  .markdown-preview [data-streamdown="image"] {
     @apply h-auto max-w-full rounded-lg border border-border/40;
   }
 
-  .markdown-content [data-streamdown="mermaid-block"] {
+  .markdown-preview [data-streamdown="mermaid-block"] {
     @apply my-4 w-full overflow-hidden rounded-[var(--radius)] border border-border/60 p-3;
     background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
   }
 
-  .markdown-content [data-streamdown="mermaid"] {
+  .markdown-preview [data-streamdown="mermaid"] {
     @apply w-full;
   }
 
-  .markdown-content [data-streamdown="code-block"] {
+  .markdown-preview [data-streamdown="code-block"] {
     @apply my-4 overflow-hidden rounded-[var(--radius)] border border-border/60;
-    background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
     border-top: 0 !important;
   }
 
-  .markdown-content [data-streamdown="code-block-header"] {
-    @apply border-none px-3 py-2 text-[11px] text-muted-foreground;
-    background: transparent !important;
+  .markdown-preview [data-streamdown="code-block-header"] {
+    @apply border-none text-[11px] text-muted-foreground;
+    padding: 6px !important;
   }
 
-  .markdown-content [data-streamdown="code-block-header"] > span {
+  .markdown-preview [data-streamdown="code-block-header"] > span {
     @apply uppercase tracking-wide;
   }
 
-  .markdown-content [data-streamdown="code-block-body"] {
+  .markdown-preview [data-streamdown="code-block-body"] {
     padding: 0.625rem 0.875rem !important;
-    background: transparent !important;
   }
 
-  .markdown-content {
+  /* Streamdown line numbers are injected via ::before on each code line span. */
+  .markdown-preview [data-streamdown="code-block-body"] code > span::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  .markdown-preview [data-streamdown="code-block-body"] code > span {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .markdown-preview {
     line-height: 1.6;
   }
 }
