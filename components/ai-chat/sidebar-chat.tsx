@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
 import { ArrowDownLeft, Copy, File, Loader2, Paperclip, RefreshCcw, SendHorizontal, Square, X } from "lucide-react";
@@ -84,6 +84,27 @@ function createChatSessionId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+let sharedChatSession = createChatSession();
+const sharedChatSessionSubscribers = new Set<() => void>();
+
+function getSharedChatSession(): Chat<UIMessage> {
+  return sharedChatSession;
+}
+
+function subscribeSharedChatSession(callback: () => void): () => void {
+  sharedChatSessionSubscribers.add(callback);
+  return () => {
+    sharedChatSessionSubscribers.delete(callback);
+  };
+}
+
+function resetSharedChatSession() {
+  sharedChatSession = createChatSession();
+  for (const callback of sharedChatSessionSubscribers) {
+    callback();
+  }
+}
+
 export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const fileKey = useEditorStore((state) => state.fileKey);
   const editorStatus = useEditorStore((state) => state.status);
@@ -101,7 +122,11 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const [availableModels, setAvailableModels] = useState<GatewayLanguageModelOption[]>(FALLBACK_LANGUAGE_MODELS);
   const [gatewayDefaultModel, setGatewayDefaultModel] = useState(DEFAULT_CHAT_MODEL);
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [chatSession, setChatSession] = useState<Chat<UIMessage>>(() => createChatSession());
+  const chatSession = useSyncExternalStore(
+    subscribeSharedChatSession,
+    getSharedChatSession,
+    getSharedChatSession,
+  );
 
   // Ref to conversation for scroll control
   const conversationRef = useRef<ConversationHandle>(null);
@@ -224,7 +249,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     setDraft("");
     setCopyingId(null);
     setMessages([]);
-    setChatSession(createChatSession());
+    resetSharedChatSession();
     shouldAutoScrollRef.current = false;
     lastMessageCountRef.current = 0;
     conversationRef.current?.setScrollPosition(0);
