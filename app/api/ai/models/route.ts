@@ -22,10 +22,14 @@ export async function GET() {
   const configuredDefault = resolveConfiguredDefaultModel();
 
   try {
+    const headers: HeadersInit = { accept: "application/json" };
+    const gatewayKey = process.env.AI_GATEWAY_API_KEY;
+    if (gatewayKey) {
+      headers["authorization"] = `Bearer ${gatewayKey}`;
+    }
+
     const response = await fetch(GATEWAY_MODELS_URL, {
-      headers: {
-        accept: "application/json",
-      },
+      headers,
       next: { revalidate: MODELS_REVALIDATE_SECONDS },
     });
 

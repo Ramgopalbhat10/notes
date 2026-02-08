@@ -195,6 +195,10 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   }, []);
 
   useEffect(() => {
+    if (modelsLoading) {
+      return;
+    }
+
     if (availableModels.some((model) => model.id === selectedModel)) {
       return;
     }
@@ -203,7 +207,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     if (fallback !== selectedModel) {
       setSelectedModel(fallback);
     }
-  }, [availableModels, gatewayDefaultModel, selectedModel, setSelectedModel]);
+  }, [modelsLoading, availableModels, gatewayDefaultModel, selectedModel, setSelectedModel]);
 
   // Update context file when a new file is opened (but keep chat session)
   useEffect(() => {
