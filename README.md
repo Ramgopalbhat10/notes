@@ -41,6 +41,10 @@ AI_CHAT_MODEL=
 # Optional: allowlist of CDN hosts for markdown images
 # Comma-separated hostnames, e.g. "cdn.example.com,images.example.org"
 NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS=
+
+# Optional: enable PWA service worker registration in `pnpm dev`
+# In production builds, PWA registration is enabled automatically.
+NEXT_PUBLIC_ENABLE_PWA_IN_DEV=false
 ```
 
 ## Install & Run
@@ -118,6 +122,20 @@ pnpm tree:refresh -- --push-redis
 - If `NEXT_PUBLIC_MARKDOWN_IMAGE_HOSTS` is omitted, the default allowlist is:
   - `avatars.githubusercontent.com`
   - `nordicapis.com` (includes `www.nordicapis.com`)
+
+## PWA Support
+- The app is installable as a Progressive Web App using native Next.js file conventions.
+- Included in v1:
+  - `GET /manifest.webmanifest` via `app/manifest.ts`
+  - installable icon assets in `public/`
+  - minimal service worker at `public/sw.js` with lifecycle-only behavior
+  - service worker registration from root layout
+  - dev toggle via `NEXT_PUBLIC_ENABLE_PWA_IN_DEV=true` when validating installability locally
+- Intentionally excluded in v1:
+  - offline caching for authenticated API/data routes
+  - runtime fetch interception strategies
+  - background sync/push messaging flows
+- To extend behavior later, add cache/fetch logic in `public/sw.js`.
 
 ## Development Notes
 - Friendly URLs: `/files/...` render using slugified paths (lowercase, hyphenated, no `.md`). Deep links are resolved back to canonical keys and folders fall back gracefully when empty or missing.

@@ -3,7 +3,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
-import { ArrowDownLeft, Copy, File, Loader2, Paperclip, RefreshCcw, SendHorizontal, Square, X } from "lucide-react";
+import { ArrowDownLeft, Copy, File, Loader2, Paperclip, RefreshCcw, Search, SendHorizontal, SlidersHorizontal, Square, X } from "lucide-react";
 
 import { DEFAULT_CHAT_MODEL, FALLBACK_LANGUAGE_MODELS, parseModelId, type GatewayLanguageModelOption } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ import {
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -41,6 +42,11 @@ type FilePayload = {
   key: string;
   contentDigest: string | null;
   excerpt: string | null;
+};
+
+type ModelGroup = {
+  provider: string;
+  models: GatewayLanguageModelOption[];
 };
 
 export type SidebarChatHandle = {
@@ -122,11 +128,16 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const [availableModels, setAvailableModels] = useState<GatewayLanguageModelOption[]>(FALLBACK_LANGUAGE_MODELS);
   const [gatewayDefaultModel, setGatewayDefaultModel] = useState(DEFAULT_CHAT_MODEL);
   const [modelsLoading, setModelsLoading] = useState(true);
+  const [modelSelectOpen, setModelSelectOpen] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
+  const [providerFilter, setProviderFilter] = useState<string>("all");
+  const [showProviderFilters, setShowProviderFilters] = useState(false);
   const chatSession = useSyncExternalStore(
     subscribeSharedChatSession,
     getSharedChatSession,
     getSharedChatSession,
   );
+  const modelSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Ref to conversation for scroll control
   const conversationRef = useRef<ConversationHandle>(null);
@@ -195,6 +206,10 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   }, []);
 
   useEffect(() => {
+    if (modelsLoading) {
+      return;
+    }
+
     if (availableModels.some((model) => model.id === selectedModel)) {
       return;
     }
@@ -203,7 +218,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     if (fallback !== selectedModel) {
       setSelectedModel(fallback);
     }
-  }, [availableModels, gatewayDefaultModel, selectedModel, setSelectedModel]);
+  }, [modelsLoading, availableModels, gatewayDefaultModel, selectedModel, setSelectedModel]);
 
   // Update context file when a new file is opened (but keep chat session)
   useEffect(() => {
@@ -224,6 +239,55 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   }, [contextFile, digest, excerpt]);
 
   const modelGroups = useMemo(() => groupModelsByProvider(availableModels), [availableModels]);
+  const providerOptions = useMemo(
+    () => modelGroups.map((group) => group.provider),
+    [modelGroups],
+  );
+  const filteredModelGroups = useMemo(() => {
+    const normalizedQuery = modelSearchQuery.trim().toLowerCase();
+    const matchesQuery = (model: GatewayLanguageModelOption) => {
+      if (!normalizedQuery) {
+        return true;
+      }
+      const providerLabel = toProviderLabel(model.provider).toLowerCase();
+      return (
+        model.name.toLowerCase().includes(normalizedQuery) ||
+        model.id.toLowerCase().includes(normalizedQuery) ||
+        providerLabel.includes(normalizedQuery)
+      );
+    };
+
+    return modelGroups
+      .map((group) => ({
+        provider: group.provider,
+        models: group.models.filter((model) => {
+          const providerMatch = providerFilter === "all" || group.provider === providerFilter;
+          return providerMatch && matchesQuery(model);
+        }),
+      }))
+      .filter((group) => group.models.length > 0);
+  }, [modelGroups, modelSearchQuery, providerFilter]);
+
+  useEffect(() => {
+    if (providerFilter === "all") {
+      return;
+    }
+    if (!providerOptions.includes(providerFilter)) {
+      setProviderFilter("all");
+    }
+  }, [providerFilter, providerOptions]);
+
+  useEffect(() => {
+    if (!modelSelectOpen) {
+      setModelSearchQuery("");
+      setProviderFilter("all");
+      setShowProviderFilters(false);
+      return;
+    }
+    requestAnimationFrame(() => {
+      modelSearchInputRef.current?.focus();
+    });
+  }, [modelSelectOpen]);
 
   // Keep the global context ref updated
   useEffect(() => {
@@ -597,18 +661,102 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                 <TooltipContent side="top">Attach file (coming soon)</TooltipContent>
               </Tooltip>
 
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <Select value={selectedModel} onValueChange={setSelectedModel} open={modelSelectOpen} onOpenChange={setModelSelectOpen}>
                 <SelectTrigger className="h-7 w-auto gap-1 border border-border/40 rounded-md bg-background/80 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/60 focus:ring-0 [&>svg]:opacity-50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent align="start">
+                <SelectContent align="start" className="w-[19rem] max-h-[420px]">
+                  <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 border-b bg-popover/95 px-2 pt-2 pb-2 backdrop-blur">
+                    <div className="flex items-center gap-1.5">
+                      <div className="relative min-w-0 flex-1">
+                        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          ref={modelSearchInputRef}
+                          type="text"
+                          placeholder="Search models..."
+                          value={modelSearchQuery}
+                          onChange={(event) => setModelSearchQuery(event.target.value)}
+                          onKeyDown={(event) => event.stopPropagation()}
+                          className="h-8 border-border/60 bg-background pl-7 pr-7 text-xs"
+                        />
+                        {modelSearchQuery ? (
+                          <button
+                            type="button"
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => setModelSearchQuery("")}
+                            aria-label="Clear model search"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
+                      </div>
+                      {providerOptions.length > 1 ? (
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => setShowProviderFilters((current) => !current)}
+                          className={cn(
+                            "inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition-colors",
+                            providerFilter === "all"
+                              ? "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
+                              : "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15",
+                          )}
+                          aria-label="Toggle provider filters"
+                        >
+                          <SlidersHorizontal className="h-3.5 w-3.5" />
+                          <span className="max-w-[78px] truncate">
+                            {providerFilter === "all" ? "All" : toProviderLabel(providerFilter)}
+                          </span>
+                        </button>
+                      ) : null}
+                    </div>
+                    {providerOptions.length > 1 && showProviderFilters ? (
+                      <div className="mt-1.5 flex gap-1 overflow-x-auto pb-1">
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => setProviderFilter("all")}
+                          className={cn(
+                            "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                            providerFilter === "all"
+                              ? "border-primary/50 bg-primary/10 text-foreground"
+                              : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                          )}
+                        >
+                          All
+                        </button>
+                        {providerOptions.map((provider) => (
+                          <button
+                            key={provider}
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => setProviderFilter(provider)}
+                            className={cn(
+                              "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                              providerFilter === provider
+                                ? "border-primary/50 bg-primary/10 text-foreground"
+                                : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                            )}
+                          >
+                            {toProviderLabel(provider)}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                   {modelsLoading ? (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading models...</div>
+                  ) : null}
+                  {!modelsLoading && filteredModelGroups.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No models match your filters.
+                    </div>
                   ) : null}
                   {!modelsLoading && modelGroups.length === 0 ? (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">No models available</div>
                   ) : null}
-                  {modelGroups.map((group, groupIndex) => (
+                  {filteredModelGroups.map((group, groupIndex) => (
                     <div key={group.provider}>
                       {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
                       <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
@@ -789,7 +937,7 @@ function resolveDefaultModel(models: GatewayLanguageModelOption[], preferredMode
 
 function groupModelsByProvider(
   models: GatewayLanguageModelOption[],
-): Array<{ provider: string; models: GatewayLanguageModelOption[] }> {
+): ModelGroup[] {
   const grouped = new Map<string, GatewayLanguageModelOption[]>();
 
   for (const model of models) {

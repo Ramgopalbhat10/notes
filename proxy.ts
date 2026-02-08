@@ -15,11 +15,22 @@ export async function proxy(request: NextRequest) {
       return NextResponse.rewrite(new URL(targetPath, request.url));
     }
   }
+  const isPwaPublicAsset =
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/sw.js" ||
+    pathname === "/favicon.svg" ||
+    pathname === "/apple-touch-icon.png" ||
+    pathname === "/icon-192x192.png" ||
+    pathname === "/icon-512x512.png" ||
+    pathname === "/icon-192x192-maskable.png" ||
+    pathname === "/icon-512x512-maskable.png";
+
   const bypass =
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/public") ||
     pathname.startsWith("/_next/") ||
     pathname === "/favicon.ico" ||
+    isPwaPublicAsset ||
     pathname.startsWith("/auth/error") ||
     pathname.startsWith("/auth/sign-in") ||
     pathname === "/p" ||
