@@ -142,6 +142,8 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const sidebarChatRootRef = useRef<HTMLDivElement>(null);
   const modelSearchInputRef = useRef<HTMLInputElement>(null);
   const [modelSelectPortalContainer, setModelSelectPortalContainer] = useState<HTMLElement | null>(null);
+  const composerContainerRef = useRef<HTMLDivElement>(null);
+  const composerInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Ref to conversation for scroll control
   const conversationRef = useRef<ConversationHandle>(null);
@@ -300,6 +302,23 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   }, [isMobile, modelSelectOpen]);
 
   useEffect(() => {
+    if (!isMobile || !modelSelectOpen || typeof window === "undefined") {
+      return;
+    }
+    // Radix Select dismisses on window resize; mobile keyboard open emits resize.
+    const preventKeyboardResizeDismiss = (event: UIEvent) => {
+      if (document.activeElement !== modelSearchInputRef.current) {
+        return;
+      }
+      event.stopImmediatePropagation();
+    };
+    window.addEventListener("resize", preventKeyboardResizeDismiss, { capture: true });
+    return () => {
+      window.removeEventListener("resize", preventKeyboardResizeDismiss, { capture: true });
+    };
+  }, [isMobile, modelSelectOpen]);
+
+  useEffect(() => {
     const root = sidebarChatRootRef.current;
     if (!root) {
       setModelSelectPortalContainer(null);
@@ -310,6 +329,33 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
       sheetContent instanceof HTMLElement ? sheetContent : null,
     );
   }, [isMobile]);
+
+  const ensureComposerVisible = useCallback(() => {
+    requestAnimationFrame(() => {
+      composerContainerRef.current?.scrollIntoView({
+        block: "end",
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || typeof window === "undefined" || !window.visualViewport) {
+      return;
+    }
+    const viewport = window.visualViewport;
+    const handleViewportChange = () => {
+      if (document.activeElement !== composerInputRef.current) {
+        return;
+      }
+      ensureComposerVisible();
+    };
+    viewport.addEventListener("resize", handleViewportChange);
+    viewport.addEventListener("scroll", handleViewportChange);
+    return () => {
+      viewport.removeEventListener("resize", handleViewportChange);
+      viewport.removeEventListener("scroll", handleViewportChange);
+    };
+  }, [ensureComposerVisible, isMobile]);
 
   // Keep the global context ref updated
   useEffect(() => {
@@ -631,7 +677,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
       </div>
 
       {/* ChatGPT-style input area */}
-      <div className="shrink-0 px-3 pb-3">
+      <div ref={composerContainerRef} className="shrink-0 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="rounded-xl border border-border/60 bg-muted/40">
           {/* Top section: Context file chip */}
           {contextFile ? (
@@ -654,9 +700,15 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
           {/* Middle section: Textarea */}
           <div className="px-3 py-1.5">
             <Textarea
+              ref={composerInputRef}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={() => {
+                if (isMobile) {
+                  ensureComposerVisible();
+                }
+              }}
               placeholder="Ask anything..."
               disabled={composerDisabled}
               className="min-h-[36px] max-h-[120px] resize-none border-0 bg-transparent p-0 text-sm shadow-none ring-0 outline-none placeholder:text-muted-foreground/60 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"

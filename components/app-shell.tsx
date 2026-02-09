@@ -277,14 +277,14 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
         }}>
           <SheetContent
             side="right"
-            className="w-auto bg-transparent shadow-none border-none p-0 [&>button]:hidden"
+            className="h-[100dvh] w-auto bg-transparent shadow-none border-none p-0 [&>button]:hidden"
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "100vw" } as CSSProperties}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Chat</SheetTitle>
             </SheetHeader>
             <div className={cn(
-              "flex flex-col h-full bg-background border-l shadow-lg transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width]",
+              "flex h-[100dvh] flex-col bg-background border-l shadow-lg transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width]",
               // Mobile: always full width (100vw). Desktop: respect expanded state
               rightMobileExpanded ? "md:w-full md:max-w-full" : "md:w-1/2 md:max-w-md",
               "w-[100vw] max-w-[100vw]"
