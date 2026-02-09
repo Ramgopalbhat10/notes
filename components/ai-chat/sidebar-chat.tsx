@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useEditorStore } from "@/stores/editor";
 import { useChatStore } from "@/stores/chat";
@@ -112,6 +113,7 @@ function resetSharedChatSession() {
 }
 
 export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
+  const isMobile = useIsMobile();
   const fileKey = useEditorStore((state) => state.fileKey);
   const editorStatus = useEditorStore((state) => state.status);
   const content = useEditorStore((state) => state.content);
@@ -137,7 +139,9 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     getSharedChatSession,
     getSharedChatSession,
   );
+  const sidebarChatRootRef = useRef<HTMLDivElement>(null);
   const modelSearchInputRef = useRef<HTMLInputElement>(null);
+  const [modelSelectPortalContainer, setModelSelectPortalContainer] = useState<HTMLElement | null>(null);
 
   // Ref to conversation for scroll control
   const conversationRef = useRef<ConversationHandle>(null);
@@ -284,10 +288,28 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
       setShowProviderFilters(false);
       return;
     }
-    requestAnimationFrame(() => {
+    // Avoid force-focusing on touch devices, which can trigger keyboard-driven dismissals.
+    const usesCoarsePointer = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+    if (isMobile || usesCoarsePointer) {
+      return;
+    }
+    const frameId = requestAnimationFrame(() => {
       modelSearchInputRef.current?.focus();
     });
-  }, [modelSelectOpen]);
+    return () => cancelAnimationFrame(frameId);
+  }, [isMobile, modelSelectOpen]);
+
+  useEffect(() => {
+    const root = sidebarChatRootRef.current;
+    if (!root) {
+      setModelSelectPortalContainer(null);
+      return;
+    }
+    const sheetContent = root.closest("[data-slot='sheet-content']");
+    setModelSelectPortalContainer(
+      sheetContent instanceof HTMLElement ? sheetContent : null,
+    );
+  }, [isMobile]);
 
   // Keep the global context ref updated
   useEffect(() => {
@@ -526,7 +548,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   );
 
   return (
-    <div className="flex h-full flex-col text-[13px]">
+    <div ref={sidebarChatRootRef} className="flex h-full flex-col text-[13px]">
       {error ? (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 mx-3 mt-2 text-xs text-destructive">
           <div className="flex items-center justify-between gap-3">
@@ -665,8 +687,14 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                 <SelectTrigger className="h-7 w-auto gap-1 border border-border/40 rounded-md bg-background/80 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/60 focus:ring-0 [&>svg]:opacity-50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent align="start" className="w-[19rem] max-h-[420px]">
-                  <div className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 border-b bg-popover/95 px-2 pt-2 pb-2 backdrop-blur">
+                <SelectContent
+                  align="start"
+                  className="w-[19rem] max-h-[420px]"
+                  container={modelSelectPortalContainer ?? undefined}
+                  showScrollButtons={false}
+                  viewportClassName="p-0"
+                >
+                  <div className="sticky top-0 z-20 mb-1 border-b bg-popover px-2 py-1.5">
                     <div className="flex items-center gap-1.5">
                       <div className="relative min-w-0 flex-1">
                         <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -676,6 +704,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                           placeholder="Search models..."
                           value={modelSearchQuery}
                           onChange={(event) => setModelSearchQuery(event.target.value)}
+                          onPointerDown={(event) => event.stopPropagation()}
                           onKeyDown={(event) => event.stopPropagation()}
                           className="h-8 border-border/60 bg-background pl-7 pr-7 text-xs"
                         />
@@ -683,6 +712,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                           <button
                             type="button"
                             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            onPointerDown={(event) => event.stopPropagation()}
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => setModelSearchQuery("")}
                             aria-label="Clear model search"
@@ -694,6 +724,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                       {providerOptions.length > 1 ? (
                         <button
                           type="button"
+                          onPointerDown={(event) => event.stopPropagation()}
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => setShowProviderFilters((current) => !current)}
                           className={cn(
@@ -715,6 +746,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                       <div className="mt-1.5 flex gap-1 overflow-x-auto pb-1">
                         <button
                           type="button"
+                          onPointerDown={(event) => event.stopPropagation()}
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => setProviderFilter("all")}
                           className={cn(
@@ -730,6 +762,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                           <button
                             key={provider}
                             type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => setProviderFilter(provider)}
                             className={cn(
