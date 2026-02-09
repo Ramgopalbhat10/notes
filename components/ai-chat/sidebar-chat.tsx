@@ -135,6 +135,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   );
   const sidebarChatRootRef = useRef<HTMLDivElement>(null);
   const modelSearchInputRef = useRef<HTMLInputElement>(null);
+  const providerFiltersScrollRef = useRef<HTMLDivElement>(null);
   const [modelSelectPortalContainer, setModelSelectPortalContainer] = useState<HTMLElement | null>(null);
   const composerContainerRef = useRef<HTMLDivElement>(null);
   const composerInputRef = useRef<HTMLTextAreaElement>(null);
@@ -318,6 +319,30 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
       });
     });
   }, []);
+
+  const handleProviderFiltersWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    if (isMobile) {
+      return;
+    }
+    const element = event.currentTarget;
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    if (maxScrollLeft <= 0) {
+      return;
+    }
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+      return;
+    }
+    const nextScrollLeft = Math.min(
+      maxScrollLeft,
+      Math.max(0, element.scrollLeft + event.deltaY),
+    );
+    if (nextScrollLeft !== element.scrollLeft) {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      element.scrollLeft = nextScrollLeft;
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     if (!isMobile || typeof window === "undefined" || !window.visualViewport) {
@@ -776,7 +801,16 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                       ) : null}
                     </div>
                     {providerOptions.length > 1 && showProviderFilters ? (
-                      <div className="mt-1.5 w-full overflow-x-auto overflow-y-hidden pb-1 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden">
+                      <div
+                        ref={providerFiltersScrollRef}
+                        onWheel={handleProviderFiltersWheel}
+                        className={cn(
+                          "mt-1.5 w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
+                          isMobile
+                            ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
+                            : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
+                        )}
+                      >
                         <div className="flex w-max min-w-full gap-1">
                           <button
                             type="button"
