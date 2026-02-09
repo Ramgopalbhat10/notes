@@ -3,7 +3,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
-import { ArrowDownLeft, Copy, File, Loader2, Paperclip, RefreshCcw, Search, SendHorizontal, SlidersHorizontal, Square, X } from "lucide-react";
+import { ArrowDownLeft, Check, ChevronDown, Copy, File, Loader2, Paperclip, RefreshCcw, Search, SendHorizontal, SlidersHorizontal, Square, X } from "lucide-react";
 
 import { DEFAULT_CHAT_MODEL, FALLBACK_LANGUAGE_MODELS, parseModelId, type GatewayLanguageModelOption } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
@@ -17,15 +17,9 @@ import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useEditorStore } from "@/stores/editor";
@@ -273,6 +267,10 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
       }))
       .filter((group) => group.models.length > 0);
   }, [modelGroups, modelSearchQuery, providerFilter]);
+  const selectedModelName = useMemo(
+    () => availableModels.find((model) => model.id === selectedModel)?.name ?? selectedModel,
+    [availableModels, selectedModel],
+  );
 
   useEffect(() => {
     if (providerFilter === "all") {
@@ -299,23 +297,6 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
       modelSearchInputRef.current?.focus();
     });
     return () => cancelAnimationFrame(frameId);
-  }, [isMobile, modelSelectOpen]);
-
-  useEffect(() => {
-    if (!isMobile || !modelSelectOpen || typeof window === "undefined") {
-      return;
-    }
-    // Radix Select dismisses on window resize; mobile keyboard open emits resize.
-    const preventKeyboardResizeDismiss = (event: UIEvent) => {
-      if (document.activeElement !== modelSearchInputRef.current) {
-        return;
-      }
-      event.stopImmediatePropagation();
-    };
-    window.addEventListener("resize", preventKeyboardResizeDismiss, { capture: true });
-    return () => {
-      window.removeEventListener("resize", preventKeyboardResizeDismiss, { capture: true });
-    };
   }, [isMobile, modelSelectOpen]);
 
   useEffect(() => {
@@ -735,19 +716,28 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                 <TooltipContent side="top">Attach file (coming soon)</TooltipContent>
               </Tooltip>
 
-              <Select value={selectedModel} onValueChange={setSelectedModel} open={modelSelectOpen} onOpenChange={setModelSelectOpen}>
-                <SelectTrigger className="h-7 w-auto gap-1 border border-border/40 rounded-md bg-background/80 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/60 focus:ring-0 [&>svg]:opacity-50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent
-                  align="start"
-                  className="w-[19rem] max-h-[420px]"
+              <Popover open={modelSelectOpen} onOpenChange={setModelSelectOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-7 gap-1 border-border/40 bg-background/80 px-2 text-xs font-normal text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                  >
+                    <span className="max-w-[140px] truncate">{selectedModelName}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align={isMobile ? "center" : "start"}
+                  side="top"
+                  sideOffset={8}
+                  avoidCollisions
+                  collisionPadding={8}
+                  className="w-[min(24rem,calc(100vw-2rem))] max-h-[min(70dvh,460px)] overflow-hidden p-0"
                   container={modelSelectPortalContainer ?? undefined}
-                  showScrollButtons={false}
-                  viewportClassName="p-0"
                 >
-                  <div className="sticky top-0 z-20 mb-1 border-b bg-popover px-2 py-1.5">
-                    <div className="flex items-center gap-1.5">
+                  <div className="border-b bg-popover px-2 py-1.5">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
                       <div className="relative min-w-0 flex-1">
                         <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -756,16 +746,12 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                           placeholder="Search models..."
                           value={modelSearchQuery}
                           onChange={(event) => setModelSearchQuery(event.target.value)}
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
                           className="h-8 border-border/60 bg-background pl-7 pr-7 text-xs"
                         />
                         {modelSearchQuery ? (
                           <button
                             type="button"
                             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onMouseDown={(event) => event.preventDefault()}
                             onClick={() => setModelSearchQuery("")}
                             aria-label="Clear model search"
                           >
@@ -776,11 +762,9 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                       {providerOptions.length > 1 ? (
                         <button
                           type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onMouseDown={(event) => event.preventDefault()}
                           onClick={() => setShowProviderFilters((current) => !current)}
                           className={cn(
-                            "inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition-colors",
+                            "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors",
                             providerFilter === "all"
                               ? "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
                               : "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15",
@@ -788,74 +772,88 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                           aria-label="Toggle provider filters"
                         >
                           <SlidersHorizontal className="h-3.5 w-3.5" />
-                          <span className="max-w-[78px] truncate">
-                            {providerFilter === "all" ? "All" : toProviderLabel(providerFilter)}
-                          </span>
                         </button>
                       ) : null}
                     </div>
                     {providerOptions.length > 1 && showProviderFilters ? (
-                      <div className="mt-1.5 flex gap-1 overflow-x-auto pb-1">
-                        <button
-                          type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => setProviderFilter("all")}
-                          className={cn(
-                            "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                            providerFilter === "all"
-                              ? "border-primary/50 bg-primary/10 text-foreground"
-                              : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                          )}
-                        >
-                          All
-                        </button>
-                        {providerOptions.map((provider) => (
+                      <div className="mt-1.5 w-full overflow-x-auto overflow-y-hidden pb-1 pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden">
+                        <div className="flex w-max min-w-full gap-1">
                           <button
-                            key={provider}
                             type="button"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => setProviderFilter(provider)}
+                            onClick={() => setProviderFilter("all")}
                             className={cn(
                               "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                              providerFilter === provider
+                              providerFilter === "all"
                                 ? "border-primary/50 bg-primary/10 text-foreground"
                                 : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
                             )}
                           >
-                            {toProviderLabel(provider)}
+                            All
                           </button>
-                        ))}
+                          {providerOptions.map((provider) => (
+                            <button
+                              key={provider}
+                              type="button"
+                              onClick={() => setProviderFilter(provider)}
+                              className={cn(
+                                "max-w-[140px] shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                                providerFilter === provider
+                                  ? "border-primary/50 bg-primary/10 text-foreground"
+                                  : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                              )}
+                            >
+                              <span className="block truncate">{toProviderLabel(provider)}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     ) : null}
                   </div>
-                  {modelsLoading ? (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading models...</div>
-                  ) : null}
-                  {!modelsLoading && filteredModelGroups.length === 0 ? (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                      No models match your filters.
-                    </div>
-                  ) : null}
-                  {!modelsLoading && modelGroups.length === 0 ? (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No models available</div>
-                  ) : null}
-                  {filteredModelGroups.map((group, groupIndex) => (
-                    <div key={group.provider}>
-                      {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                        {toProviderLabel(group.provider)}
+                  <div className="max-h-[min(62dvh,420px)] overflow-y-auto px-1 pb-1">
+                    {modelsLoading ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading models...</div>
+                    ) : null}
+                    {!modelsLoading && filteredModelGroups.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        No models match your filters.
                       </div>
-                      {group.models.map((model) => (
-                        <SelectItem key={model.id} value={model.id} className="text-xs">
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ) : null}
+                    {!modelsLoading && modelGroups.length === 0 ? (
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">No models available</div>
+                    ) : null}
+                    {filteredModelGroups.map((group, groupIndex) => (
+                      <div key={group.provider}>
+                        {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
+                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                          {toProviderLabel(group.provider)}
+                        </div>
+                        {group.models.map((model) => {
+                          const isSelected = model.id === selectedModel;
+                          return (
+                            <button
+                              key={model.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedModel(model.id);
+                                setModelSelectOpen(false);
+                              }}
+                              className={cn(
+                                "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
+                                isSelected
+                                  ? "bg-accent text-accent-foreground"
+                                  : "text-foreground hover:bg-accent/80",
+                              )}
+                            >
+                              <span>{model.name}</span>
+                              {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <Button
