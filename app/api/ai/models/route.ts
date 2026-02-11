@@ -106,6 +106,8 @@ function normalizeLanguageModel(value: unknown): GatewayLanguageModelOption | nu
     type: "language",
     contextWindow: safeNumber(model.context_window),
     maxTokens: safeNumber(model.max_tokens),
+    description: safeString(model.description) || null,
+    tags: safeStringArray(model.tags).map((tag) => tag.toLowerCase()),
   };
 }
 
@@ -126,6 +128,8 @@ function ensureDefaultModel(
       type: "language",
       contextWindow: null,
       maxTokens: null,
+      description: null,
+      tags: [],
     },
     ...models,
   ]);
@@ -179,6 +183,15 @@ function safeString(value: unknown): string {
 
 function safeNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function safeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
 }
 
 function cacheHeaders(): HeadersInit {

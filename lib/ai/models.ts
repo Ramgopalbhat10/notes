@@ -9,6 +9,8 @@ export type GatewayLanguageModelOption = {
   type: "language";
   contextWindow: number | null;
   maxTokens: number | null;
+  description: string | null;
+  tags: string[];
 };
 
 export const FALLBACK_LANGUAGE_MODELS: GatewayLanguageModelOption[] = [
@@ -19,6 +21,8 @@ export const FALLBACK_LANGUAGE_MODELS: GatewayLanguageModelOption[] = [
     type: "language",
     contextWindow: null,
     maxTokens: null,
+    description: null,
+    tags: [],
   },
 ];
 

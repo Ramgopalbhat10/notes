@@ -1,9 +1,9 @@
 "use client";
 
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport, type UIMessage } from "ai";
-import { ArrowDownLeft, Check, ChevronDown, Copy, File, Loader2, Paperclip, RefreshCcw, Search, SendHorizontal, SlidersHorizontal, Square, X } from "lucide-react";
+import { ArrowDownLeft, BrainCircuit, Check, ChevronDown, Copy, Eye, File, FileText, ImageIcon, Loader2, Paperclip, RefreshCcw, Search, SendHorizontal, SlidersHorizontal, Square, Wrench, X } from "lucide-react";
 
 import { DEFAULT_CHAT_MODEL, FALLBACK_LANGUAGE_MODELS, parseModelId, type GatewayLanguageModelOption } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,12 @@ type ModelGroup = {
   models: GatewayLanguageModelOption[];
 };
 
+type ModelFeatureIcon = {
+  tag: string;
+  label: string;
+  Icon: ComponentType<{ className?: string }>;
+};
+
 export type SidebarChatHandle = {
   clearChat: () => void;
 };
@@ -51,6 +57,14 @@ export type SidebarChatHandle = {
 type SidebarChatProps = {
   onNewChatRef?: (handle: SidebarChatHandle | null) => void;
 };
+
+const MODEL_FEATURE_ICONS: ModelFeatureIcon[] = [
+  { tag: "vision", label: "Vision", Icon: Eye },
+  { tag: "tool-use", label: "Tool use", Icon: Wrench },
+  { tag: "reasoning", label: "Reasoning", Icon: BrainCircuit },
+  { tag: "image-generation", label: "Image generation", Icon: ImageIcon },
+  { tag: "file-input", label: "File input", Icon: FileText },
+];
 
 // Create stable transport and chat instances outside the component
 // This ensures they persist across component remounts
@@ -127,7 +141,8 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const [modelSelectOpen, setModelSelectOpen] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState<string>("all");
-  const [showProviderFilters, setShowProviderFilters] = useState(false);
+  const [featureFilter, setFeatureFilter] = useState<string>("all");
+  const [showModelFilters, setShowModelFilters] = useState(false);
   const chatSession = useSyncExternalStore(
     subscribeSharedChatSession,
     getSharedChatSession,
@@ -244,6 +259,16 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     () => modelGroups.map((group) => group.provider),
     [modelGroups],
   );
+  const featureOptions = useMemo(() => {
+    const availableTags = new Set<string>();
+    for (const model of availableModels) {
+      for (const tag of deriveModelFeatureTags(model)) {
+        availableTags.add(tag);
+      }
+    }
+    return MODEL_FEATURE_ICONS.filter((feature) => availableTags.has(feature.tag));
+  }, [availableModels]);
+  const hasActiveFilters = providerFilter !== "all" || featureFilter !== "all";
   const filteredModelGroups = useMemo(() => {
     const normalizedQuery = modelSearchQuery.trim().toLowerCase();
     const matchesQuery = (model: GatewayLanguageModelOption) => {
@@ -263,11 +288,13 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
         provider: group.provider,
         models: group.models.filter((model) => {
           const providerMatch = providerFilter === "all" || group.provider === providerFilter;
-          return providerMatch && matchesQuery(model);
+          const featureTags = deriveModelFeatureTags(model);
+          const featureMatch = featureFilter === "all" || featureTags.has(featureFilter);
+          return providerMatch && featureMatch && matchesQuery(model);
         }),
       }))
       .filter((group) => group.models.length > 0);
-  }, [modelGroups, modelSearchQuery, providerFilter]);
+  }, [modelGroups, modelSearchQuery, providerFilter, featureFilter]);
   const selectedModelName = useMemo(
     () => availableModels.find((model) => model.id === selectedModel)?.name ?? selectedModel,
     [availableModels, selectedModel],
@@ -283,10 +310,20 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   }, [providerFilter, providerOptions]);
 
   useEffect(() => {
+    if (featureFilter === "all") {
+      return;
+    }
+    if (!featureOptions.some((feature) => feature.tag === featureFilter)) {
+      setFeatureFilter("all");
+    }
+  }, [featureFilter, featureOptions]);
+
+  useEffect(() => {
     if (!modelSelectOpen) {
       setModelSearchQuery("");
       setProviderFilter("all");
-      setShowProviderFilters(false);
+      setFeatureFilter("all");
+      setShowModelFilters(false);
       return;
     }
     // Avoid force-focusing on touch devices, which can trigger keyboard-driven dismissals.
@@ -784,62 +821,108 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                           </button>
                         ) : null}
                       </div>
-                      {providerOptions.length > 1 ? (
+                      {providerOptions.length > 1 || featureOptions.length > 0 ? (
                         <button
                           type="button"
-                          onClick={() => setShowProviderFilters((current) => !current)}
+                          onClick={() => setShowModelFilters((current) => !current)}
                           className={cn(
                             "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors",
-                            providerFilter === "all"
-                              ? "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground"
-                              : "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15",
+                            hasActiveFilters
+                              ? "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15"
+                              : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
                           )}
-                          aria-label="Toggle provider filters"
+                          aria-label="Toggle model filters"
                         >
                           <SlidersHorizontal className="h-3.5 w-3.5" />
                         </button>
                       ) : null}
                     </div>
-                    {providerOptions.length > 1 && showProviderFilters ? (
-                      <div
-                        ref={providerFiltersScrollRef}
-                        onWheel={handleProviderFiltersWheel}
-                        className={cn(
-                          "mt-1.5 w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
-                          isMobile
-                            ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
-                            : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
-                        )}
-                      >
-                        <div className="flex w-max min-w-full gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setProviderFilter("all")}
+                    {(providerOptions.length > 1 || featureOptions.length > 0) && showModelFilters ? (
+                      <div className="mt-1.5 space-y-1.5">
+                        {providerOptions.length > 1 ? (
+                          <div
+                            ref={providerFiltersScrollRef}
+                            onWheel={handleProviderFiltersWheel}
                             className={cn(
-                              "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                              providerFilter === "all"
-                                ? "border-primary/50 bg-primary/10 text-foreground"
-                                : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                              "w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
+                              isMobile
+                                ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
+                                : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
                             )}
                           >
-                            All
-                          </button>
-                          {providerOptions.map((provider) => (
-                            <button
-                              key={provider}
-                              type="button"
-                              onClick={() => setProviderFilter(provider)}
-                              className={cn(
-                                "max-w-[140px] shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                                providerFilter === provider
-                                  ? "border-primary/50 bg-primary/10 text-foreground"
-                                  : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                              )}
-                            >
-                              <span className="block truncate">{toProviderLabel(provider)}</span>
-                            </button>
-                          ))}
-                        </div>
+                            <div className="flex w-max min-w-full gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setProviderFilter("all")}
+                                className={cn(
+                                  "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                                  providerFilter === "all"
+                                    ? "border-primary/50 bg-primary/10 text-foreground"
+                                    : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                                )}
+                              >
+                                All providers
+                              </button>
+                              {providerOptions.map((provider) => (
+                                <button
+                                  key={provider}
+                                  type="button"
+                                  onClick={() => setProviderFilter(provider)}
+                                  className={cn(
+                                    "max-w-[140px] shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                                    providerFilter === provider
+                                      ? "border-primary/50 bg-primary/10 text-foreground"
+                                      : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                                  )}
+                                >
+                                  <span className="block truncate">{toProviderLabel(provider)}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {featureOptions.length > 0 ? (
+                          <div
+                            onWheel={handleProviderFiltersWheel}
+                            className={cn(
+                              "w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
+                              isMobile
+                                ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
+                                : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
+                            )}
+                          >
+                            <div className="flex w-max min-w-full gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setFeatureFilter("all")}
+                                className={cn(
+                                  "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                                  featureFilter === "all"
+                                    ? "border-primary/50 bg-primary/10 text-foreground"
+                                    : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                                )}
+                              >
+                                Any feature
+                              </button>
+                              {featureOptions.map((feature) => (
+                                <button
+                                  key={feature.tag}
+                                  type="button"
+                                  onClick={() => setFeatureFilter(feature.tag)}
+                                  className={cn(
+                                    "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                                    featureFilter === feature.tag
+                                      ? "border-primary/50 bg-primary/10 text-foreground"
+                                      : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                                  )}
+                                >
+                                  <feature.Icon className="h-3 w-3" />
+                                  <span>{feature.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -863,6 +946,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                         </div>
                         {group.models.map((model) => {
                           const isSelected = model.id === selectedModel;
+                          const features = getModelFeatureIcons(model);
                           return (
                             <button
                               key={model.id}
@@ -872,14 +956,26 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                                 setModelSelectOpen(false);
                               }}
                               className={cn(
-                                "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
+                                "flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
                                 isSelected
                                   ? "bg-accent text-accent-foreground"
                                   : "text-foreground hover:bg-accent/80",
                               )}
                             >
-                              <span>{model.name}</span>
-                              {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
+                              <span className="min-w-0 flex-1 truncate">{model.name}</span>
+                              <span className="flex shrink-0 items-center gap-1">
+                                {features.length > 0 ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-1.5 py-0.5 text-muted-foreground">
+                                    {features.map((feature) => (
+                                      <span key={`${model.id}-${feature.tag}`} className="inline-flex" title={feature.label}>
+                                        <feature.Icon className="h-3 w-3" aria-hidden="true" />
+                                        <span className="sr-only">{feature.label}</span>
+                                      </span>
+                                    ))}
+                                  </span>
+                                ) : null}
+                                {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
+                              </span>
                             </button>
                           );
                         })}
@@ -1082,6 +1178,46 @@ function toProviderLabel(provider: string): string {
     return "xAI";
   }
   return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
+
+function getModelFeatureIcons(model: GatewayLanguageModelOption): ModelFeatureIcon[] {
+  const featureTags = deriveModelFeatureTags(model);
+  return MODEL_FEATURE_ICONS.filter((feature) => featureTags.has(feature.tag));
+}
+
+function deriveModelFeatureTags(model: GatewayLanguageModelOption): Set<string> {
+  const tags = new Set(
+    (Array.isArray(model.tags) ? model.tags : [])
+      .map((tag) => normalizeFeatureTag(tag))
+      .filter(Boolean),
+  );
+
+  const description = (model.description || "").toLowerCase();
+  if (!description) {
+    return tags;
+  }
+
+  if (description.includes("vision")) {
+    tags.add("vision");
+  }
+  if (description.includes("reasoning")) {
+    tags.add("reasoning");
+  }
+  if (description.includes("tool")) {
+    tags.add("tool-use");
+  }
+  if (description.includes("image generation") || description.includes("image-generation")) {
+    tags.add("image-generation");
+  }
+  if (description.includes("file input") || description.includes("file-input")) {
+    tags.add("file-input");
+  }
+
+  return tags;
+}
+
+function normalizeFeatureTag(value: string): string {
+  return value.toLowerCase().trim();
 }
 
 function computeExcerpt(value: string): string {
