@@ -19,3 +19,4 @@ Use this index to quickly find implementation stories.
 | 13 | Streamdown Markdown Rendering + CDN Images + Streamdown Mermaid Plugin | `docs/stories/story-13.md` |
 | 14 | AI Gateway Migration + Dynamic Model Selection | `docs/stories/story-14.md` |
 | 15 | PWA Enablement (Next.js 16, Turbopack-Safe) | `docs/stories/story-15.md` |
+| 16 | Desktop Header File Navigation (Sibling Files Only) | `docs/stories/story-16.md` |

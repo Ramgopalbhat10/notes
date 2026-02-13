@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronRight,
   Download,
   Eye,
@@ -58,6 +60,10 @@ export type WorkspaceHeaderProps = {
   onCopyPublicLink?: () => void;
   centered?: boolean;
   onToggleCentered?: () => void;
+  canNavigatePrev: boolean;
+  canNavigateNext: boolean;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
   onDownload?: (format: "markdown" | "text" | "pdf") => void;
   onDelete?: () => void;
 };
@@ -79,6 +85,10 @@ export function WorkspaceHeader({
   onCopyPublicLink,
   centered = false,
   onToggleCentered,
+  canNavigatePrev,
+  canNavigateNext,
+  onNavigatePrev,
+  onNavigateNext,
   onDownload,
   onDelete,
 }: WorkspaceHeaderProps) {
@@ -173,9 +183,42 @@ export function WorkspaceHeader({
           )}
         </div>
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
-          {/* Desktop: Expand, Edit/Preview, Save icons */}
+          {/* Desktop: Navigation, expand, edit/preview, save icons */}
           {hasFile && (
             <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden lg:inline-flex")}
+                    onClick={onNavigatePrev}
+                    disabled={!onNavigatePrev || !canNavigatePrev}
+                    aria-label="Previous file in folder"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Previous file</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden lg:inline-flex")}
+                    onClick={onNavigateNext}
+                    disabled={!onNavigateNext || !canNavigateNext}
+                    aria-label="Next file in folder"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Next file</TooltipContent>
+              </Tooltip>
+              <div className="hidden lg:block h-4 w-px bg-border mx-1" aria-hidden="true" />
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

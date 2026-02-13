@@ -39,6 +39,7 @@ export function VaultWorkspace({
     return node && node.type === "file" ? node.path : null;
   });
   const selectedId = useTreeStore((state) => state.selectedId);
+  const select = useTreeStore((state) => state.select);
   const deleteNode = useTreeStore((state) => state.deleteNode);
   const routeTarget = useTreeStore((state) => state.routeTarget);
   const refreshTree = useTreeStore((state) => state.refreshTree);
@@ -148,12 +149,65 @@ export function VaultWorkspace({
 
   const segments = useMemo(() => (resolvedPath ? buildSegments(resolvedPath) : []), [resolvedPath]);
 
+  const siblingNavigation = useMemo(() => {
+    if (!selectedId) {
+      return { prevId: null, nextId: null };
+    }
+
+    const selectedNode = nodes[selectedId];
+    if (!selectedNode || selectedNode.type !== "file") {
+      return { prevId: null, nextId: null };
+    }
+
+    const parentId = selectedNode.parentId;
+    if (!parentId) {
+      return { prevId: null, nextId: null };
+    }
+
+    const parentNode = nodes[parentId];
+    if (!parentNode || parentNode.type !== "folder") {
+      return { prevId: null, nextId: null };
+    }
+
+    const fileSiblingIds = parentNode.children.filter((childId) => nodes[childId]?.type === "file");
+    if (fileSiblingIds.length <= 1) {
+      return { prevId: null, nextId: null };
+    }
+
+    const currentIndex = fileSiblingIds.indexOf(selectedNode.id);
+    if (currentIndex === -1) {
+      return { prevId: null, nextId: null };
+    }
+
+    return {
+      prevId: currentIndex > 0 ? fileSiblingIds[currentIndex - 1] : null,
+      nextId: currentIndex < fileSiblingIds.length - 1 ? fileSiblingIds[currentIndex + 1] : null,
+    };
+  }, [nodes, selectedId]);
+
+  const canNavigatePrev = siblingNavigation.prevId !== null;
+  const canNavigateNext = siblingNavigation.nextId !== null;
+
   const handleSave = useCallback(() => {
     if (!dirty || status === "saving" || status === "conflict") {
       return;
     }
     void save("manual");
   }, [dirty, save, status]);
+
+  const handleNavigatePrev = useCallback(() => {
+    if (!siblingNavigation.prevId) {
+      return;
+    }
+    select(siblingNavigation.prevId);
+  }, [select, siblingNavigation.prevId]);
+
+  const handleNavigateNext = useCallback(() => {
+    if (!siblingNavigation.nextId) {
+      return;
+    }
+    select(siblingNavigation.nextId);
+  }, [select, siblingNavigation.nextId]);
 
   const {
     state: aiState,
@@ -340,17 +394,25 @@ export function VaultWorkspace({
         onCopyPublicLink={hasFile ? handleCopyPublicLink : undefined}
         centered={centered}
         onToggleCentered={toggleCentered}
+        canNavigatePrev={canNavigatePrev}
+        canNavigateNext={canNavigateNext}
+        onNavigatePrev={handleNavigatePrev}
+        onNavigateNext={handleNavigateNext}
         onDownload={hasFile ? handleDownload : undefined}
         onDelete={hasFile ? handleDelete : undefined}
       />
     ),
     [
       aiStreaming,
+      canNavigateNext,
+      canNavigatePrev,
       centered,
       dirty,
       handleCopyPublicLink,
       handleDelete,
       handleDownload,
+      handleNavigateNext,
+      handleNavigatePrev,
       handleSave,
       toggleCentered,
       handleTogglePublic,
