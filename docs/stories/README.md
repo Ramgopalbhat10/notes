@@ -2,6 +2,8 @@
 
 Use this index to quickly find implementation stories.
 
+Story template: `docs/stories/temlate.md`
+
 | Story | Title | File |
 |---|---|---|
 | 1 | Browse Vault (File Tree, Read-only) | `docs/stories/story-1.md` |

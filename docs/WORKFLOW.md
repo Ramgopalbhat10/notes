@@ -5,6 +5,7 @@
 - For a new feature:
   - Ensure `main` is up to date (`git switch main`, `git pull --ff-only`).
   - Create/switch branch (`git switch -c feature/<slug>`).
+  - Create a new story file from `docs/stories/temlate.md` and add it to `docs/stories/README.md`.
 - For work that belongs on an existing feature branch:
   - Update `main` (`git switch main`, `git pull --ff-only`).
   - Switch back (`git switch <branch>`).
