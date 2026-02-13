@@ -6,10 +6,12 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { SidebarChat, type SidebarChatHandle } from "@/components/ai-chat/sidebar-chat";
 import { FileTree } from "@/components/file-tree";
+import { OutlineSidebar } from "@/components/vault-workspace/outline-sidebar";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth/client";
 import { encodePath } from "@/lib/utils";
+import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useTreeStore, type SelectByPathResult } from "@/stores/tree";
 
 function LeftSidebar() {
@@ -159,6 +161,7 @@ export default function FilesPage() {
   const sessionState = authClient.useSession();
   const session = sessionState?.data;
   const isPending = sessionState?.isPending;
+  const rightSidebarPanel = useWorkspaceLayoutStore((state) => state.rightSidebarPanel);
   const [header, setHeader] = useState<ReactNode | null>(null);
   const chatHandleRef = useRef<SidebarChatHandle | null>(null);
 
@@ -170,11 +173,13 @@ export default function FilesPage() {
     chatHandleRef.current?.clearChat();
   }, []);
 
-  // Memoize the right sidebar to prevent re-mounting on file changes
-  const rightSidebar = useMemo(
+  // Keep chat element stable to preserve draft and scroll behavior.
+  const chatSidebar = useMemo(
     () => <SidebarChat onNewChatRef={handleNewChatRef} />,
-    [handleNewChatRef]
+    [handleNewChatRef],
   );
+  const outlineSidebar = useMemo(() => <OutlineSidebar />, []);
+  const rightSidebar = rightSidebarPanel === "outline" ? outlineSidebar : chatSidebar;
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -195,8 +200,12 @@ export default function FilesPage() {
         header={header}
         onNewChat={handleNewChat}
       >
-        {({ toggleRight }) => (
-          <VaultWorkspace onHeaderChange={setHeader} onToggleRight={toggleRight} />
+        {({ openChatSidebar, openOutlineSidebar }) => (
+          <VaultWorkspace
+            onHeaderChange={setHeader}
+            onOpenChatSidebar={openChatSidebar}
+            onOpenOutlineSidebar={openOutlineSidebar}
+          />
         )}
       </AppShell>
     </>

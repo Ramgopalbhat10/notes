@@ -3,10 +3,11 @@
 import { code } from "@streamdown/code";
 import { mermaid as mermaidPlugin } from "@streamdown/mermaid";
 import type { ImgHTMLAttributes } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 import type { StreamdownProps } from "streamdown";
 
+import { buildMarkdownOutline } from "@/lib/markdown-outline";
 import { isAllowedMarkdownImageUrl } from "@/lib/markdown-image-policy";
 import { cn } from "@/lib/utils";
 
@@ -138,6 +139,7 @@ function MarkdownImage({ className, alt, src, ...props }: MarkdownImageProps) {
 
 export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getThemeMode());
+  const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -159,8 +161,41 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
     () => ({ config: buildMermaidConfig(themeMode) }),
     [themeMode],
   );
+  const outline = useMemo(() => buildMarkdownOutline(content), [content]);
+  const streamdownComponents = useMemo<NonNullable<StreamdownProps["components"]>>(
+    () => ({ img: MarkdownImage }),
+    [],
+  );
 
   const trimmed = content.trim();
+
+  useEffect(() => {
+    const container = previewRef.current;
+    if (!container || !trimmed) {
+      return;
+    }
+
+    const syncHeadingAnchors = () => {
+      const headings = Array.from(
+        container.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6"),
+      );
+      const itemCount = Math.min(headings.length, outline.flat.length);
+      for (let index = 0; index < itemCount; index += 1) {
+        const heading = headings[index];
+        const item = outline.flat[index];
+        if (!heading || !item) {
+          continue;
+        }
+        heading.id = item.id;
+        heading.dataset.outlineId = item.id;
+      }
+    };
+
+    syncHeadingAnchors();
+    const observer = new MutationObserver(syncHeadingAnchors);
+    observer.observe(container, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [outline.flat, trimmed]);
 
   if (!trimmed) {
     return (
@@ -171,10 +206,13 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   }
 
   return (
-    <div className={cn("markdown-preview px-4 md:px-0 markdown-content text-sm md:text-base leading-7 w-full max-w-full", className)}>
+    <div
+      ref={previewRef}
+      className={cn("markdown-preview px-4 md:px-0 markdown-content text-sm md:text-base leading-7 w-full max-w-full", className)}
+    >
       <Streamdown
         className="space-y-4"
-        components={{ img: MarkdownImage }}
+        components={streamdownComponents}
         controls={{ code: true, mermaid: { copy: true, download: true, fullscreen: true, panZoom: true }, table: true }}
         mermaid={mermaidOptions}
         parseIncompleteMarkdown

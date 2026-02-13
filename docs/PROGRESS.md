@@ -1,14 +1,11 @@
 # Progress
 
-Current story: `docs/stories/story-16.md`
+Current story: `docs/stories/story-17.md`
 
-Status:
-- Done: 17
-- In progress: 0
-- Pending: 0
+Current section: Story 17.4 — Verification and Regression Checks
 
-Next action:
-- None (Story 16 complete)
+Next tasks:
+- [ ] Manually verify desktop and mobile panel switch scenarios.
 
 Notes:
 - Learnings live in `docs/learnings/README.md`

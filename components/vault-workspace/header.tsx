@@ -13,6 +13,7 @@ import {
   FilePenLine,
   Globe,
   Link as LinkIcon,
+  ListTree,
   Loader2,
   MessageSquare,
   Minimize,
@@ -54,7 +55,8 @@ export type WorkspaceHeaderProps = {
   aiBusy: boolean;
   aiDisabled: boolean;
   hasFile: boolean;
-  onToggleRight?: () => void;
+  onOpenChatSidebar?: () => void;
+  onOpenOutlineSidebar?: () => void;
   sharingState?: SharingState;
   onTogglePublic?: () => void;
   onCopyPublicLink?: () => void;
@@ -79,7 +81,8 @@ export function WorkspaceHeader({
   aiBusy,
   aiDisabled,
   hasFile,
-  onToggleRight,
+  onOpenChatSidebar,
+  onOpenOutlineSidebar,
   sharingState,
   onTogglePublic,
   onCopyPublicLink,
@@ -399,8 +402,17 @@ export function WorkspaceHeader({
 
                   <DropdownMenuItem
                     className="flex items-center gap-2"
-                    onClick={onToggleRight}
-                    disabled={!onToggleRight}
+                    onClick={onOpenOutlineSidebar}
+                    disabled={!onOpenOutlineSidebar}
+                  >
+                    <ListTree className="h-4 w-4" />
+                    <span className="text-sm">Outline</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={onOpenChatSidebar}
+                    disabled={!onOpenChatSidebar}
                   >
                     <MessageSquare className="h-4 w-4" />
                     <span className="text-sm">Chat</span>
@@ -424,8 +436,8 @@ export function WorkspaceHeader({
               {!hasFile && (
                 <DropdownMenuItem
                   className="flex items-center gap-2"
-                  onClick={onToggleRight}
-                  disabled={!onToggleRight}
+                  onClick={onOpenChatSidebar}
+                  disabled={!onOpenChatSidebar}
                 >
                   <MessageSquare className="h-4 w-4" />
                   <span className="text-sm">Chat</span>

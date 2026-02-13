@@ -24,11 +24,13 @@ import type { BreadcrumbSegment } from "./types";
 export function VaultWorkspace({
   className,
   onHeaderChange,
-  onToggleRight,
+  onOpenChatSidebar,
+  onOpenOutlineSidebar,
 }: {
   className?: string;
   onHeaderChange?: (node: ReactNode | null) => void;
-  onToggleRight?: () => void;
+  onOpenChatSidebar?: () => void;
+  onOpenOutlineSidebar?: () => void;
 }) {
   const selectedPath = useTreeStore((state) => {
     const id = state.selectedId;
@@ -388,7 +390,8 @@ export function VaultWorkspace({
           void start(action);
         }}
         hasFile={hasFile}
-        onToggleRight={onToggleRight}
+        onOpenChatSidebar={onOpenChatSidebar}
+        onOpenOutlineSidebar={onOpenOutlineSidebar}
         sharingState={hasFile ? sharingState : undefined}
         onTogglePublic={hasFile ? handleTogglePublic : undefined}
         onCopyPublicLink={hasFile ? handleCopyPublicLink : undefined}
@@ -419,7 +422,8 @@ export function VaultWorkspace({
       hasDocumentContent,
       hasFile,
       mode,
-      onToggleRight,
+      onOpenChatSidebar,
+      onOpenOutlineSidebar,
       segments,
       setMode,
       sharingState,
