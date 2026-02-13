@@ -5,6 +5,9 @@
 - Skim `docs/learnings/README.md` and search relevant keywords in `docs/learnings/` (use `rg`).
 - If the change touches architecture, caching, data flow, auth, or AI routing, skim `docs/decisions/README.md` first.
 
+## UI Tooling
+- For any new UI components, layouts, or major look-and-feel changes, use the Shadcn UI MCP server.
+
 ## Branching (Agent-Managed)
 - Use `feature/<slug>` branches only.
 - For a new feature:
