@@ -19,6 +19,10 @@
 ## Unit Of Work Definition
 A "unit of work" is a legitimate change that impacts code, behavior, or user-visible docs (not formatting-only churn).
 
+## Planning vs Execution
+- Planning phase: propose branch name, story number/title, and approach. Do not mutate the repo (no branch/story creation, no commits).
+- Execution phase (after an explicit "implement/start work" request): follow this workflow, including branch setup, story creation, and docs updates.
+
 ## After Each Unit Of Work (Docs + Commits)
 1. Commit with Conventional Commits, but stay on the same `feature/<slug>` branch:
    - `feat:` `fix:` `refactor:` `docs:` `chore:` etc.
