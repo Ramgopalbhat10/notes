@@ -18,7 +18,7 @@ A "unit of work" is a legitimate change that impacts code, behavior, or user-vis
 1. Commit with Conventional Commits, but stay on the same `feature/<slug>` branch:
    - `feat:` `fix:` `refactor:` `docs:` `chore:` etc.
 2. Update the current story document:
-   - Add a row to its `## Dev Log` table (date, unit type, 1-line summary).
+   - Add a row to its `## Dev Log` table (date, unit type, 1-line summary). Add `## Dev Log` after the `## Acceptance Criteria` section if it doesn't exist.
    - Check off any completed story subtasks.
 3. Update `docs/PROGRESS.md`:
    - Point to the current story file.
