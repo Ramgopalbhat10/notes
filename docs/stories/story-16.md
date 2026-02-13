@@ -33,6 +33,7 @@ Goal: Add desktop-only previous/next file navigation controls to the workspace h
 | 2026-02-13 | docs | Added story template `docs/stories/template.md` and updated workflow docs. |
 | 2026-02-13 | docs | Added workflow pre-checks for decisions/learnings (context pull). |
 | 2026-02-13 | docs | Workflow: require Shadcn UI MCP server for major UI changes. |
+| 2026-02-13 | docs | Clarified Shadcn UI MCP instruction (trigger/requirement/fallback). |
 
 ---
 

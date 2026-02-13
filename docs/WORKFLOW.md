@@ -6,7 +6,10 @@
 - If the change touches architecture, caching, data flow, auth, or AI routing, skim `docs/decisions/README.md` first.
 
 ## UI Tooling
-- For any new UI components, layouts, or major look-and-feel changes, use the Shadcn UI MCP server.
+- Trigger: any work that adds/changes UI components, page layouts, or the app's look-and-feel (spacing, typography, color, interaction patterns).
+- Requirement: use the Shadcn UI MCP server to source/generate the relevant shadcn/ui components and patterns (keep consistency with `components/ui/*`).
+- Output: prefer composing from existing shadcn/ui primitives before writing custom UI from scratch.
+- Fallback: if the Shadcn UI MCP server is not available in the current environment, proceed using the existing `components/ui/*` components and match their styling conventions.
 
 ## Branching (Agent-Managed)
 - Use `feature/<slug>` branches only.
