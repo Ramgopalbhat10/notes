@@ -23,6 +23,11 @@ A "unit of work" is a legitimate change that impacts code, behavior, or user-vis
 - Planning phase: propose branch name, story number/title, and approach. Do not mutate the repo (no branch/story creation, no commits).
 - Execution phase (after an explicit "implement/start work" request): follow this workflow, including branch setup, story creation, and docs updates.
 
+## Quality Gate (Before Commit/Push)
+- If code was changed, run `pnpm lint` before committing.
+- For user-visible or risky changes (or before opening/updating a PR), run `pnpm build`.
+- If checks fail, do not commit as "done". Fix the issue or commit explicitly as WIP and note the failure in the story `## Dev Log`.
+
 ## After Each Unit Of Work (Docs + Commits)
 1. Commit with Conventional Commits, but stay on the same `feature/<slug>` branch:
    - `feat:` `fix:` `refactor:` `docs:` `chore:` etc.
