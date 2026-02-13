@@ -14,6 +14,10 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 - Load `AGENTS.md`, then load `docs/PROGRESS.md` and `docs/WORKFLOW.md` only.
 - Use those docs to navigate to deeper context (stories, learnings, PRD) as needed.
 
+## Progressive Disclosure
+- Keep `AGENTS.md` stable and minimal; avoid listing deep internal paths here.
+- Prefer linking to index docs under `docs/` so agents pull context only when needed.
+
 ## Quick Commands
 - Install: `pnpm install`
 - Dev: `pnpm dev`

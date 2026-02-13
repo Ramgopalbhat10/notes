@@ -1,5 +1,10 @@
 # Workflow Standards
 
+## Before You Implement (Context Pull)
+- Read `docs/PROGRESS.md` and open the current story file it points to.
+- Skim `docs/learnings/README.md` and search relevant keywords in `docs/learnings/` (use `rg`).
+- If the change touches architecture, caching, data flow, auth, or AI routing, skim `docs/decisions/README.md` first.
+
 ## Branching (Agent-Managed)
 - Use `feature/<slug>` branches only.
 - For a new feature:
