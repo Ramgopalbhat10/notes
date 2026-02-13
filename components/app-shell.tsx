@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+} from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "../lib/utils";
 import { Button } from "@/components/ui/button";
@@ -9,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, PanelLeft, PanelRight, Plus, Settings, X } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
-import { useWorkspaceLayoutStore } from "@/stores/layout";
+import { useWorkspaceLayoutStore, type RightSidebarPanel } from "@/stores/layout";
 import { SettingsModal } from "@/components/settings";
 import {
   Sidebar,
@@ -30,7 +40,12 @@ const FOOTER_SURFACE_CLASS =
 const ICON_BUTTON_BASE =
   "inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:bg-accent/40";
 
-type AppShellChildren = React.ReactNode | ((helpers: { toggleRight: () => void }) => React.ReactNode);
+type AppShellChildren = React.ReactNode | ((helpers: {
+  toggleRight: () => void;
+  openRightPanel: (panel: RightSidebarPanel) => void;
+  openChatSidebar: () => void;
+  openOutlineSidebar: () => void;
+}) => React.ReactNode);
 
 type AppShellProps = {
   left?: React.ReactNode;
@@ -52,8 +67,11 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   // Right sidebar state from global store (persists across route changes)
   const rightSidebarOpen = useWorkspaceLayoutStore((state) => state.rightSidebarOpen);
   const rightSidebarExpanded = useWorkspaceLayoutStore((state) => state.rightSidebarExpanded);
+  const rightSidebarPanel = useWorkspaceLayoutStore((state) => state.rightSidebarPanel);
   const setRightSidebarOpen = useWorkspaceLayoutStore((state) => state.setRightSidebarOpen);
   const setRightSidebarExpanded = useWorkspaceLayoutStore((state) => state.setRightSidebarExpanded);
+  const setRightSidebarPanel = useWorkspaceLayoutStore((state) => state.setRightSidebarPanel);
+  const openRightSidebar = useWorkspaceLayoutStore((state) => state.openRightSidebar);
   const toggleRightSidebar = useWorkspaceLayoutStore((state) => state.toggleRightSidebar);
   const toggleRightSidebarExpansion = useWorkspaceLayoutStore((state) => state.toggleRightSidebarExpansion);
 
@@ -98,9 +116,18 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
       if (e.key === "j" && (e.metaKey || e.ctrlKey) && hasRight) {
         e.preventDefault();
         if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-          toggleRightSidebar();
+          toggleRightSidebar("chat");
         } else {
-          setRightMobileOpen((v) => !v);
+          if (rightMobileOpen) {
+            if (rightSidebarPanel !== "chat") {
+              setRightSidebarPanel("chat");
+            } else {
+              setRightMobileOpen(false);
+            }
+          } else {
+            setRightSidebarPanel("chat");
+            setRightMobileOpen(true);
+          }
         }
         return;
       }
@@ -118,15 +145,42 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hasRight, toggleRightSidebar]);
+  }, [hasRight, rightMobileOpen, rightSidebarPanel, setRightSidebarPanel, toggleRightSidebar]);
 
   const toggleRight = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-      toggleRightSidebar();
+      toggleRightSidebar("chat");
     } else {
-      setRightMobileOpen((v) => !v);
+      if (rightMobileOpen) {
+        if (rightSidebarPanel !== "chat") {
+          setRightSidebarPanel("chat");
+        } else {
+          setRightMobileOpen(false);
+        }
+      } else {
+        setRightSidebarPanel("chat");
+        setRightMobileOpen(true);
+      }
     }
-  }, [toggleRightSidebar]);
+  }, [rightMobileOpen, rightSidebarPanel, setRightSidebarPanel, toggleRightSidebar]);
+
+  const openRightPanel = useCallback((panel: RightSidebarPanel) => {
+    if (!hasRight) {
+      return;
+    }
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+      openRightSidebar(panel);
+    } else {
+      setRightSidebarPanel(panel);
+      setRightMobileOpen(true);
+    }
+  }, [hasRight, openRightSidebar, setRightSidebarPanel]);
+  const openChatSidebar = useCallback(() => {
+    openRightPanel("chat");
+  }, [openRightPanel]);
+  const openOutlineSidebar = useCallback(() => {
+    openRightPanel("outline");
+  }, [openRightPanel]);
 
   const toggleRightExpansion = useCallback(() => {
     toggleRightSidebarExpansion();
@@ -136,7 +190,9 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     setRightMobileExpanded((value) => !value);
   }, []);
 
-  const renderedChildren = typeof children === "function" ? children({ toggleRight }) : children;
+  const renderedChildren = typeof children === "function"
+    ? children({ toggleRight, openRightPanel, openChatSidebar, openOutlineSidebar })
+    : children;
   const editorStatus = useEditorStore((state) => state.status);
   const dirty = useEditorStore((state) => state.dirty);
   const lastSavedAt = useEditorStore((state) => state.lastSavedAt);
@@ -185,6 +241,27 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     : rightSidebarExpanded
       ? "w-1/2 border-border"
       : "w-[30rem] border-border";
+  const rightSidebarTitle = rightSidebarPanel === "outline" ? "Outline" : "Chat";
+  const showNewChatAction = rightSidebarPanel === "chat";
+  const handleOutlineNavigateOnMobile = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      return;
+    }
+    setRightMobileOpen(false);
+    setRightMobileExpanded(false);
+  }, []);
+  const renderedRight = useMemo(() => {
+    if (rightSidebarPanel !== "outline" || !isValidElement(right)) {
+      return right;
+    }
+    return cloneElement(
+      right as ReactElement<{ onNavigateToSection?: () => void }>,
+      { onNavigateToSection: handleOutlineNavigateOnMobile },
+    );
+  }, [handleOutlineNavigateOnMobile, right, rightSidebarPanel]);
   const updateMainScrollMetrics = useCallback(() => {
     const el = mainScrollRef.current;
     if (!el) {
@@ -281,7 +358,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
             style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "100vw" } as CSSProperties}
           >
             <SheetHeader className="sr-only">
-              <SheetTitle>Chat</SheetTitle>
+              <SheetTitle>{rightSidebarTitle}</SheetTitle>
             </SheetHeader>
             <div className={cn(
               "flex h-[100dvh] flex-col bg-background border-l shadow-lg transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width]",
@@ -291,32 +368,35 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
             )}>
               <div className="h-10 shrink-0 border-b border-solid border-border/40 flex items-center justify-between px-2.5">
                 <div className="font-semibold text-sm h-7 flex items-center uppercase tracking-wide">
-                  Chat
+                  {rightSidebarTitle}
                 </div>
                 <div className="flex items-center gap-1">
-                  {/* New Chat button */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                        onClick={onNewChat}
-                        aria-label="New chat"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="hidden md:block">New chat</TooltipContent>
-                  </Tooltip>
-                  <div className="h-4 w-px bg-border/60 mx-1.5" />
+                  {showNewChatAction ? (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                            onClick={onNewChat}
+                            aria-label="New chat"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="hidden md:block">New chat</TooltipContent>
+                      </Tooltip>
+                      <div className="h-4 w-px bg-border/60 mx-1.5" />
+                    </>
+                  ) : null}
                   {/* Expand button - only on tablet (md) and above */}
                   <Button
                     variant="ghost"
                     size="icon"
                     className={cn(ICON_BUTTON_BASE, "hidden md:inline-flex size-7")}
                     onClick={toggleRightMobileExpansion}
-                    aria-label={rightMobileExpanded ? "Shrink chat panel" : "Expand chat panel"}
+                    aria-label={rightMobileExpanded ? "Shrink panel" : "Expand panel"}
                   >
                     {rightMobileExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                   </Button>
@@ -325,7 +405,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
                     variant="ghost"
                     className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                     onClick={() => setRightMobileOpen(false)}
-                    aria-label="Close chat panel"
+                    aria-label="Close right panel"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -333,8 +413,11 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
               </div>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  <div className="h-full">
-                    {right}
+                  <div
+                    key={rightSidebarPanel}
+                    className="h-full animate-in fade-in-0 slide-in-from-right-2 duration-200"
+                  >
+                    {renderedRight}
                   </div>
                 </div>
               </div>
@@ -455,29 +538,35 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
               >
                 <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
                   <div className="flex h-full items-center justify-between px-2.5 md:px-3">
-                    <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">Chat</div>
+                    <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">
+                      {rightSidebarTitle}
+                    </div>
                     <div className="flex items-center gap-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                            onClick={onNewChat}
-                            aria-label="New chat"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">New chat</TooltipContent>
-                      </Tooltip>
-                      <div className="h-4 w-px bg-border/60 mx-1.5" />
+                      {showNewChatAction ? (
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
+                                onClick={onNewChat}
+                                aria-label="New chat"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">New chat</TooltipContent>
+                          </Tooltip>
+                          <div className="h-4 w-px bg-border/60 mx-1.5" />
+                        </>
+                      ) : null}
                       <Button
                         variant="ghost"
                         size="icon"
                         className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
                         onClick={toggleRightExpansion}
-                        aria-label={rightSidebarExpanded ? "Shrink details panel" : "Expand details panel"}
+                        aria-label={rightSidebarExpanded ? "Shrink panel" : "Expand panel"}
                         disabled={!rightSidebarOpen}
                       >
                         {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -498,7 +587,12 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
                   </div>
                 </SidebarHeader>
                 <SidebarContent className="min-h-0 gap-0 p-0 overflow-hidden">
-                  {right}
+                  <div
+                    key={rightSidebarPanel}
+                    className="h-full animate-in fade-in-0 slide-in-from-right-2 duration-200"
+                  >
+                    {renderedRight}
+                  </div>
                 </SidebarContent>
               </Sidebar>
             </div>

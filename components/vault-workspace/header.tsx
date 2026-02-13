@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { cn } from "@/lib/utils";
 import {
+  ArrowLeft,
+  ArrowRight,
   ChevronRight,
   Download,
   Eye,
   FilePenLine,
   Globe,
   Link as LinkIcon,
+  ListTree,
   Loader2,
   MessageSquare,
   Minimize,
@@ -52,12 +55,17 @@ export type WorkspaceHeaderProps = {
   aiBusy: boolean;
   aiDisabled: boolean;
   hasFile: boolean;
-  onToggleRight?: () => void;
+  onOpenChatSidebar?: () => void;
+  onOpenOutlineSidebar?: () => void;
   sharingState?: SharingState;
   onTogglePublic?: () => void;
   onCopyPublicLink?: () => void;
   centered?: boolean;
   onToggleCentered?: () => void;
+  canNavigatePrev: boolean;
+  canNavigateNext: boolean;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
   onDownload?: (format: "markdown" | "text" | "pdf") => void;
   onDelete?: () => void;
 };
@@ -73,12 +81,17 @@ export function WorkspaceHeader({
   aiBusy,
   aiDisabled,
   hasFile,
-  onToggleRight,
+  onOpenChatSidebar,
+  onOpenOutlineSidebar,
   sharingState,
   onTogglePublic,
   onCopyPublicLink,
   centered = false,
   onToggleCentered,
+  canNavigatePrev,
+  canNavigateNext,
+  onNavigatePrev,
+  onNavigateNext,
   onDownload,
   onDelete,
 }: WorkspaceHeaderProps) {
@@ -173,9 +186,42 @@ export function WorkspaceHeader({
           )}
         </div>
         <div className="ml-auto flex flex-shrink-0 items-center gap-0.5">
-          {/* Desktop: Expand, Edit/Preview, Save icons */}
+          {/* Desktop: Navigation, expand, edit/preview, save icons */}
           {hasFile && (
             <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden lg:inline-flex")}
+                    onClick={onNavigatePrev}
+                    disabled={!onNavigatePrev || !canNavigatePrev}
+                    aria-label="Previous file in folder"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Previous file</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden lg:inline-flex")}
+                    onClick={onNavigateNext}
+                    disabled={!onNavigateNext || !canNavigateNext}
+                    aria-label="Next file in folder"
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Next file</TooltipContent>
+              </Tooltip>
+              <div className="hidden lg:block h-4 w-px bg-border mx-1" aria-hidden="true" />
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -356,8 +402,17 @@ export function WorkspaceHeader({
 
                   <DropdownMenuItem
                     className="flex items-center gap-2"
-                    onClick={onToggleRight}
-                    disabled={!onToggleRight}
+                    onClick={onOpenOutlineSidebar}
+                    disabled={!onOpenOutlineSidebar}
+                  >
+                    <ListTree className="h-4 w-4" />
+                    <span className="text-sm">Outline</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={onOpenChatSidebar}
+                    disabled={!onOpenChatSidebar}
                   >
                     <MessageSquare className="h-4 w-4" />
                     <span className="text-sm">Chat</span>
@@ -381,8 +436,8 @@ export function WorkspaceHeader({
               {!hasFile && (
                 <DropdownMenuItem
                   className="flex items-center gap-2"
-                  onClick={onToggleRight}
-                  disabled={!onToggleRight}
+                  onClick={onOpenChatSidebar}
+                  disabled={!onOpenChatSidebar}
                 >
                   <MessageSquare className="h-4 w-4" />
                   <span className="text-sm">Chat</span>

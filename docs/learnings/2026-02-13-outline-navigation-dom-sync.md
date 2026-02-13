@@ -1,0 +1,21 @@
+# 2026-02-13-outline-navigation-dom-sync
+
+- Area: `header`
+- Context: Implemented markdown outline navigation from right sidebar into Streamdown-rendered preview headings.
+- Symptom: Outline clicks did not consistently scroll/highlight the target heading; when scrolling worked, highlight was often invisible.
+- Root cause: Heading IDs assigned only at render-time were not consistently available across Streamdown render cycles. Scroll behavior changes (`auto` vs `smooth`) and top-offset handling caused inconsistent UX; highlight animation often started before target visibility.
+- Fix:
+  - Assign heading `id`/`data-outline-id` after render via DOM sync in `MarkdownPreview`.
+  - Add index-based fallback target resolution in `OutlineSidebar` when ID lookup misses.
+  - Use top-aligned custom smooth scrolling against the active scroll container.
+  - Apply highlight after smooth-scroll settle for reliable visibility.
+  - Close right mobile sheet on outline selection only.
+  - Add connector line rendering for expanded outline children to mirror file tree affordance.
+- Guardrails:
+  - For Streamdown/markdown anchor navigation, prefer post-render DOM synchronization over purely render-time assumptions.
+  - If using animated scroll + transient highlight, start highlight after viewport positioning.
+  - Keep mobile behavior explicit per panel mode (`outline` can auto-close; `chat` should stay open).
+- References:
+  - `components/markdown-preview.tsx`
+  - `components/vault-workspace/outline-sidebar.tsx`
+  - `components/app-shell.tsx`

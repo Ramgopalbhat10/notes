@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+export type RightSidebarPanel = "chat" | "outline";
+
 type WorkspaceLayoutState = {
   centered: boolean;
   toggleCentered: () => void;
@@ -11,9 +13,12 @@ type WorkspaceLayoutState = {
   // Right sidebar state
   rightSidebarOpen: boolean;
   rightSidebarExpanded: boolean;
+  rightSidebarPanel: RightSidebarPanel;
   setRightSidebarOpen: (open: boolean) => void;
   setRightSidebarExpanded: (expanded: boolean) => void;
-  toggleRightSidebar: () => void;
+  setRightSidebarPanel: (panel: RightSidebarPanel) => void;
+  openRightSidebar: (panel: RightSidebarPanel) => void;
+  toggleRightSidebar: (panel?: RightSidebarPanel) => void;
   toggleRightSidebarExpansion: () => void;
   closeRightSidebar: () => void;
   // Left sidebar state
@@ -38,12 +43,21 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>((set) => ({
   // Right sidebar state
   rightSidebarOpen: false,
   rightSidebarExpanded: false,
+  rightSidebarPanel: "chat",
   setRightSidebarOpen: (open) => set({ rightSidebarOpen: open, ...(open ? {} : { rightSidebarExpanded: false }) }),
   setRightSidebarExpanded: (expanded) => set({ rightSidebarExpanded: expanded }),
-  toggleRightSidebar: () =>
+  setRightSidebarPanel: (panel) => set({ rightSidebarPanel: panel }),
+  openRightSidebar: (panel) => set({ rightSidebarOpen: true, rightSidebarPanel: panel }),
+  toggleRightSidebar: (panel) =>
     set((state) => ({
-      rightSidebarOpen: !state.rightSidebarOpen,
-      rightSidebarExpanded: state.rightSidebarOpen ? false : state.rightSidebarExpanded,
+      ...(state.rightSidebarOpen
+        ? panel && panel !== state.rightSidebarPanel
+          ? { rightSidebarOpen: true, rightSidebarPanel: panel }
+          : { rightSidebarOpen: false, rightSidebarExpanded: false }
+        : {
+          rightSidebarOpen: true,
+          rightSidebarPanel: panel ?? state.rightSidebarPanel,
+        }),
     })),
   toggleRightSidebarExpansion: () =>
     set((state) => ({
@@ -64,4 +78,3 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>((set) => ({
       leftSidebarExpanded: !state.leftSidebarExpanded,
     })),
 }));
-
