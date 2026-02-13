@@ -22,7 +22,8 @@ A "unit of work" is a legitimate change that impacts code, behavior, or user-vis
 3. Update `docs/PROGRESS.md`:
    - Point to the current story file.
    - Update counts of done / in-progress / pending items.
-4. If you learned something non-obvious (gotcha, repeated failure, tricky edge case), append it to `docs/LEARNINGS.md`.
+4. If you learned something non-obvious (gotcha, repeated failure, tricky edge case), add a new file under `docs/learnings/` and add it to `docs/learnings/README.md`.
+5. If a major architectural decision was made and implemented, add a doc under `docs/decisions/` and add it to `docs/decisions/README.md`.
 
 ## No-Op Rule
 If the request is not related to code modification and has no doc impact, do nothing.

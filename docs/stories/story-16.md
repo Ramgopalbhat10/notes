@@ -28,6 +28,8 @@ Goal: Add desktop-only previous/next file navigation controls to the workspace h
 |---|---|---|
 | 2026-02-13 | feat | Desktop header sibling-file navigation (arrows, desktop-only). |
 | 2026-02-13 | docs | Workflow/progress/learnings docs + AGENTS pointer refresh. |
+| 2026-02-13 | docs | Learnings moved to `docs/learnings/` (index + per-item files). |
+| 2026-02-13 | docs | Decisions live in `docs/decisions/` (index + moved ADRs). |
 
 ---
 

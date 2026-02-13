@@ -8,7 +8,11 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 ## Workflow
 - Branching and docs update rules: `docs/WORKFLOW.md`
 - Current focus and checklist: `docs/PROGRESS.md`
-- Gotchas and lessons learned: `docs/LEARNINGS.md`
+- Gotchas and lessons learned: `docs/learnings/README.md`
+
+## Session Bootstrap (New Chat)
+- Load `AGENTS.md`, then load `docs/PROGRESS.md` and `docs/WORKFLOW.md` only.
+- Use those docs to navigate to deeper context (stories, learnings, PRD) as needed.
 
 ## Quick Commands
 - Install: `pnpm install`
@@ -20,4 +24,4 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 - Setup, env, scripts: `README.md`
 - Product/architecture: `docs/PRD.md`
 - Work history/stories: `docs/stories/README.md`
-- Caching notes: `docs/ADR-caching-strategy.md`
+- Architectural decisions: `docs/decisions/README.md`

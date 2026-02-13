@@ -9,3 +9,6 @@ Status:
 
 Next action:
 - None (Story 16 complete)
+
+Notes:
+- Learnings live in `docs/learnings/README.md`
