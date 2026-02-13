@@ -22,6 +22,13 @@ Goal: Add desktop-only previous/next file navigation controls to the workspace h
 - Clicking navigation uses existing `select()` flow and preserves unsaved/conflict confirmation behavior.
 - Existing edit/preview/save/help/actions behavior remains unchanged.
 
+## Dev Log
+
+| Date | Unit | Summary |
+|---|---|---|
+| 2026-02-13 | feat | Desktop header sibling-file navigation (arrows, desktop-only). |
+| 2026-02-13 | docs | Workflow/progress/learnings docs + AGENTS pointer refresh. |
+
 ---
 
 ## Story 16.1 — State Derivation in VaultWorkspace
