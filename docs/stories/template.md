@@ -8,6 +8,7 @@ Notes:
 - Update `docs/stories/README.md` to add the new story row.
 - Use this as the default starting point after planning a new feature.
 - Source template: `docs/stories/template.md`.
+ - Initialize `docs/PROGRESS.md` with only Story N.1 sub-tasks (next incomplete section).
 -->
 
 ## Scope
