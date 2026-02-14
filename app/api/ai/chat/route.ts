@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   convertToModelMessages,
@@ -44,6 +45,11 @@ type FileContext = {
 
 export async function POST(request: NextRequest) {
   try {
+    const authRes = await requireApiUser(request);
+    if (!authRes.ok) {
+      return json({ error: authRes.error }, { status: authRes.status });
+    }
+
     const { messages: rawMessages, file: rawFile, model: requestedModel } = await parseRequest(request);
 
     if (rawMessages.length === 0) {
