@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, ChevronsDown, ChevronsUp, ListTree } from "lucide-react";
+import { ChevronRight, ChevronsDown, ChevronsUp, Search, X } from "lucide-react";
 
+import { Input } from "@/components/ui/input";
 import { buildMarkdownOutline, type MarkdownOutlineNode } from "@/lib/markdown-outline";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editor";
@@ -10,6 +11,7 @@ import { useEditorStore } from "@/stores/editor";
 const NODE_INDENT_PX = 14;
 const CONNECTOR_LEFT_OFFSET_PX = 10;
 const HIGHLIGHT_DURATION_MS = 2_000;
+const OUTLINE_HIGHLIGHT_TOKEN_ATTR = "data-outline-highlight-token";
 
 export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: () => void }) {
   const fileKey = useEditorStore((state) => state.fileKey);
@@ -24,13 +26,22 @@ export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: 
   }, [outline.flat]);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   const clearHighlightTimeoutRef = useRef<number | null>(null);
+  const highlightedTargetRef = useRef<HTMLElement | null>(null);
+  const normalizedQuery = query.trim().toLowerCase();
+  const filterActive = normalizedQuery.length > 0;
+  const filteredOutline = useMemo(() => filterOutlineTree(outline.tree, normalizedQuery), [outline.tree, normalizedQuery]);
+  const visibleTree = filterActive ? filteredOutline.tree : outline.tree;
+  const hasOutlineHeadings = outline.tree.length > 0;
+  const hasVisibleOutline = visibleTree.length > 0;
+  const disableOutlineControls = filterActive || !hasOutlineHeadings;
 
   useEffect(() => {
     const defaultExpanded = collectExpandableState(outline.tree, true);
     setExpanded((current) => {
       const next = { ...defaultExpanded };
-      for (const [id, value] of Object.entries(next)) {
+      for (const id of Object.keys(next)) {
         if (id in current) {
           next[id] = current[id]!;
         }
@@ -41,24 +52,38 @@ export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: 
   }, [fileKey, outline.tree]);
 
   useEffect(() => {
-    return () => {
-      if (clearHighlightTimeoutRef.current) {
-        window.clearTimeout(clearHighlightTimeoutRef.current);
-      }
-    };
-  }, []);
+    setQuery("");
+  }, [fileKey]);
 
   const focusHeadingWithRetry = useCallback((headingId: string, headingIndex: number, retries: number) => {
     const applyHighlight = (target: HTMLElement) => {
+      if (highlightedTargetRef.current && highlightedTargetRef.current !== target) {
+        highlightedTargetRef.current.classList.remove("outline-target-highlight");
+        highlightedTargetRef.current.removeAttribute(OUTLINE_HIGHLIGHT_TOKEN_ATTR);
+      }
+
       target.classList.remove("outline-target-highlight");
+      target.removeAttribute(OUTLINE_HIGHLIGHT_TOKEN_ATTR);
       void target.getBoundingClientRect();
       target.classList.add("outline-target-highlight");
+      highlightedTargetRef.current = target;
+
+      const highlightToken = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      target.setAttribute(OUTLINE_HIGHLIGHT_TOKEN_ATTR, highlightToken);
 
       if (clearHighlightTimeoutRef.current) {
         window.clearTimeout(clearHighlightTimeoutRef.current);
       }
       clearHighlightTimeoutRef.current = window.setTimeout(() => {
+        const token = target.getAttribute(OUTLINE_HIGHLIGHT_TOKEN_ATTR);
+        if (token !== highlightToken) {
+          return;
+        }
         target.classList.remove("outline-target-highlight");
+        target.removeAttribute(OUTLINE_HIGHLIGHT_TOKEN_ATTR);
+        if (highlightedTargetRef.current === target) {
+          highlightedTargetRef.current = null;
+        }
       }, HIGHLIGHT_DURATION_MS);
     };
     const scrollToTop = (target: HTMLElement) => {
@@ -138,62 +163,82 @@ export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: 
     );
   }
 
-  if (outline.tree.length === 0) {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex h-10 items-center justify-between border-b border-border/40 px-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <ListTree className="h-4 w-4" />
-            Outline
-          </div>
-        </div>
-        <div className="flex flex-1 items-center justify-center p-4 text-sm text-muted-foreground">
-          No headings found in this file.
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-10 items-center justify-between border-b border-border/40 px-3">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <ListTree className="h-4 w-4" />
-          Outline
+      <div className="flex h-10 items-center gap-2 border-b border-border/40 px-3">
+        <div className="relative flex-1">
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search headings..."
+            aria-label="Search outline headings"
+            className="h-8 rounded-md border border-transparent bg-transparent dark:bg-transparent pl-8 pr-8 text-sm shadow-none focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0"
+          />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          {query.length > 0 ? (
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              aria-label="Clear outline search"
+              onClick={() => setQuery("")}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
         </div>
+        <div className="h-4 w-px bg-border/60" aria-hidden="true" />
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className={cn(
+              "rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              disableOutlineControls && "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-muted-foreground",
+            )}
             aria-label="Expand all outline sections"
             onClick={handleExpandAll}
+            disabled={disableOutlineControls}
           >
             <ChevronsDown className="h-4 w-4" />
           </button>
           <button
             type="button"
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className={cn(
+              "rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              disableOutlineControls && "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-muted-foreground",
+            )}
             aria-label="Collapse all outline sections"
             onClick={handleCollapseAll}
+            disabled={disableOutlineControls}
           >
             <ChevronsUp className="h-4 w-4" />
           </button>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-2">
-        <div className="space-y-0.5">
-          {outline.tree.map((node) => (
-            <OutlineTreeNode
-              key={node.id}
-              node={node}
-              depth={0}
-              expanded={expanded}
-              activeId={activeId}
-              onToggleNode={toggleNode}
-              onNavigate={handleNavigate}
-            />
-          ))}
-        </div>
+        {!hasOutlineHeadings ? (
+          <div className="flex h-full items-center justify-center p-4 text-sm text-muted-foreground">
+            No headings found in this file.
+          </div>
+        ) : filterActive && !hasVisibleOutline ? (
+          <div className="flex h-full items-center justify-center p-4 text-sm text-muted-foreground">
+            No headings match your search.
+          </div>
+        ) : (
+          <div className="space-y-0.5">
+            {visibleTree.map((node) => (
+              <OutlineTreeNode
+                key={node.id}
+                node={node}
+                depth={0}
+                expanded={expanded}
+                activeId={activeId}
+                filterActive={filterActive}
+                onToggleNode={toggleNode}
+                onNavigate={handleNavigate}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -204,6 +249,7 @@ function OutlineTreeNode({
   depth,
   expanded,
   activeId,
+  filterActive,
   onToggleNode,
   onNavigate,
 }: {
@@ -211,13 +257,15 @@ function OutlineTreeNode({
   depth: number;
   expanded: Record<string, boolean>;
   activeId: string | null;
+  filterActive: boolean;
   onToggleNode: (id: string) => void;
   onNavigate: (id: string) => void;
 }) {
   const hasChildren = node.children.length > 0;
-  const isExpanded = hasChildren ? expanded[node.id] ?? true : false;
+  const isExpanded = hasChildren ? (filterActive ? true : (expanded[node.id] ?? true)) : false;
   const isActive = activeId === node.id;
   const connectorLeft = depth * NODE_INDENT_PX + CONNECTOR_LEFT_OFFSET_PX;
+  const toggleDisabled = filterActive;
 
   return (
     <div className="space-y-0.5">
@@ -226,9 +274,13 @@ function OutlineTreeNode({
         {hasChildren ? (
           <button
             type="button"
-            className="mr-1 rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            aria-label={isExpanded ? `Collapse ${node.text}` : `Expand ${node.text}`}
+            className={cn(
+              "mr-1 rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              toggleDisabled && "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-muted-foreground",
+            )}
+            aria-label={toggleDisabled ? `Expansion locked while searching: ${node.text}` : (isExpanded ? `Collapse ${node.text}` : `Expand ${node.text}`)}
             onClick={() => onToggleNode(node.id)}
+            disabled={toggleDisabled}
           >
             <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isExpanded && "rotate-90")} />
           </button>
@@ -265,6 +317,7 @@ function OutlineTreeNode({
                 depth={depth + 1}
                 expanded={expanded}
                 activeId={activeId}
+                filterActive={filterActive}
                 onToggleNode={onToggleNode}
                 onNavigate={onNavigate}
               />
@@ -290,6 +343,67 @@ function collectExpandableState(nodes: MarkdownOutlineNode[], expanded: boolean)
 
   traverse(nodes);
   return state;
+}
+
+type FilterOutlineResult = {
+  tree: MarkdownOutlineNode[];
+  includedIds: Set<string>;
+  matchedIds: Set<string>;
+};
+
+function filterOutlineTree(nodes: MarkdownOutlineNode[], normalizedQuery: string): FilterOutlineResult {
+  const includedIds = new Set<string>();
+  const matchedIds = new Set<string>();
+
+  if (!normalizedQuery) {
+    for (const node of nodes) {
+      collectNodeIds(node, includedIds);
+    }
+    return { tree: nodes, includedIds, matchedIds };
+  }
+
+  const filterNode = (node: MarkdownOutlineNode): MarkdownOutlineNode | null => {
+    const matchesSelf = node.text.toLowerCase().includes(normalizedQuery);
+    if (matchesSelf) {
+      matchedIds.add(node.id);
+      const cloned = cloneOutlineSubtree(node);
+      collectNodeIds(cloned, includedIds);
+      return cloned;
+    }
+
+    const filteredChildren = node.children
+      .map((child) => filterNode(child))
+      .filter((child): child is MarkdownOutlineNode => child !== null);
+    if (filteredChildren.length === 0) {
+      return null;
+    }
+
+    includedIds.add(node.id);
+    return {
+      ...node,
+      children: filteredChildren,
+    };
+  };
+
+  const tree = nodes
+    .map((node) => filterNode(node))
+    .filter((node): node is MarkdownOutlineNode => node !== null);
+
+  return { tree, includedIds, matchedIds };
+}
+
+function cloneOutlineSubtree(node: MarkdownOutlineNode): MarkdownOutlineNode {
+  return {
+    ...node,
+    children: node.children.map((child) => cloneOutlineSubtree(child)),
+  };
+}
+
+function collectNodeIds(node: MarkdownOutlineNode, ids: Set<string>): void {
+  ids.add(node.id);
+  for (const child of node.children) {
+    collectNodeIds(child, ids);
+  }
 }
 
 function findScrollableAncestor(element: HTMLElement): HTMLElement | null {
