@@ -24,3 +24,4 @@ Filename: `YYYY-MM-DD-short-title.md`
 |---|---|
 | 2026-02-13-header-nav-enabled-state-wrong | `docs/learnings/2026-02-13-header-nav-enabled-state-wrong.md` |
 | 2026-02-13-outline-navigation-dom-sync | `docs/learnings/2026-02-13-outline-navigation-dom-sync.md` |
+| 2026-02-14-outline-highlight-scroll-ux | `docs/learnings/2026-02-14-outline-highlight-scroll-ux.md` |

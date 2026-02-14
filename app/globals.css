@@ -330,26 +330,30 @@ body {
   }
 
   .markdown-preview .outline-target-highlight {
-    animation: outline-target-highlight 2s ease-out;
-    border-radius: 0.35rem;
-    padding-left: 0.25rem;
-    margin-left: -0.25rem;
-    transition: background-color 150ms ease, box-shadow 150ms ease;
+    position: relative;
   }
-}
 
-@keyframes outline-target-highlight {
-  0% {
-    background-color: rgba(0, 0, 0, 0.55);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  .markdown-preview .outline-target-highlight::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.1em;
+    height: 2px;
+    pointer-events: none;
+    border-radius: 9999px;
+    background: var(--primary);
+    animation: outline-underline-pulse 1s ease-in-out 2;
   }
-  55% {
-    background-color: rgba(0, 0, 0, 0.38);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: inset 0 0 0 1px transparent;
+
+  @keyframes outline-underline-pulse {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 }
 

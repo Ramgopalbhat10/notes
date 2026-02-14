@@ -10,7 +10,6 @@ import { useEditorStore } from "@/stores/editor";
 const NODE_INDENT_PX = 14;
 const CONNECTOR_LEFT_OFFSET_PX = 10;
 const HIGHLIGHT_DURATION_MS = 2_000;
-const SMOOTH_SCROLL_SETTLE_MS = 320;
 
 export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: () => void }) {
   const fileKey = useEditorStore((state) => state.fileKey);
@@ -62,17 +61,22 @@ export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: 
         target.classList.remove("outline-target-highlight");
       }, HIGHLIGHT_DURATION_MS);
     };
-    const smoothScrollToTop = (target: HTMLElement) => {
+    const scrollToTop = (target: HTMLElement) => {
       const scroller = findScrollableAncestor(target);
       if (!scroller) {
-        target.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+        target.scrollIntoView({ behavior: "auto", block: "start", inline: "nearest" });
         return;
       }
 
       const targetRect = target.getBoundingClientRect();
       const scrollerRect = scroller.getBoundingClientRect();
-      const targetTop = scroller.scrollTop + (targetRect.top - scrollerRect.top);
-      scroller.scrollTo({ top: targetTop, behavior: "smooth" });
+      const targetTop = scroller.scrollTop + (targetRect.top - scrollerRect.top - 15);
+      const previousBehavior = scroller.style.scrollBehavior;
+      scroller.style.scrollBehavior = "auto";
+      scroller.scrollTop = targetTop;
+      window.requestAnimationFrame(() => {
+        scroller.style.scrollBehavior = previousBehavior;
+      });
     };
 
     const tryFocus = (remainingAttempts: number) => {
@@ -94,9 +98,8 @@ export function OutlineSidebar({ onNavigateToSection }: { onNavigateToSection?: 
         return;
       }
 
-      smoothScrollToTop(target);
-      // Wait for smooth scrolling to settle so highlight is visible at final position.
-      window.setTimeout(() => applyHighlight(target), SMOOTH_SCROLL_SETTLE_MS);
+      scrollToTop(target);
+      window.requestAnimationFrame(() => applyHighlight(target));
     };
 
     tryFocus(retries);
