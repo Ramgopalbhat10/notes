@@ -130,7 +130,7 @@ Test Plan
 Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
-- [ ] Manually verify desktop and mobile panel switch scenarios.
+- [x] Manually verify desktop and mobile panel switch scenarios.
 
 Test Plan
 - Manual QA checklist from acceptance criteria.
