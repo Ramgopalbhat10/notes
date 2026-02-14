@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { streamText } from "ai";
 
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
+import { requireApiUser } from "@/lib/auth";
 
 type ActionType = "improve" | "summarize" | "expand";
 
@@ -13,6 +14,11 @@ const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireApiUser(request);
+    if (!authResult.ok) {
+      return json({ error: authResult.error }, { status: authResult.status });
+    }
+
     const ip = getClientIdentifier(request);
     if (!consumeRateLimit(ip)) {
       return json({ error: "Too many requests. Please wait and try again." }, { status: 429 });
