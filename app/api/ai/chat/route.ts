@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireApiUser } from "@/lib/auth";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   convertToModelMessages,
@@ -44,10 +45,15 @@ type FileContext = {
 
 export async function POST(request: NextRequest) {
   try {
+    const authRes = await requireApiUser(request);
+    if (!authRes.ok) {
+      return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+    }
+
     const { messages: rawMessages, file: rawFile, model: requestedModel } = await parseRequest(request);
 
     if (rawMessages.length === 0) {
-      return json({ error: "At least one message is required" }, { status: 400 });
+      return NextResponse.json({ error: "At least one message is required" }, { status: 400 });
     }
 
     const messages = clampMessages(rawMessages, MAX_MESSAGES);
@@ -90,7 +96,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("/api/ai/chat failed", error);
-    return json({ error: normalizeError(error) }, { status: 500 });
+    return NextResponse.json({ error: normalizeError(error) }, { status: 500 });
   }
 }
 
@@ -289,13 +295,4 @@ function normalizeError(error: unknown): string {
     return error;
   }
   return "Unexpected server error";
-}
-
-function json(data: Record<string, unknown>, init?: ResponseInit) {
-  const headers = new Headers(init?.headers);
-  headers.set("content-type", "application/json; charset=utf-8");
-  return new Response(JSON.stringify(data), {
-    ...init,
-    headers,
-  });
 }
