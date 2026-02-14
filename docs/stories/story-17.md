@@ -37,6 +37,11 @@ Goal: Add an Obsidian-style markdown outline panel in the right sidebar, opened 
 | 2026-02-13 | feat | Added preview heading anchors and highlight animation styles. |
 | 2026-02-13 | fix | Fixed outline navigation reliability, top-aligned scrolling, visible highlight timing, and mobile auto-close on outline selection. |
 | 2026-02-13 | fix | Restored smooth section scrolling, strengthened dark highlight styling, and added vertical connector lines for expanded outline trees. |
+| 2026-02-14 | fix | Removed smooth scrolling from outline navigation and forced instant top alignment in the active markdown scroll container. |
+| 2026-02-14 | fix | Reworked heading highlight UX from block background to primary underline pulse, then refined to smooth opacity-only pulse without width scaling. |
+| 2026-02-14 | feat | Replaced duplicate outline subheader with a search toolbar and added hierarchy-aware outline filtering with search-locked expansion behavior. |
+| 2026-02-14 | fix | Refined outline search toolbar visuals with transparent input styling, inline clear button, and a separator before expand/collapse controls. |
+| 2026-02-14 | fix | Fixed mobile outline navigation highlight cleanup so underline is removed after timeout even when the outline sheet closes immediately. |
 
 ---
 
@@ -125,7 +130,7 @@ Test Plan
 Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
-- [ ] Manually verify desktop and mobile panel switch scenarios.
+- [x] Manually verify desktop and mobile panel switch scenarios.
 
 Test Plan
 - Manual QA checklist from acceptance criteria.

@@ -56,5 +56,6 @@ A "unit of work" is a legitimate change that impacts code, behavior, or user-vis
    - Point to the current story file.
    - Include only one story section's sub-tasks (the next incomplete section).
    - Keep it short; it is a queue for the next unit of work, not a full story mirror.
+   - If all sub-tasks are complete, keep 'None - all tasks complete' as the next task.
 4. If you learned something non-obvious (gotcha, repeated failure, tricky edge case), add a new file under `docs/learnings/` and add it to `docs/learnings/README.md`.
 5. If a major architectural decision was made and implemented, add a doc under `docs/decisions/` and add it to `docs/decisions/README.md`.
