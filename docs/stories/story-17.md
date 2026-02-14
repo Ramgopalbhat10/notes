@@ -45,6 +45,7 @@ Goal: Add an Obsidian-style markdown outline panel in the right sidebar, opened 
 | 2026-02-14 | perf | Cached AI models metadata in shared memory + localStorage with TTL and in-flight deduping to avoid repeated `/api/ai/models` fetches on file route changes. |
 | 2026-02-14 | docs | Strengthened workflow with mandatory request routing and pre/post hard-stop gates. |
 | 2026-02-14 | docs | Rephrased workflow to compact numbered checklist with strict pre/post gates. |
+| 2026-02-14 | qa | Manually verified `/api/ai/models` fetch behavior occurs once per app load and does not refetch on file-to-file navigation. |
 
 ---
 
@@ -134,6 +135,7 @@ Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
 - [x] Manually verify desktop and mobile panel switch scenarios.
+- [x] Manually verify `/api/ai/models` is fetched once per app load and not on each file selection.
 
 Test Plan
 - Manual QA checklist from acceptance criteria.

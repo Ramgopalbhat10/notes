@@ -21,7 +21,8 @@ Complete all checks before editing code:
   - Existing feature: `git switch main` -> `git pull --ff-only` -> `git switch feature/<slug>` -> `git merge main`
   - Wrong branch but work already started: `git switch -c feature/<slug>` first, then merge `main` if needed.
 - [ ] Story file exists and is indexed in `docs/stories/README.md` (use `docs/stories/template.md` for new story).
-- [ ] `docs/PROGRESS.md` points to that story and contains only one section's sub-tasks (next incomplete section).
+- [ ] `docs/PROGRESS.md` points to that story and includes both sections: `Previous tasks` and `Next tasks`.
+- [ ] `docs/PROGRESS.md` `Next tasks` contains only the current workable sub-task(s), not completed tasks.
 - [ ] If adding/changing major UI, use Shadcn UI MCP server (fallback: existing `components/ui/*` conventions if MCP unavailable).
 - If any checkbox is incomplete, do not start implementation code.
 
@@ -31,9 +32,13 @@ Complete all checks before editing code:
 
 ## 5) Mandatory Post-Code Gate (Hard Stop)
 Before marking the unit complete:
-- [ ] Story subtasks updated (`[ ]` -> `[x]` as applicable).
+- [ ] Story subtasks updated (`[ ]` -> `[x]` as applicable) in the story file.
 - [ ] Story `## Dev Log` has one new row for this unit.
-- [ ] `docs/PROGRESS.md` advanced to next incomplete section tasks (or `None - all tasks complete`).
+- [ ] Update `docs/PROGRESS.md` with strict task movement:
+  - Clear existing `Previous tasks` first (do not accumulate across cycles).
+  - Move only the tasks just completed from `Next tasks` to `Previous tasks` and mark them `[x]`.
+  - Refill `Next tasks` from the next incomplete story sub-task(s) only.
+  - If no sub-tasks remain, set: `- None - all tasks completed.`
 - [ ] Quality gate run:
   - If code changed: `pnpm lint`
   - User-visible/risky change: `pnpm build`
