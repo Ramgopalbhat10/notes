@@ -26,6 +26,8 @@ import { useEditorStore } from "@/stores/editor";
 import { useChatStore } from "@/stores/chat";
 
 const MAX_EXCERPT_CHARS = 6_000;
+const MODELS_CACHE_STORAGE_KEY = "sidebar-chat-models-cache-v1";
+const MODELS_CACHE_TTL_MS = 12 * 60 * 60 * 1_000;
 
 type GatewayModelsResponse = {
   defaultModel?: string;
@@ -48,6 +50,12 @@ type ModelFeatureIcon = {
   tag: string;
   label: string;
   Icon: ComponentType<{ className?: string }>;
+};
+
+type CachedModelsState = {
+  availableModels: GatewayLanguageModelOption[];
+  gatewayDefaultModel: string;
+  cachedAt: number;
 };
 
 export type SidebarChatHandle = {
@@ -101,6 +109,8 @@ function createChatSessionId(): string {
 
 let sharedChatSession = createChatSession();
 const sharedChatSessionSubscribers = new Set<() => void>();
+let sharedModelsState: CachedModelsState | null = null;
+let sharedModelsPromise: Promise<CachedModelsState> | null = null;
 
 function getSharedChatSession(): Chat<UIMessage> {
   return sharedChatSession;
@@ -120,6 +130,98 @@ function resetSharedChatSession() {
   }
 }
 
+function isModelsCacheFresh(value: CachedModelsState): boolean {
+  return Date.now() - value.cachedAt <= MODELS_CACHE_TTL_MS;
+}
+
+function buildCachedModelsState(payload: GatewayModelsResponse): CachedModelsState {
+  const models = normalizeAvailableModels(payload.models);
+  const normalizedDefault = parseModelId(payload.defaultModel) || DEFAULT_CHAT_MODEL;
+  return {
+    availableModels: models.length > 0 ? models : FALLBACK_LANGUAGE_MODELS,
+    gatewayDefaultModel: normalizedDefault,
+    cachedAt: Date.now(),
+  };
+}
+
+function readModelsStateFromStorage(): CachedModelsState | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(MODELS_CACHE_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      availableModels?: GatewayLanguageModelOption[];
+      gatewayDefaultModel?: string;
+      cachedAt?: number;
+    };
+    if (!parsed || typeof parsed.cachedAt !== "number") {
+      return null;
+    }
+
+    const normalizedModels = normalizeAvailableModels(parsed.availableModels);
+    const gatewayDefaultModel = parseModelId(parsed.gatewayDefaultModel) || DEFAULT_CHAT_MODEL;
+    return {
+      availableModels: normalizedModels.length > 0 ? normalizedModels : FALLBACK_LANGUAGE_MODELS,
+      gatewayDefaultModel,
+      cachedAt: parsed.cachedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeModelsStateToStorage(value: CachedModelsState): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(MODELS_CACHE_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // Ignore storage errors (quota/private mode).
+  }
+}
+
+async function loadModelsState(): Promise<CachedModelsState> {
+  if (sharedModelsState && isModelsCacheFresh(sharedModelsState)) {
+    return sharedModelsState;
+  }
+
+  const stored = readModelsStateFromStorage();
+  if (stored && isModelsCacheFresh(stored)) {
+    sharedModelsState = stored;
+    return stored;
+  }
+
+  if (sharedModelsPromise) {
+    return sharedModelsPromise;
+  }
+
+  sharedModelsPromise = (async () => {
+    const response = await fetch("/api/ai/models");
+    if (!response.ok) {
+      throw new Error(`Failed to load models (${response.status})`);
+    }
+    const payload = (await response.json()) as GatewayModelsResponse;
+    const nextState = buildCachedModelsState(payload);
+    sharedModelsState = nextState;
+    writeModelsStateToStorage(nextState);
+    return nextState;
+  })();
+
+  try {
+    return await sharedModelsPromise;
+  } finally {
+    sharedModelsPromise = null;
+  }
+}
+
 export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const isMobile = useIsMobile();
   const fileKey = useEditorStore((state) => state.fileKey);
@@ -135,9 +237,13 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const setSelectedModel = useChatStore((state) => state.setSelectedModel);
   const draft = useChatStore((state) => state.draft);
   const setDraft = useChatStore((state) => state.setDraft);
-  const [availableModels, setAvailableModels] = useState<GatewayLanguageModelOption[]>(FALLBACK_LANGUAGE_MODELS);
-  const [gatewayDefaultModel, setGatewayDefaultModel] = useState(DEFAULT_CHAT_MODEL);
-  const [modelsLoading, setModelsLoading] = useState(true);
+  const [availableModels, setAvailableModels] = useState<GatewayLanguageModelOption[]>(
+    sharedModelsState?.availableModels ?? FALLBACK_LANGUAGE_MODELS,
+  );
+  const [gatewayDefaultModel, setGatewayDefaultModel] = useState(
+    sharedModelsState?.gatewayDefaultModel ?? DEFAULT_CHAT_MODEL,
+  );
+  const [modelsLoading, setModelsLoading] = useState(() => sharedModelsState === null);
   const [modelSelectOpen, setModelSelectOpen] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState<string>("all");
@@ -170,36 +276,19 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const digest = useMemo(() => computeDigest(content), [content]);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    let mounted = true;
+    let active = true;
 
     const loadModels = async () => {
       try {
-        const response = await fetch("/api/ai/models", {
-          cache: "no-store",
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to load models (${response.status})`);
-        }
-
-        const payload = (await response.json()) as GatewayModelsResponse;
-        const models = normalizeAvailableModels(payload.models);
-        const normalizedDefault = parseModelId(payload.defaultModel) || DEFAULT_CHAT_MODEL;
-
-        if (!mounted) {
+        const state = await loadModelsState();
+        if (!active) {
           return;
         }
 
-        setAvailableModels(models.length > 0 ? models : FALLBACK_LANGUAGE_MODELS);
-        setGatewayDefaultModel(normalizedDefault);
+        setAvailableModels(state.availableModels);
+        setGatewayDefaultModel(state.gatewayDefaultModel);
       } catch (error) {
-        if (!mounted) {
-          return;
-        }
-
-        if (error instanceof DOMException && error.name === "AbortError") {
+        if (!active) {
           return;
         }
 
@@ -207,7 +296,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
         setAvailableModels(FALLBACK_LANGUAGE_MODELS);
         setGatewayDefaultModel(DEFAULT_CHAT_MODEL);
       } finally {
-        if (mounted) {
+        if (active) {
           setModelsLoading(false);
         }
       }
@@ -216,8 +305,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     void loadModels();
 
     return () => {
-      mounted = false;
-      abortController.abort();
+      active = false;
     };
   }, []);
 

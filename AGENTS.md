@@ -9,10 +9,12 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 - Branching and docs update rules: `docs/WORKFLOW.md`
 - Current focus and checklist: `docs/PROGRESS.md`
 - Gotchas and lessons learned: `docs/learnings/README.md`
+- Enforce strict gates in `docs/WORKFLOW.md` (pre-code and post-code hard stops).
 
 ## Session Bootstrap (New Chat)
 - Load `AGENTS.md`, then load `docs/PROGRESS.md` and `docs/WORKFLOW.md` only.
 - Use those docs to navigate to deeper context (stories, learnings, PRD) as needed.
+- For each implementation request, follow `docs/WORKFLOW.md` in order; do not start code edits before the pre-code gate is complete.
 
 ## Progressive Disclosure
 - Keep `AGENTS.md` stable and minimal; avoid listing deep internal paths here.

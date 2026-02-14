@@ -1,61 +1,51 @@
 # Workflow Standards
 
-## Planning vs Execution
-- Planning phase: propose branch name, story number/title, and approach. Do not mutate the repo (no branch/story creation, no commits).
-- Execution phase (after an explicit "implement/start work" request): follow this workflow, including branch setup, story creation, and docs updates.
+## 1) Mode
+- Planning: propose branch/story/approach only. No repo mutations.
+- Execution: follow this file in order.
+- No-op: if no code/docs impact, do nothing.
 
-## No-Op Rule
-If the request is not related to code modification and has no doc impact, do nothing.
+## 2) Route The Request (Every Prompt)
+- Treat each new request independently, even in the same chat.
+- If request is unrelated to current `docs/PROGRESS.md` story/branch, treat as new work (new branch + new story + reset progress queue).
+- Never implement unrelated work on the old feature branch.
 
-## Before You Implement (Context Pull)
-- Read `docs/PROGRESS.md` and open the current story file it points to.
-- Skim `docs/learnings/README.md` and search relevant keywords in `docs/learnings/` (use `rg`).
-- If the change touches architecture, caching, data flow, auth, or AI routing, skim `docs/decisions/README.md` first.
+## 3) Mandatory Pre-Code Gate (Hard Stop)
+Complete all checks before editing code:
+- [ ] Read `docs/PROGRESS.md` and open its story file.
+- [ ] Skim `docs/learnings/README.md`; search relevant keywords in `docs/learnings/` via `rg`.
+- [ ] If architecture/caching/data-flow/auth/AI routing changes are involved, skim `docs/decisions/README.md`.
+- [ ] Run `git status --short --branch` and confirm target `feature/<slug>`.
+- [ ] Branch setup:
+  - New feature: `git switch main` -> `git pull --ff-only` -> `git switch -c feature/<slug>`
+  - Existing feature: `git switch main` -> `git pull --ff-only` -> `git switch feature/<slug>` -> `git merge main`
+  - Wrong branch but work already started: `git switch -c feature/<slug>` first, then merge `main` if needed.
+- [ ] Story file exists and is indexed in `docs/stories/README.md` (use `docs/stories/template.md` for new story).
+- [ ] `docs/PROGRESS.md` points to that story and includes both sections: `Previous tasks` and `Next tasks`.
+- [ ] `docs/PROGRESS.md` `Next tasks` contains only the current workable sub-task(s), not completed tasks.
+- [ ] If adding/changing major UI, use Shadcn UI MCP server (fallback: existing `components/ui/*` conventions if MCP unavailable).
+- If any checkbox is incomplete, do not start implementation code.
 
-## Execution Kickoff (Before Any Code Changes)
-- Always start execution by checking branch state: `git status --short --branch`.
-- Determine the target branch (use `feature/<slug>` branches only):
-  - New feature:
-    - `git switch main`
-    - `git pull --ff-only`
-    - `git switch -c feature/<slug>`
-    - Create a new story file from `docs/stories/template.md` and add it to `docs/stories/README.md`.
-  - Existing feature branch work:
-    - `git switch main`
-    - `git pull --ff-only`
-    - `git switch feature/<slug>`
-    - `git merge main`
-- If you are on the wrong branch and work has already started:
-  - Create the correct branch immediately from the current state to preserve work: `git switch -c feature/<slug>`.
-  - Then update `main` and merge `main` into the feature branch if needed.
-- Only after branch is correct:
-  - Ensure the story file exists and is indexed.
-  - Ensure `docs/PROGRESS.md` is initialized with the first incomplete section tasks.
+## 4) Execute One Unit Of Work
+- A unit of work is one legitimate, scoped change (code/behavior/docs).
+- Keep scope tight to the current section in `docs/PROGRESS.md`.
 
-## UI Tooling
-- Trigger: any work that adds/changes UI components, page layouts, or the app's look-and-feel (spacing, typography, color, interaction patterns).
-- Requirement: use the Shadcn UI MCP server to source/generate the relevant shadcn/ui components and patterns (keep consistency with `components/ui/*`).
-- Output: prefer composing from existing shadcn/ui primitives before writing custom UI from scratch.
-- Fallback: if the Shadcn UI MCP server is not available in the current environment, proceed using the existing `components/ui/*` components and match their styling conventions.
+## 5) Mandatory Post-Code Gate (Hard Stop)
+Before marking the unit complete:
+- [ ] Story subtasks updated (`[ ]` -> `[x]` as applicable) in the story file.
+- [ ] Story `## Dev Log` has one new row for this unit.
+- [ ] Update `docs/PROGRESS.md` with strict task movement:
+  - Clear existing `Previous tasks` first (do not accumulate across cycles).
+  - Move only the tasks just completed from `Next tasks` to `Previous tasks` and mark them `[x]`.
+  - Refill `Next tasks` from the next incomplete story sub-task(s) only.
+  - If no sub-tasks remain, set: `- None - all tasks completed.`
+- [ ] Quality gate run:
+  - If code changed: `pnpm lint`
+  - User-visible/risky change: `pnpm build`
+- [ ] If checks fail: fix first, or commit explicitly as WIP and note failure in Dev Log.
+- [ ] If major architecture changed: add/update `docs/decisions/*` and `docs/decisions/README.md`.
+- [ ] If non-obvious lesson emerged: add learning file and update `docs/learnings/README.md`.
+- If any checkbox is incomplete, the unit is not done.
 
-## Unit Of Work Definition
-A "unit of work" is a legitimate change that impacts code, behavior, or user-visible docs (not formatting-only churn).
-
-## Quality Gate (Before Commit/Push)
-- If code was changed, run `pnpm lint` before committing.
-- For user-visible or risky changes (or before opening/updating a PR), run `pnpm build`.
-- If checks fail, do not commit as "done". Fix the issue or commit explicitly as WIP and note the failure in the story `## Dev Log`.
-
-## After Each Unit Of Work (Docs + Commits)
-1. Commit with Conventional Commits, but stay on the same `feature/<slug>` branch:
-   - `feat:` `fix:` `refactor:` `docs:` `chore:` etc.
-2. Update the current story document:
-   - Add a row to its `## Dev Log` table (date, unit type, 1-line summary). Add `## Dev Log` after the `## Acceptance Criteria` section if it doesn't exist.
-   - Check off any completed story subtasks.
-3. Update `docs/PROGRESS.md`:
-   - Point to the current story file.
-   - Include only one story section's sub-tasks (the next incomplete section).
-   - Keep it short; it is a queue for the next unit of work, not a full story mirror.
-   - If all sub-tasks are complete, keep 'None - all tasks complete' as the next task.
-4. If you learned something non-obvious (gotcha, repeated failure, tricky edge case), add a new file under `docs/learnings/` and add it to `docs/learnings/README.md`.
-5. If a major architectural decision was made and implemented, add a doc under `docs/decisions/` and add it to `docs/decisions/README.md`.
+## 6) Commit Rule
+- Commit with Conventional Commits on the same `feature/<slug>` branch (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`).
