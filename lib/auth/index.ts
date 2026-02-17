@@ -56,6 +56,7 @@ export async function getSession() {
 }
 
 const ALLOWED_LOGIN = (process.env.GITHUB_ALLOWED_LOGIN || "").trim().toLowerCase();
+const INSECURE_ALLOW_ALL = process.env.AUTH_INSECURE_ALLOW_ALL === "true";
 
 type AuthSession = Awaited<
   ReturnType<(typeof auth)["api"]["getSession"]>
@@ -100,7 +101,8 @@ function getUserCandidates(session: SessionLike) {
 }
 
 export function isAllowedUser(session: SessionLike): boolean {
-  if (!ALLOWED_LOGIN) return true;
+  if (INSECURE_ALLOW_ALL) return true;
+  if (!ALLOWED_LOGIN) return false;
   const { username, email } = getUserCandidates(session);
   return username === ALLOWED_LOGIN || email === ALLOWED_LOGIN;
 }

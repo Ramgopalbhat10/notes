@@ -8,3 +8,4 @@ Issue template: `docs/issues/template.md`
 |---|---|---|---|---|
 | 1 | Unnecessary Console Logging in File Tree Builder | resolved | None | `lib/file-tree-builder.ts` |
 | 2 | Refactor Path Utilities | open | None | `lib/paths.ts` |
+| 3 | Insecure Default Authentication Configuration | resolved | None | `lib/auth/index.ts` |
