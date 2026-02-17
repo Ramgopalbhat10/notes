@@ -18,6 +18,7 @@ import {
   type RedisManifestValue,
 } from "@/lib/manifest-store";
 import { serializeFileTreeManifest, uploadFileTreeManifest } from "@/lib/file-tree-builder";
+import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/s3";
 
 function basename(input: string): string {
@@ -39,13 +40,6 @@ function parentIdFromPath(path: string): FileTreeNodeId | null {
     return null;
   }
   return `${normalized.slice(0, idx + 1)}`;
-}
-
-function sanitizeEtag(etag: string | undefined): string | undefined {
-  if (!etag) {
-    return undefined;
-  }
-  return etag.replace(/"/g, "");
 }
 
 function computeChecksum(manifest: FileTreeManifest): string {
@@ -205,7 +199,7 @@ export async function addOrUpdateFile(params: AddFileParams): Promise<void> {
     path: key,
     parentId,
     lastModified,
-    etag: sanitizeEtag(etag),
+    etag: normalizeEtag(etag) ?? undefined,
     size,
   };
 
@@ -371,7 +365,7 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     fileNode.name = basename(newKey);
     fileNode.path = newKey;
     fileNode.parentId = newParentId;
-    fileNode.etag = sanitizeEtag(head.ETag ?? undefined);
+    fileNode.etag = normalizeEtag(head.ETag ?? undefined) ?? undefined;
     fileNode.lastModified = head.LastModified?.toISOString();
     fileNode.size = typeof head.ContentLength === "number" ? head.ContentLength : undefined;
 
