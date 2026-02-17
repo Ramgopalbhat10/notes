@@ -30,6 +30,13 @@ Notes:
 |---|---|---|
 | YYYY-MM-DD | feat | <what shipped in this unit of work> |
 
+## Issues
+<!-- Cross-references to related issues (bugs, refactors, perf fixes) filed against this story.
+     Add a row when an issue is created that relates to this story. Keep Status in sync. -->
+
+| Issue | Title | Status | File |
+|---|---|---|---|
+
 ---
 
 ## Story N.1 — <Sub-Story Title>

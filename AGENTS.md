@@ -26,4 +26,5 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 - Setup, env, scripts: `README.md`
 - Product/architecture: `docs/PRD.md`
 - Work history/stories: `docs/stories/README.md`
+- Bugs, refactors, and non-feature work: `docs/issues/README.md`
 - Architectural decisions: `docs/decisions/README.md`
