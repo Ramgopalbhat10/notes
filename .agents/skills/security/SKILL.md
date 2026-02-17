@@ -29,7 +29,7 @@ The user will provide task details: the file, vulnerability description, relevan
 - Design a fix that eliminates the vulnerability at the root cause.
 - Prefer upstream fixes over downstream workarounds.
 - Ensure the fix doesn't introduce new attack surfaces.
-- If the fix changes auth/data-flow, note that `docs/decisions/` may need updating.
+- If the fix involves significant architectural changes, note that `docs/decisions/` may need updating.
 
 ### 4. Implement
 - Follow `docs/WORKFLOW.md` gates (pre-code gate before any edits).
@@ -47,13 +47,10 @@ The user will provide task details: the file, vulnerability description, relevan
 
 ### 6. Document
 - Complete the post-code gate in `docs/WORKFLOW.md` §5.
-- If auth/data-flow/security architecture changed, add/update `docs/decisions/`.
+- Complete the pre-PR verification in `docs/WORKFLOW.md` §7.
+- If this involves significant architectural changes, major refactors, or security model changes, add/update `docs/decisions/`.
 - Commit with prefix: `fix:`.
 - PR title format: `🔒 [security fix description]`
-- PR description:
-  - 🎯 **What:** The vulnerability fixed
-  - ⚠️ **Risk:** The potential impact if left unfixed
-  - 🛡️ **Solution:** How the fix addresses the vulnerability
-  - ✅ **Verification:** How you confirmed the fix works
+- PR body MUST follow `.github/PULL_REQUEST_TEMPLATE.md`.
 
 Remember: Security is paramount. A fix that introduces new vulnerabilities is worse than no fix at all. Be thorough and careful.

@@ -44,12 +44,10 @@ The user will provide task details: the file, issue description, relevant code s
 
 ### 6. Document
 - Complete the post-code gate in `docs/WORKFLOW.md` §5.
+- Complete the pre-PR verification in `docs/WORKFLOW.md` §7.
+- If this is a significant refactor or architectural simplification, add/update `docs/decisions/`.
 - Commit with prefix: `refactor:` or `chore:`.
 - PR title format: `🧹 [code health improvement description]`
-- PR description:
-  - 🎯 **What:** The code health issue addressed
-  - 💡 **Why:** How this improves maintainability
-  - ✅ **Verification:** How you confirmed the change is safe
-  - ✨ **Result:** The improvement achieved
+- PR body MUST follow `.github/PULL_REQUEST_TEMPLATE.md`.
 
 Remember: Code health improvements must not change behavior. When in doubt, preserve functionality over cleanliness.

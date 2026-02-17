@@ -28,7 +28,7 @@
 - [ ] If test files were generated during development, they have been deleted
 
 ### Architecture (if applicable)
-- [ ] Decision record added/updated in `docs/decisions/` (for auth/caching/data-flow/architecture changes)
+- [ ] Decision record added/updated in `docs/decisions/` (for significant architectural changes, major refactors, or major upgrades)
 - [ ] Learning added to `docs/learnings/` (if non-obvious lesson emerged)
 
 ## Related

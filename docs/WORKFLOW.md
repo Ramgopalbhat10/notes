@@ -28,7 +28,7 @@
 You MUST NOT write, modify, or delete any source code until every checkbox below is checked:
 - [ ] Read `docs/PROGRESS.md` and open its story or issue file.
 - [ ] Skim `docs/learnings/README.md`; search relevant keywords in `docs/learnings/` via `rg`.
-- [ ] If architecture/caching/data-flow/auth/AI routing changes are involved, skim `docs/decisions/README.md`.
+- [ ] If significant architectural changes, major refactors, or major upgrades are involved, skim `docs/decisions/README.md`.
 - [ ] Run `git status --short --branch` and confirm target branch (`feature/`, `fix/`, `refactor/`, or `chore/`).
 - [ ] Branch setup:
   - New work: `git switch main` -> `git pull --ff-only` -> `git switch -c <prefix>/<slug>`
@@ -72,7 +72,7 @@ You MUST NOT commit, push, or create a PR until every checkbox below is checked:
   - If code changed: `pnpm lint`
   - User-visible/risky change: `pnpm build`
 - [ ] If checks fail: fix first, or commit explicitly as WIP and note failure in Dev Log.
-- [ ] If major architecture changed: add/update `docs/decisions/*` and `docs/decisions/README.md`.
+- [ ] If significant architectural changes, major refactors, or major upgrades were made: add/update `docs/decisions/*` and `docs/decisions/README.md`.
 - [ ] If non-obvious lesson emerged: add learning file and update `docs/learnings/README.md`.
 - [ ] Verify the relevant index includes the current work:
   - Stories: `docs/stories/README.md`

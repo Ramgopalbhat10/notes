@@ -1,6 +1,6 @@
 # Decisions
 
-Architectural decisions live in `docs/decisions/` as standalone docs.
+Decision records for significant architectural changes, major refactors, and major upgrades live here as standalone docs. Create one when a change alters system structure, introduces new patterns, or has broad consequences across the codebase.
 
 ## Template (One File Per Decision)
 

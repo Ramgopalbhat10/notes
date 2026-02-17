@@ -28,7 +28,7 @@ The user will provide task details: the file, performance issue description, rel
 - What is the target improvement?
 - Consider trade-offs: caching vs freshness, code complexity vs speed, bundle size vs features.
 - Prefer standard patterns (memoization, lazy loading, pagination) over clever optimizations.
-- If the change affects caching/data-flow architecture, note that `docs/decisions/` may need updating.
+- If the change involves significant architectural changes, note that `docs/decisions/` may need updating.
 
 ### 4. Implement
 - Follow `docs/WORKFLOW.md` gates (pre-code gate before any edits).
@@ -46,13 +46,10 @@ The user will provide task details: the file, performance issue description, rel
 
 ### 6. Document
 - Complete the post-code gate in `docs/WORKFLOW.md` §5.
-- If caching/data-flow architecture changed, add/update `docs/decisions/`.
+- Complete the pre-PR verification in `docs/WORKFLOW.md` §7.
+- If this involves significant architectural changes, major refactors, or infrastructure changes, add/update `docs/decisions/`.
 - Commit with prefix: `perf:` or `fix:`.
 - PR title format: `⚡ [performance improvement description]`
-- PR description:
-  - 🎯 **What:** The performance issue addressed
-  - 📊 **Impact:** Measurable or expected improvement
-  - 🔧 **Approach:** What was changed and why this approach
-  - ✅ **Verification:** How you confirmed the improvement
+- PR body MUST follow `.github/PULL_REQUEST_TEMPLATE.md`.
 
 Remember: Performance fixes must not change behavior. Measure before and after when possible. Avoid trading correctness for speed.
