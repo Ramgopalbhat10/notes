@@ -77,6 +77,7 @@ Before marking the unit complete:
 - [ ] Verify the relevant index includes the current work:
   - Stories: `docs/stories/README.md`
   - Issues: `docs/issues/README.md`
+- [ ] Delete any test files created during this unit (`*.test.*`, `*.spec.*`, `__tests__/`). This project relies on manual testing only.
 - If any checkbox is incomplete, the unit is not done.
 
 ## 6) Commit Rule

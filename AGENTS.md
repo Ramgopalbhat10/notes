@@ -16,6 +16,11 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 - Use those docs to navigate to deeper context (stories, learnings, PRD) as needed.
 - For each implementation request, follow `docs/WORKFLOW.md` in order; do not start code edits before the pre-code gate is complete.
 
+## Testing Policy
+- This project has no test files and intentionally relies on manual testing.
+- Do not commit test files (e.g. `*.test.*`, `*.spec.*`, `__tests__/`).
+- If an agent creates test files during a PR review or code generation, delete them before the final commit.
+
 ## Quick Commands
 - Install: `pnpm install`
 - Dev: `pnpm dev`
