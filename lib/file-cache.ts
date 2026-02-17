@@ -147,12 +147,17 @@ export async function revalidateFileTags(keys: string[]): Promise<void> {
     return;
   }
   const redis = getRedisClient();
-  for (const key of normalized) {
-    try {
-      await redis.del(buildRedisKey(key));
-    } catch {
-      // ignore redis delete failures
+
+  try {
+    const redisKeys = normalized.map((key) => buildRedisKey(key));
+    if (redisKeys.length > 0) {
+      await redis.del(...redisKeys);
     }
+  } catch {
+    // ignore redis delete failures
+  }
+
+  for (const key of normalized) {
     revalidateTag(getFileCacheTag(key), "max");
   }
 }
