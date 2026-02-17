@@ -92,11 +92,12 @@ export async function removePersistentDocumentsWithPrefix(prefix: string): Promi
   }
 
   const tx = db.transaction(STORE_NAME, "readwrite");
-  let cursor = await tx.store.openKeyCursor();
+  const range = IDBKeyRange.bound(prefix, prefix + "\uffff");
+  let cursor = await tx.store.openKeyCursor(range);
   const removedKeys: string[] = [];
   while (cursor) {
     const key = cursor.key;
-    if (typeof key === "string" && key.startsWith(prefix)) {
+    if (typeof key === "string") {
       await cursor.delete();
       removedKeys.push(key);
     }
