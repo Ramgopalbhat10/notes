@@ -3,6 +3,7 @@
 <!--
 Notes:
 - Copy this file to `docs/issues/issue-<N>.md`.
+- Remove all notes and comments before using.
 - Update `docs/issues/README.md` to add the new issue row.
 - Use this for bug fixes, refactors, performance fixes, code cleanup, and other non-feature work.
 - If this issue relates to a story, add cross-references in both files.
