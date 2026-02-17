@@ -1,11 +1,11 @@
 # Progress
 
-Current story: `docs/stories/story-18.md`
+Current issue: `docs/issues/issue-1.md`
 
-Current section: Story 18 — Secure AI Action Endpoint
+Current section: Issue 1 — Unnecessary Console Logging in File Tree Builder
 
 Previous tasks (latest completed batch only):
-- [x] Add `requireApiUser` check to `/api/ai/action/route.ts`.
+- [x] Remove `console.log` statements in `lib/file-tree-builder.ts`.
 
 Next tasks:
 - None - all tasks completed.

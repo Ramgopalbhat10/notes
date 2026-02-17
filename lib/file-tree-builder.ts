@@ -76,18 +76,14 @@ async function buildContext(): Promise<BuildContext> {
   const folderQueue: string[] = [""];
   const visited = new Set<string>();
 
-  console.log("[buildContext] Starting file tree scan");
-
   while (folderQueue.length > 0) {
     const prefix = folderQueue.shift() ?? "";
     if (visited.has(prefix)) {
-      console.log("[buildContext] Skipping already visited prefix:", prefix);
       continue;
     }
     visited.add(prefix);
 
     let continuationToken: string | undefined;
-    console.log("[buildContext] Scanning S3 prefix:", applyVaultPrefix(prefix));
 
     do {
       const response = await client.send(
@@ -102,8 +98,6 @@ async function buildContext(): Promise<BuildContext> {
       const folderEntries = response.CommonPrefixes ?? [];
       const fileEntries = response.Contents ?? [];
 
-      console.log(`[buildContext] Prefix: ${prefix} | Folders: ${folderEntries.length} | Files: ${fileEntries.length}`);
-
       for (const entry of folderEntries) {
         const rawPrefix = entry.Prefix;
         if (!rawPrefix) {
@@ -117,7 +111,6 @@ async function buildContext(): Promise<BuildContext> {
         if (folderId === FILE_TREE_MANIFEST_FILENAME) {
           continue;
         }
-        console.log("[buildContext] Found folder:", folderId);
         folderQueue.push(folderId);
         const parentId = parentIdFromPath(folderId);
         addChild(childMap, parentId, folderId);
@@ -157,7 +150,6 @@ async function buildContext(): Promise<BuildContext> {
           folderQueue.push(folderId);
 
           if (!nodes.has(folderId)) {
-            console.log("[buildContext] Found folder marker:", folderId);
             const folderNode: FileTreeFolderNode = {
               id: folderId,
               type: "folder",
@@ -172,11 +164,9 @@ async function buildContext(): Promise<BuildContext> {
         }
 
         if (!relative.endsWith(".md")) {
-          console.log("[buildContext] Skipping non-markdown file:", relative);
           continue;
         }
 
-        console.log("[buildContext] Found markdown file:", relative);
         const parentId = parentIdFromPath(relative);
         addChild(childMap, parentId, relative);
 
@@ -197,7 +187,6 @@ async function buildContext(): Promise<BuildContext> {
     } while (continuationToken);
   }
 
-  console.log(`[buildContext] Scan complete. Total nodes: ${nodes.size}`);
   return { nodes, childMap };
 }
 
