@@ -18,19 +18,11 @@ import {
   type FileTreeNodeId,
   isFolderNode,
 } from "@/lib/file-tree-manifest";
+import { basename } from "@/lib/paths";
 
 interface BuildContext {
   nodes: Map<FileTreeNodeId, FileTreeNode>;
   childMap: Map<FileTreeNodeId | null, Set<FileTreeNodeId>>;
-}
-
-function basename(input: string): string {
-  if (!input) {
-    return input;
-  }
-  const trimmed = input.endsWith("/") ? input.slice(0, -1) : input;
-  const idx = trimmed.lastIndexOf("/");
-  return idx === -1 ? trimmed : trimmed.slice(idx + 1);
 }
 
 function parentIdFromPath(path: string): FileTreeNodeId | null {

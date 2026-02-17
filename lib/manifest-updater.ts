@@ -20,15 +20,7 @@ import {
 import { serializeFileTreeManifest, uploadFileTreeManifest } from "@/lib/file-tree-builder";
 import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/s3";
-
-function basename(input: string): string {
-  if (!input) {
-    return input;
-  }
-  const trimmed = input.endsWith("/") ? input.slice(0, -1) : input;
-  const idx = trimmed.lastIndexOf("/");
-  return idx === -1 ? trimmed : trimmed.slice(idx + 1);
-}
+import { basename } from "@/lib/paths";
 
 function parentIdFromPath(path: string): FileTreeNodeId | null {
   if (!path) {

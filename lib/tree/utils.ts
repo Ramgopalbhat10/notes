@@ -1,10 +1,6 @@
 import type { Node as TreeNode, NodeId } from "./types";
 
-export function basename(path: string): string {
-  const trimmed = path.endsWith("/") ? path.slice(0, -1) : path;
-  const idx = trimmed.lastIndexOf("/");
-  return idx >= 0 ? trimmed.slice(idx + 1) : trimmed;
-}
+export { basename } from "@/lib/paths";
 
 export function ensureFolderPath(parentPath: string, name: string): string {
   return `${parentPath}${name}/`;
