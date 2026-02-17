@@ -1,6 +1,7 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 
+import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/s3";
 import { s3BodyToString } from "@/lib/s3-body";
 import { getRedisClient } from "@/lib/redis-client";
@@ -45,13 +46,6 @@ function isRedisFileCacheValue(value: unknown): value is RedisFileCacheValue {
   return true;
 }
 
-function sanitizeEtag(value: string | undefined): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-  return value.replace(/"/g, "");
-}
-
 async function fetchFileFromS3(key: string): Promise<Omit<CachedFileRecord, "cacheStatus">> {
   const client = getS3Client();
   const bucket = getBucket();
@@ -64,7 +58,7 @@ async function fetchFileFromS3(key: string): Promise<Omit<CachedFileRecord, "cac
   );
 
   const content = await s3BodyToString(response.Body);
-  const etag = sanitizeEtag(response.ETag ?? undefined);
+  const etag = normalizeEtag(response.ETag ?? undefined) ?? undefined;
   const lastModified = response.LastModified?.toISOString();
 
   return {
