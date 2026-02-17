@@ -1,11 +1,16 @@
 # Progress
 
-Current issue: `docs/issues/issue-1.md`
+Current issue: `docs/issues/issue-2.md`
 
-Current section: Issue 1 — Unnecessary Console Logging in File Tree Builder
+Current section: Issue 2 — Refactor Path Utilities
 
 Previous tasks (latest completed batch only):
-- [x] Remove `console.log` statements in `lib/file-tree-builder.ts`.
+- [x] Create `lib/paths.ts` with `basename` and `getParentPath`.
+- [x] Refactor `lib/manifest-updater.ts`.
+- [x] Refactor `lib/file-tree-builder.ts`.
+- [x] Refactor `lib/tree/utils.ts`.
+- [x] Refactor `stores/tree.ts`.
+- [x] Verify functionality.
 
 Next tasks:
 - None - all tasks completed.
