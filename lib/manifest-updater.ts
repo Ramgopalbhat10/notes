@@ -20,27 +20,7 @@ import {
 import { serializeFileTreeManifest, uploadFileTreeManifest } from "@/lib/file-tree-builder";
 import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/s3";
-
-function basename(input: string): string {
-  if (!input) {
-    return input;
-  }
-  const trimmed = input.endsWith("/") ? input.slice(0, -1) : input;
-  const idx = trimmed.lastIndexOf("/");
-  return idx === -1 ? trimmed : trimmed.slice(idx + 1);
-}
-
-function parentIdFromPath(path: string): FileTreeNodeId | null {
-  if (!path) {
-    return null;
-  }
-  const normalized = path.endsWith("/") ? path.slice(0, -1) : path;
-  const idx = normalized.lastIndexOf("/");
-  if (idx === -1) {
-    return null;
-  }
-  return `${normalized.slice(0, idx + 1)}`;
-}
+import { basename, getParentPath } from "@/lib/paths";
 
 function computeChecksum(manifest: FileTreeManifest): string {
   const checksumPayload = JSON.stringify({
@@ -68,7 +48,7 @@ function ensureParentFolders(manifest: FileTreeManifest, childPath: string): voi
     }
 
     // Create folder node
-    const parentId = parentIdFromPath(folderPath);
+    const parentId = getParentPath(folderPath);
     const folderNode: FileTreeFolderNode = {
       id: folderPath,
       type: "folder",
@@ -190,7 +170,7 @@ export async function addOrUpdateFile(params: AddFileParams): Promise<void> {
 
   // Check if file already exists
   const existingIndex = manifest.nodes.findIndex((n) => n.id === key);
-  const parentId = parentIdFromPath(key);
+  const parentId = getParentPath(key);
 
   const fileNode: FileTreeFileNode = {
     id: key,
@@ -239,7 +219,7 @@ export async function addFolder(params: AddFolderParams): Promise<void> {
   ensureParentFolders(manifest, folderId);
 
   // Create folder node
-  const parentId = parentIdFromPath(folderId);
+  const parentId = getParentPath(folderId);
   const folderNode: FileTreeFolderNode = {
     id: folderId,
     type: "folder",
@@ -358,7 +338,7 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     );
 
     // Update file node
-    const newParentId = parentIdFromPath(newKey);
+    const newParentId = getParentPath(newKey);
     ensureParentFolders(manifest, newKey);
 
     fileNode.id = newKey;
@@ -377,7 +357,7 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
   } catch (error) {
     console.error("Failed to fetch metadata for moved file", error);
     // If we can't get S3 metadata, just update the IDs
-    const newParentId = parentIdFromPath(newKey);
+    const newParentId = getParentPath(newKey);
     ensureParentFolders(manifest, newKey);
 
     fileNode.id = newKey;
@@ -430,7 +410,7 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
   // Update all affected nodes
   for (const node of toUpdate) {
     const newId = node.id.replace(oldFolderId, newFolderId);
-    const newParentId = parentIdFromPath(newId);
+    const newParentId = getParentPath(newId);
 
     // Ensure parent folders exist
     ensureParentFolders(manifest, newId);

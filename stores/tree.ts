@@ -27,9 +27,8 @@ import {
   ensureFilePath,
   ensureFolderPath,
   filterOpenFolders,
+  getParentPath,
   openAncestorFolders,
-  parentPathFromFolderKey,
-  parentPathFromKey,
   removeNodesWithPrefix,
   slugifySegment,
 } from "@/lib/tree/utils";
@@ -331,9 +330,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
     }
 
     const snapshot = captureTreeSnapshot(createSnapshot(state));
-    const newParentId = node.type === "folder"
-      ? parentPathFromFolderKey(targetPath)
-      : parentPathFromKey(targetPath);
+    const newParentId = getParentPath(targetPath);
     const newName = basename(targetPath);
 
     const updatedNode: TreeNode = node.type === "folder"
