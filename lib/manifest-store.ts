@@ -1,6 +1,7 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { cacheLife, cacheTag } from "next/cache";
 
+import { normalizeEtag } from "@/lib/etag";
 import { getRedisClient } from "@/lib/redis-client";
 import { FILE_TREE_MANIFEST_FILENAME, validateFileTreeManifest, type FileTreeManifest } from "@/lib/file-tree-manifest";
 import { getBucket, getS3Client } from "@/lib/s3";
@@ -47,13 +48,6 @@ function isRedisManifestValue(value: unknown): value is RedisManifestValue {
   return true;
 }
 
-function sanitizeEtag(etag: string | undefined): string | undefined {
-  if (!etag) {
-    return undefined;
-  }
-  return etag.replace(/"/g, "");
-}
-
 export async function readManifestFromRedis(): Promise<RedisManifestValue | null> {
   try {
     const redis = getRedisClient();
@@ -72,7 +66,7 @@ export async function readManifestFromRedis(): Promise<RedisManifestValue | null
       body: parsed.body,
       metadata: parsed.metadata,
       updatedAt: parsed.updatedAt,
-      etag: sanitizeEtag(parsed.etag),
+      etag: normalizeEtag(parsed.etag) ?? undefined,
     };
   } catch (error) {
     console.error("Failed to read manifest from Redis", error);
@@ -109,7 +103,7 @@ async function fetchManifestFromS3(): Promise<ManifestRecord | null> {
     return {
       manifest,
       body: JSON.stringify(manifest),
-      etag: sanitizeEtag(response.ETag ?? undefined),
+      etag: normalizeEtag(response.ETag ?? undefined) ?? undefined,
       updatedAt: new Date().toISOString(),
       source: "s3",
     };
@@ -146,7 +140,7 @@ export async function loadLatestManifest(): Promise<ManifestRecord | null> {
         return {
           manifest: validation.manifest,
           body: JSON.stringify(validation.manifest),
-          etag: sanitizeEtag(fromRedis.etag),
+          etag: normalizeEtag(fromRedis.etag) ?? undefined,
           updatedAt: fromRedis.updatedAt,
           source: "redis",
         };

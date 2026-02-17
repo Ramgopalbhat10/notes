@@ -18,6 +18,7 @@ import {
   type FileTreeNodeId,
   isFolderNode,
 } from "@/lib/file-tree-manifest";
+import { normalizeEtag } from "@/lib/etag";
 import { basename, getParentPath } from "@/lib/paths";
 
 interface BuildContext {
@@ -38,13 +39,6 @@ function addChild(childMap: Map<FileTreeNodeId | null, Set<FileTreeNodeId>>, par
 
 function toSortedArray(set: Set<FileTreeNodeId> | undefined): FileTreeNodeId[] {
   return set ? Array.from(set).sort((a, b) => a.localeCompare(b)) : [];
-}
-
-function sanitizeEtag(etag: string | undefined): string | undefined {
-  if (!etag) {
-    return undefined;
-  }
-  return etag.replace(/"/g, "");
 }
 
 async function buildContext(): Promise<BuildContext> {
@@ -157,7 +151,7 @@ async function buildContext(): Promise<BuildContext> {
           path: relative,
           parentId,
           lastModified: object.LastModified?.toISOString(),
-          etag: sanitizeEtag(object.ETag ?? undefined),
+          etag: normalizeEtag(object.ETag ?? undefined) ?? undefined,
           size: typeof object.Size === "number" ? object.Size : undefined,
         };
         nodes.set(relative, fileNode);
@@ -224,5 +218,5 @@ export async function uploadFileTreeManifest(manifest: FileTreeManifest): Promis
       ContentType: "application/json; charset=utf-8",
     }),
   );
-  return { etag: sanitizeEtag(response.ETag ?? undefined) };
+  return { etag: normalizeEtag(response.ETag ?? undefined) ?? undefined };
 }

@@ -1,16 +1,16 @@
 # Progress
 
-Current issue: `docs/issues/issue-4.md`
+Current issue: `docs/issues/issue-5.md`
 
-Current section: Issue 4 — Weak Secret Redaction Mechanism in AI Chat Context
+Current section: Issue 5 - Consolidate ETag Sanitization Utilities
 
 Previous tasks (latest completed batch only):
-- [x] Harden `redactSecrets()` in `app/api/ai/chat/route.ts` with layered secret detection and redaction
+- [x] Replace duplicated `sanitizeEtag` helpers with `normalizeEtag` imports in target files
 - [x] Run `pnpm lint` and `pnpm build`
-- [x] Update `docs/issues/issue-4.md` Dev Log and set status to resolved
+- [x] Update issue/dev log and mark status resolved
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Source task captured in `docs/TASK.md`
+- Source task captured in `/code-health` report and follow-up screenshot finding

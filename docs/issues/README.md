@@ -10,3 +10,4 @@ Issue template: `docs/issues/template.md`
 | 2 | Refactor Path Utilities | open | None | `lib/paths.ts` |
 | 3 | Insecure Default Authentication Configuration | resolved | None | `lib/auth/index.ts` |
 | 4 | Weak Secret Redaction Mechanism in AI Chat Context | resolved | None | `app/api/ai/chat/route.ts` |
+| 5 | Consolidate ETag Sanitization Utilities | resolved | None | `lib/etag.ts` |
