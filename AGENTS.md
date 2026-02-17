@@ -27,6 +27,13 @@ This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree 
 - Lint: `pnpm lint`
 - Build: `pnpm build`
 
+## Agent Skills
+- Skills live in `.agents/skills/<name>/SKILL.md` following the [Agent Skills spec](https://agentskills.io/specification).
+- Windsurf users: invoke via `/slash-command`. Other agents: read the SKILL.md directly.
+- `/code-health` — duplication, dead code, naming, deprecated usage, complexity.
+- `/security` — weak validation, secret exposure, injection risks, auth bypass.
+- `/performance` — slow queries, re-renders, bundle bloat, inefficient algorithms.
+
 ## Context Pointers
 - Setup, env, scripts: `README.md`
 - Product/architecture: `docs/PRD.md`
