@@ -4,21 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeFileKey } from "@/lib/fs-validation";
 import { getCachedFile } from "@/lib/file-cache";
 import { getFileMeta } from "@/lib/file-meta";
-import { normalizeEtag } from "@/lib/etag";
+import { normalizeEtag, parseIfNoneMatch } from "@/lib/etag";
 
 const CACHE_CONTROL_HEADER = "public, max-age=60, s-maxage=60, stale-while-revalidate=30";
-
-function parseIfNoneMatch(header: string | null): string[] {
-  if (!header) {
-    return [];
-  }
-  return header
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((value) => normalizeEtag(value))
-    .filter((value): value is string => Boolean(value));
-}
 
 function buildHeaders(cached: Awaited<ReturnType<typeof getCachedFile>>): Headers {
   const headers = new Headers();

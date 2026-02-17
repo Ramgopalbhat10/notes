@@ -6,6 +6,7 @@ import {
   loadLatestManifest,
   type ManifestRecord,
 } from "@/lib/manifest-store";
+import { parseIfNoneMatch } from "@/lib/etag";
 
 const CACHE_CONTROL = "private, no-cache, must-revalidate";
 
@@ -14,18 +15,6 @@ function formatEtag(value: string | undefined): string | undefined {
     return undefined;
   }
   return `"${value}"`;
-}
-
-function parseIfNoneMatch(header: string | null): string[] {
-  if (!header) {
-    return [];
-  }
-  return header
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .map((part) => part.replace(/^W\//i, "").replace(/"/g, ""))
-    .filter((value): value is string => Boolean(value));
 }
 
 function etagMatches(header: string | null, etag: string | undefined): boolean {
