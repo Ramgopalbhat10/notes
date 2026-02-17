@@ -1,16 +1,16 @@
 # Progress
 
-Current issue: `docs/issues/issue-5.md`
+Current issue: `docs/issues/issue-6.md`
 
-Current section: Issue 5 - Consolidate ETag Sanitization Utilities
+Current section: Issue 6 — Optimize Redis Deletion in File Cache
 
 Previous tasks (latest completed batch only):
-- [x] Replace duplicated `sanitizeEtag` helpers with `normalizeEtag` imports in target files
-- [x] Run `pnpm lint` and `pnpm build`
-- [x] Update issue/dev log and mark status resolved
+- [x] Create benchmark script to measure baseline
+- [x] Implement batch Redis deletion in `lib/file-cache.ts`
+- [x] Verify changes with dry-run scripts and linting
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Source task captured in `/code-health` report and follow-up screenshot finding
+- Benchmark showed 43x speedup with 50 keys and 5ms simulated latency.
