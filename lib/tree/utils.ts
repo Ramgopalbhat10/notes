@@ -1,11 +1,5 @@
 import type { Node as TreeNode, NodeId } from "./types";
 
-export function basename(path: string): string {
-  const trimmed = path.endsWith("/") ? path.slice(0, -1) : path;
-  const idx = trimmed.lastIndexOf("/");
-  return idx >= 0 ? trimmed.slice(idx + 1) : trimmed;
-}
-
 export function ensureFolderPath(parentPath: string, name: string): string {
   return `${parentPath}${name}/`;
 }
@@ -13,26 +7,6 @@ export function ensureFolderPath(parentPath: string, name: string): string {
 export function ensureFilePath(parentPath: string, name: string): string {
   const normalized = name.toLowerCase().endsWith(".md") ? name : `${name}.md`;
   return `${parentPath}${normalized}`;
-}
-
-export function parentPathFromKey(key: string): NodeId | null {
-  const idx = key.lastIndexOf("/");
-  if (idx === -1) {
-    return null;
-  }
-  return key.slice(0, idx + 1);
-}
-
-export function parentPathFromFolderKey(key: string): NodeId | null {
-  const trimmed = key.endsWith("/") ? key.slice(0, -1) : key;
-  if (!trimmed) {
-    return null;
-  }
-  const idx = trimmed.lastIndexOf("/");
-  if (idx === -1) {
-    return null;
-  }
-  return `${trimmed.slice(0, idx + 1)}`;
 }
 
 export function removeNodesWithPrefix(nodes: Record<NodeId, TreeNode>, prefix: string): void {

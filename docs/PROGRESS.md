@@ -1,11 +1,13 @@
 # Progress
 
-Current story: `docs/stories/story-18.md`
+Current issue: `docs/issues/issue-1.md`
 
-Current section: Story 18 — Secure AI Action Endpoint
+Current section: Issue 1 — Refactor Duplicated Path Utilities
 
 Previous tasks (latest completed batch only):
-- [x] Add `requireApiUser` check to `/api/ai/action/route.ts`.
+- [x] Create `lib/paths.ts` with shared utilities.
+- [x] Refactor `lib/manifest-updater.ts` and `lib/file-tree-builder.ts`.
+- [x] Refactor `lib/tree/utils.ts` and `stores/tree.ts` to use shared utilities.
 
 Next tasks:
 - None - all tasks completed.
