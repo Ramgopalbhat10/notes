@@ -7,7 +7,7 @@ import { normalizeFileKey } from "@/lib/fs-validation";
 import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
 import { deleteFileMeta } from "@/lib/file-meta";
-import { normalizeEtag } from "@/lib/etag";
+import { normalizeEtag, parseIfNoneMatch } from "@/lib/etag";
 import { writeMarkdownFile } from "@/lib/file-writer";
 
 type StatusError = Error & {
@@ -86,18 +86,6 @@ function handleS3Error(error: unknown) {
   }
   console.error("S3 operation failed", error);
   return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
-}
-
-function parseIfNoneMatch(header: string | null): string[] {
-  if (!header) {
-    return [];
-  }
-  return header
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((value) => normalizeEtag(value))
-    .filter((value): value is string => Boolean(value));
 }
 
 export async function GET(request: NextRequest) {
