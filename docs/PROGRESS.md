@@ -1,18 +1,16 @@
 # Progress
 
-Current issue: `docs/issues/issue-3.md`
+Current issue: `docs/issues/issue-4.md`
 
-Current section: Issue 3 — Insecure Default Authentication Configuration
+Current section: Issue 4 — Weak Secret Redaction Mechanism in AI Chat Context
 
 Previous tasks (latest completed batch only):
-- [x] Add `AUTH_INSECURE_ALLOW_ALL` env var constant
-- [x] Update `isAllowedUser()` to use secure default (deny if not configured)
-- [x] Run `pnpm lint` to verify
-- [x] Update issue file with dev log and mark resolved
+- [x] Harden `redactSecrets()` in `app/api/ai/chat/route.ts` with layered secret detection and redaction
+- [x] Run `pnpm lint` and `pnpm build`
+- [x] Update `docs/issues/issue-4.md` Dev Log and set status to resolved
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Security fix complete: default is now deny-all when allowlist not configured
-- Ready for commit
+- Source task captured in `docs/TASK.md`
