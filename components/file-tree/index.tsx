@@ -9,13 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ROOT_PARENT_KEY, type NodeId, useTreeStore } from "@/stores/tree";
-import { normalizeFolderPrefix } from "@/lib/fs-validation";
-import { encodePath } from "@/lib/utils";
 import { ActionDialog } from "./action-dialog";
 import { TreeNode } from "./tree-nodes";
 import { type MatchMeta, type ModalState } from "./types";
 import { useDebouncedValue as useDebouncedValueHook } from "./hooks/use-debounced-value";
 import { useTreeKeyboardNavigation as useTreeKeyboardNavigationHook } from "./hooks/use-tree-keyboard-navigation";
+import { useModalSubmit } from "./hooks/use-modal-submit";
 import { useToast } from "@/hooks/use-toast";
 
 export function FileTree() {
@@ -154,99 +153,25 @@ export function FileTree() {
     return trimmed.length > 0 ? trimmed : "root";
   };
 
-  const handleModalSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    if (!modal) {
-      return;
-    }
-
-    setModalSubmitting(true);
-    setModalError(null);
-
-    try {
-      switch (modal.type) {
-        case "create-folder": {
-          const name = modalInput.trim();
-          if (!name) {
-            setModalError("Folder name is required.");
-            setModalSubmitting(false);
-            return;
-          }
-          await createFolderAction(modal.parentId, name);
-          toast({ title: "Folder created", description: `Created "${name}"` });
-          break;
-        }
-        case "create-file": {
-          const name = modalInput.trim();
-          if (!name) {
-            setModalError("File name is required.");
-            setModalSubmitting(false);
-            return;
-          }
-          await createFileAction(modal.parentId, name);
-          toast({ title: "File created", description: `Created "${name}"` });
-          break;
-        }
-        case "rename": {
-          const name = modalInput.trim();
-          if (!name) {
-            setModalError("Name is required.");
-            setModalSubmitting(false);
-            return;
-          }
-          await renameNodeAction(modal.nodeId, name);
-          toast({ title: "Renamed", description: `Renamed to "${name}"` });
-          break;
-        }
-        case "move": {
-          const value = modalInput.trim();
-          let destination: NodeId | null = null;
-          if (value) {
-            try {
-              const candidate = value.endsWith("/") ? value : `${value}/`;
-              destination = normalizeFolderPrefix(candidate);
-            } catch (error) {
-              setModalError(error instanceof Error ? error.message : "Invalid destination path.");
-              setModalSubmitting(false);
-              return;
-            }
-          }
-          await moveNodeAction(modal.nodeId, destination);
-          const destLabel = formatPathLabel(destination);
-          toast({ title: "Moved", description: `Moved to ${destLabel}` });
-          break;
-        }
-        case "delete": {
-          const wasSelected = selectedId === modal.nodeId;
-          const previousId = wasSelected ? getPreviousInHistory() : null;
-
-          await deleteNodeAction(modal.nodeId);
-          removeFromHistory(modal.nodeId);
-
-          // If deleted file was currently selected, navigate to previous
-          if (wasSelected) {
-            if (previousId) {
-              const slug = idToSlug[previousId] ?? previousId;
-              router.push(`/files/${encodePath(slug)}`, { scroll: false });
-            } else {
-              router.push("/files", { scroll: false });
-            }
-          }
-
-          toast({ title: "Deleted", description: `Deleted "${modal.name}"` });
-          break;
-        }
-      }
-
-      setModal(null);
-    } catch (error) {
-      setModalError(error instanceof Error ? error.message : "Something went wrong. Please try again.");
-      const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
-      toast({ title: "Action failed", description: message, variant: "destructive" });
-    } finally {
-      setModalSubmitting(false);
-    }
-  };
+  const { handleModalSubmit } = useModalSubmit({
+    modal,
+    modalInput,
+    setModal,
+    setModalError,
+    setModalSubmitting,
+    createFolderAction,
+    createFileAction,
+    renameNodeAction,
+    moveNodeAction,
+    deleteNodeAction,
+    selectedId,
+    getPreviousInHistory,
+    removeFromHistory,
+    idToSlug,
+    router,
+    toast,
+    formatPathLabel,
+  });
 
   const matchMap = useMemo(() => {
     if (!filterActive) {
