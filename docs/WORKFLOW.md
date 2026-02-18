@@ -96,3 +96,8 @@ Before creating a pull request, you MUST run this final verification and confirm
 - [ ] **Build passes:** `pnpm build` exits with code 0.
 - [ ] **Diff review:** `git diff main --stat` — confirm only expected files are changed.
 - **STOP: If any check above fails, fix it before creating the PR. A PR that skips these checks is a workflow violation.**
+
+## 8) PR Creation Rule
+- MUST create a pull request from the current branch to `main`.
+- MUST refer to .github/PULL_REQUEST_TEMPLATE.md for the PR description.
+- MUST NOT merge the PR.

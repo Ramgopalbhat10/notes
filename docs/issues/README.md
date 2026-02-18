@@ -12,3 +12,4 @@ Issue template: `docs/issues/template.md`
 | 4 | Weak Secret Redaction Mechanism in AI Chat Context | resolved | None | `app/api/ai/chat/route.ts` |
 | 5 | Consolidate ETag Sanitization Utilities | resolved | None | `lib/etag.ts` |
 | 6 | Optimize Redis Deletion in File Cache | resolved | None | `lib/file-cache.ts` |
+| 7 | Extract handleModalSubmit into a Custom Hook | resolved | None | `components/file-tree/index.tsx` |

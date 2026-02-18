@@ -1,5 +1,24 @@
 ## Summary
-<!-- Brief description of what this PR does -->
+<!-- What changed, why, and how. Replace this comment with your actual description. -->
+<!-- Example: 
+## 🎯 What
+Refactored the monolithic handleModalSubmit function in FileTree into a focused custom hook useModalSubmit.
+
+## 💡 Why
+- handleModalSubmit was 92 lines handling 5 distinct action types in one switch block
+- Made the component harder to read and the logic harder to isolate
+- Follows existing hook pattern (use-tree-keyboard-navigation.ts) for consistency
+
+## ✅ Verification
+- pnpm lint — passes with 0 errors
+- pnpm build — passes with 0 errors
+- No behavior changes — all validation, toast messages, and navigation-after-delete logic preserved exactly
+
+## ✨ Result
+- FileTree component reduced by ~70 lines
+- Modal action logic now isolated in hooks/use-modal-submit.ts
+- Easier to test and maintain in isolation
+-->
 
 ## Type
 - [ ] Feature (story)
@@ -22,6 +41,8 @@
 - [ ] NOT committing directly to `main`
 - [ ] `pnpm lint` passes
 - [ ] `pnpm build` passes
+- [ ] `git diff main --stat` reviewed — only expected files changed
+- [ ] Commits follow Conventional Commits format (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`)
 
 ### Testing Policy
 - [ ] No test files included (`*.test.*`, `*.spec.*`, `__tests__/`)
