@@ -180,7 +180,7 @@ function FolderNode({
               "group/folder relative flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
               (selectionState === "selected" || isActive)
                 ? "bg-sidebar-accent text-foreground"
-                : "hover:bg-muted/15 focus-within:bg-muted/15",
+                : "hover:bg-muted/20 focus-within:bg-muted/20",
             )}
             style={{ paddingLeft: depth * INDENT_SIZE }}
           >
@@ -201,7 +201,9 @@ function FolderNode({
               aria-setsize={setSize}
               title={node.name}
             >
-              <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
+              <span className="inline-flex shrink-0 rounded-sm p-0.5 group-hover/folder:bg-muted/40 transition-colors">
+                <ChevronRight className={cn("h-3.5 w-3.5 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
+              </span>
               <span className="truncate">{node.name || "(untitled)"}</span>
             </button>
             <div
@@ -218,14 +220,14 @@ function FolderNode({
                 "w-10 h-full pointer-events-none bg-gradient-to-r from-transparent",
                 (selectionState === "selected" || isActive)
                   ? "to-sidebar-accent"
-                  : "to-sidebar group-hover/folder:to-[color-mix(in_oklch,var(--color-muted)_15%,var(--color-sidebar))]" 
+                  : "to-sidebar group-hover/folder:to-[color-mix(in_oklch,var(--color-muted)_20%,var(--color-sidebar))]" 
               )} />
               {/* Solid icon container — bg matches row state so no color patch over selection */}
               <div className={cn(
                 "flex items-center gap-1 pr-1 pl-0.5 h-full",
                 (selectionState === "selected" || isActive)
                   ? "bg-sidebar-accent"
-                  : "bg-sidebar group-hover/folder:bg-[color-mix(in_oklch,var(--color-muted)_15%,var(--color-sidebar))]"
+                  : "bg-sidebar group-hover/folder:bg-[color-mix(in_oklch,var(--color-muted)_20%,var(--color-sidebar))]" 
               )}>
                 <button
                   type="button"
