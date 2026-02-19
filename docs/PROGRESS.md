@@ -1,12 +1,15 @@
 # Progress
 
-Current issue: `docs/issues/issue-8.md`
+Current story: `docs/stories/story-19.md`
 
-Current section: Issue 8 — O(N²) Complexity in Delete Folder Manifest Update
+Current section: Story 19 — UI Polish: Contrast, Typography & Interactive Depth
 
 Previous tasks (latest completed batch only):
-- [x] Apply O(N) BFS fix in deleteFolder (lib/manifest-updater.ts)
-- [x] Run pnpm lint and pnpm build
+- [x] Update dark-mode CSS tokens + shadow system + heading font rule in globals.css
+- [x] Remove Space Grotesk from layout.tsx
+- [x] Fix folder action-icon overlay in tree-nodes.tsx
+- [x] pnpm lint — exit 0
+- [x] pnpm build — exit 0
 
 Next tasks:
 - None - all tasks completed.

@@ -24,3 +24,4 @@ Story template: `docs/stories/template.md`
 | 16 | Desktop Header File Navigation (Sibling Files Only) | `docs/stories/story-16.md` |
 | 17 | Markdown Outline Right Sidebar (Chat/Outline Panel Switching) | `docs/stories/story-17.md` |
 | 18 | Secure AI Action Endpoint | `docs/stories/story-18.md` |
+| 19 | UI Polish: Contrast, Typography & Interactive Depth | `docs/stories/story-19.md` |

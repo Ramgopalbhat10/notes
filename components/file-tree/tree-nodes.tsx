@@ -177,7 +177,7 @@ function FolderNode({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group/folder flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
+              "group/folder relative flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
               selectionState === "selected"
                 ? "bg-muted/20 text-foreground"
                 : isActive
@@ -191,7 +191,7 @@ function FolderNode({
               data-node-id={node.id}
               onClick={handleToggle}
               className={cn(
-                "peer flex flex-1 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                "flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 isActive || selectionState === "selected" ? "text-foreground font-medium" : "text-muted-foreground/60",
                 isAncestor ? "text-foreground font-medium" : ""
               )}
@@ -208,8 +208,10 @@ function FolderNode({
             </button>
             <div
               className={cn(
-                "flex shrink-0 items-center gap-1 pl-1 opacity-0 transition-opacity",
-                "peer-hover:opacity-100 peer-focus-visible:opacity-100 group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
+                "absolute right-0 inset-y-0 flex items-center gap-1 pr-1 pl-8",
+                "opacity-0 transition-opacity",
+                "bg-gradient-to-l from-sidebar-accent/95 via-sidebar-accent/80 to-transparent",
+                "group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
                 showActions && "opacity-100",
               )}
             >
