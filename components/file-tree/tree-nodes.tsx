@@ -215,12 +215,16 @@ function FolderNode({
               {/* Gradient-only fade strip — no pointer events, just masks text */}
               <div className={cn(
                 "w-10 h-full pointer-events-none bg-gradient-to-r from-transparent",
-                (selectionState === "selected" || isActive) ? "to-sidebar-accent" : "to-sidebar"
+                (selectionState === "selected" || isActive)
+                  ? "to-sidebar-accent"
+                  : "to-sidebar group-hover/folder:to-[color-mix(in_oklch,var(--color-muted)_15%,var(--color-sidebar))]" 
               )} />
               {/* Solid icon container — bg matches row state so no color patch over selection */}
               <div className={cn(
                 "flex items-center gap-1 pr-1 pl-0.5 h-full",
-                (selectionState === "selected" || isActive) ? "bg-sidebar-accent" : "bg-sidebar"
+                (selectionState === "selected" || isActive)
+                  ? "bg-sidebar-accent"
+                  : "bg-sidebar group-hover/folder:bg-[color-mix(in_oklch,var(--color-muted)_15%,var(--color-sidebar))]"
               )}>
                 <button
                   type="button"
