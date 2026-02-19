@@ -208,35 +208,39 @@ function FolderNode({
             </button>
             <div
               className={cn(
-                "absolute right-0 inset-y-0 flex items-center gap-1 pr-1 pl-8",
+                "absolute right-0 inset-y-0 flex items-center",
                 "opacity-0 transition-opacity",
-                "bg-gradient-to-l from-sidebar via-sidebar/90 to-transparent",
                 "group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
                 showActions && "opacity-100",
               )}
             >
-              <button
-                type="button"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                aria-label="New folder"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleCreateFolder();
-                }}
-              >
-                <FolderPlus className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                aria-label="New file"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleCreateFile();
-                }}
-              >
-                <FilePlus2 className="h-3.5 w-3.5" />
-              </button>
+              {/* Gradient-only fade strip — no pointer events, just masks text */}
+              <div className="w-10 h-full bg-gradient-to-r from-transparent to-sidebar pointer-events-none" />
+              {/* Solid icon container — fully opaque so text is completely hidden beneath */}
+              <div className="flex items-center gap-1 pr-1 pl-0.5 h-full bg-sidebar">
+                <button
+                  type="button"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  aria-label="New folder"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCreateFolder();
+                  }}
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  aria-label="New file"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCreateFile();
+                  }}
+                >
+                  <FilePlus2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </ContextMenuTrigger>
