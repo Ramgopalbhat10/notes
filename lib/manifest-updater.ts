@@ -283,13 +283,15 @@ export async function deleteFolder(params: DeleteFolderParams): Promise<void> {
 
   // Remove folder and all its children recursively
   const toRemove = new Set<FileTreeNodeId>();
+  const nodeById = new Map<FileTreeNodeId, FileTreeNode>(manifest.nodes.map((n) => [n.id, n]));
   const queue: FileTreeNodeId[] = [folderId];
+  let qi = 0;
 
-  while (queue.length > 0) {
-    const currentId = queue.shift()!;
+  while (qi < queue.length) {
+    const currentId = queue[qi++];
     toRemove.add(currentId);
 
-    const node = manifest.nodes.find((n) => n.id === currentId);
+    const node = nodeById.get(currentId);
     if (node && isFolderNode(node)) {
       queue.push(...node.childrenIds);
     }

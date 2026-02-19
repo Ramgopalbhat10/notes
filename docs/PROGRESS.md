@@ -1,12 +1,11 @@
 # Progress
 
-Current issue: `docs/issues/issue-7.md`
+Current issue: `docs/issues/issue-8.md`
 
-Current section: Issue 7 — Extract handleModalSubmit into a Custom Hook
+Current section: Issue 8 — O(N²) Complexity in Delete Folder Manifest Update
 
 Previous tasks (latest completed batch only):
-- [x] Create components/file-tree/hooks/use-modal-submit.ts
-- [x] Update components/file-tree/index.tsx to use the new hook
+- [x] Apply O(N) BFS fix in deleteFolder (lib/manifest-updater.ts)
 - [x] Run pnpm lint and pnpm build
 
 Next tasks:

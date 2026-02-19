@@ -13,3 +13,4 @@ Issue template: `docs/issues/template.md`
 | 5 | Consolidate ETag Sanitization Utilities | resolved | None | `lib/etag.ts` |
 | 6 | Optimize Redis Deletion in File Cache | resolved | None | `lib/file-cache.ts` |
 | 7 | Extract handleModalSubmit into a Custom Hook | resolved | None | `components/file-tree/index.tsx` |
+| 8 | O(N²) Complexity in Delete Folder Manifest Update | resolved | None | `lib/manifest-updater.ts` |
