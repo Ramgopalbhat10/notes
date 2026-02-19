@@ -179,9 +179,9 @@ function FolderNode({
             className={cn(
               "group/folder relative flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
               selectionState === "selected"
-                ? "bg-muted/20 text-foreground"
+                ? "bg-sidebar-accent text-foreground"
                 : isActive
-                  ? "bg-muted/20"
+                  ? "bg-sidebar-accent/70"
                   : "hover:bg-muted/15 focus-within:bg-muted/15",
             )}
             style={{ paddingLeft: depth * INDENT_SIZE }}
@@ -215,9 +215,19 @@ function FolderNode({
               )}
             >
               {/* Gradient-only fade strip — no pointer events, just masks text */}
-              <div className="w-10 h-full bg-gradient-to-r from-transparent to-sidebar pointer-events-none" />
-              {/* Solid icon container — fully opaque so text is completely hidden beneath */}
-              <div className="flex items-center gap-1 pr-1 pl-0.5 h-full bg-sidebar">
+              <div className={cn(
+                "w-10 h-full pointer-events-none bg-gradient-to-r from-transparent",
+                selectionState === "selected" ? "to-sidebar-accent"
+                  : isActive ? "to-sidebar-accent/70"
+                  : "to-sidebar"
+              )} />
+              {/* Solid icon container — bg matches row state so no color patch over selection */}
+              <div className={cn(
+                "flex items-center gap-1 pr-1 pl-0.5 h-full",
+                selectionState === "selected" ? "bg-sidebar-accent"
+                  : isActive ? "bg-sidebar-accent/70"
+                  : "bg-sidebar"
+              )}>
                 <button
                   type="button"
                   className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
