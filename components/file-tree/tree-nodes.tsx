@@ -210,7 +210,7 @@ function FolderNode({
               className={cn(
                 "absolute right-0 inset-y-0 flex items-center gap-1 pr-1 pl-8",
                 "opacity-0 transition-opacity",
-                "bg-gradient-to-l from-sidebar-accent/95 via-sidebar-accent/80 to-transparent",
+                "bg-gradient-to-l from-sidebar via-sidebar/90 to-transparent",
                 "group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
                 showActions && "opacity-100",
               )}

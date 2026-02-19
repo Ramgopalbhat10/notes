@@ -73,7 +73,7 @@
   --secondary-foreground: oklch(0.9851 0 0);
   --muted: oklch(0.215 0 0);
   --muted-foreground: oklch(0.7122 0 0);
-  --accent: oklch(0.260 0 0);
+  --accent: oklch(0.31 0 0);
   --accent-foreground: oklch(0.9851 0 0);
   --destructive: oklch(0.3123 0.0852 29.7877);
   --destructive-foreground: oklch(0.9368 0.0045 34.3092);
@@ -172,10 +172,6 @@
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
 
-body {
-  letter-spacing: var(--tracking-normal);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -184,7 +180,9 @@ body {
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-family-sans, var(--font-family-sans-fallback));
-    letter-spacing: var(--tracking-normal);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
   }
 
   h1,
