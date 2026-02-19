@@ -178,11 +178,9 @@ function FolderNode({
           <div
             className={cn(
               "group/folder relative flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
-              selectionState === "selected"
+              (selectionState === "selected" || isActive)
                 ? "bg-sidebar-accent text-foreground"
-                : isActive
-                  ? "bg-sidebar-accent/70"
-                  : "hover:bg-muted/15 focus-within:bg-muted/15",
+                : "hover:bg-muted/15 focus-within:bg-muted/15",
             )}
             style={{ paddingLeft: depth * INDENT_SIZE }}
           >
@@ -217,16 +215,12 @@ function FolderNode({
               {/* Gradient-only fade strip — no pointer events, just masks text */}
               <div className={cn(
                 "w-10 h-full pointer-events-none bg-gradient-to-r from-transparent",
-                selectionState === "selected" ? "to-sidebar-accent"
-                  : isActive ? "to-sidebar-accent/70"
-                  : "to-sidebar"
+                (selectionState === "selected" || isActive) ? "to-sidebar-accent" : "to-sidebar"
               )} />
               {/* Solid icon container — bg matches row state so no color patch over selection */}
               <div className={cn(
                 "flex items-center gap-1 pr-1 pl-0.5 h-full",
-                selectionState === "selected" ? "bg-sidebar-accent"
-                  : isActive ? "bg-sidebar-accent/70"
-                  : "bg-sidebar"
+                (selectionState === "selected" || isActive) ? "bg-sidebar-accent" : "bg-sidebar"
               )}>
                 <button
                   type="button"
