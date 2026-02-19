@@ -23,6 +23,11 @@ Goal: Improve dark-mode visual hierarchy through better surface contrast, unify 
 | Date | Unit | Summary |
 |---|---|---|
 | 2026-02-19 | feat | Rework globals.css tokens/shadows/font + layout.tsx + tree-nodes.tsx overlay |
+| 2026-02-19 | fix | Overlay gradient → from-sidebar; --accent raised for popover hover visibility; button 3D shadow-sm; compact font body rule |
+| 2026-02-19 | fix | Folder overlay split into gradient-fade strip + solid icon container so text fully hidden under icons |
+| 2026-02-19 | fix | Folder selected bg → sidebar-accent (visible, distinct from file bg-muted); overlay colors track row state |
+| 2026-02-19 | fix | Solid bg-sidebar-accent (no alpha) for active/selected overlay — eliminates alpha-compositing color mismatch |
+| 2026-02-19 | fix | Hover overlay uses color-mix group-hover to exactly match row hover bg — no darker strip visible |
 
 ## Issues
 
@@ -63,6 +68,10 @@ Sub-tasks
 - [x] Make action-icon wrapper absolutely positioned
 - [x] Add gradient fade from sidebar-accent → transparent
 - [x] Verify text fills full row width when not hovering
+- [x] Split overlay into gradient-fade strip + solid icon container (text fully hidden under icons)
+- [x] Match overlay bg to row state (selected/active=sidebar-accent solid, hover=color-mix, default=sidebar)
+- [x] Fix alpha-compositing mismatch — use solid bg-sidebar-accent for selected/active
+- [x] Fix hover state mismatch via color-mix group-hover for gradient stop and icon container bg
 
 Test Plan
 - Hover over a folder with a long name — text should reach the right edge
@@ -71,13 +80,22 @@ Test Plan
 
 ---
 
-## Story 19.3 — Verification and Regression Checks
+## Story 19.3 — Additional Fixes: Popover Hover, Button Depth, Font, Folder UX
 - Components
-  - All modified files
+  - `app/globals.css`, `components/ui/button.tsx`, `components/file-tree/tree-nodes.tsx`
 - Behavior
-  - Validate functional scenarios and ensure no regressions.
+  - --accent raised so dropdown/context-menu hover items are clearly visible
+  - Button default/secondary/outline variants have inset-highlight + drop-shadow 3D pop
+  - Body font-size 13px, line-height 1.5, letter-spacing -0.01em (compact)
+  - Folder selected bg = sidebar-accent; overlay perfectly tracks row bg in all states
 
 Sub-tasks
+- [x] Raise --accent oklch lightness for popover hover visibility
+- [x] Add shadow-sm + border to Button default/secondary; upgrade outline to shadow-sm
+- [x] Compact font body rule (font-size, line-height, letter-spacing)
+- [x] Folder overlay split: gradient strip (fade only) + solid icon container
+- [x] Folder selected bg → sidebar-accent; all three bg pieces track row state
+- [x] color-mix group-hover for hover state exact bg matching
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
 
