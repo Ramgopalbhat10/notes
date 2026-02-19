@@ -177,12 +177,10 @@ function FolderNode({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group/folder flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
-              selectionState === "selected"
-                ? "bg-muted/20 text-foreground"
-                : isActive
-                  ? "bg-muted/20"
-                  : "hover:bg-muted/15 focus-within:bg-muted/15",
+              "group/folder relative flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
+              (selectionState === "selected" || isActive)
+                ? "bg-sidebar-accent text-foreground"
+                : "hover:bg-muted/20 focus-within:bg-muted/20",
             )}
             style={{ paddingLeft: depth * INDENT_SIZE }}
           >
@@ -191,7 +189,7 @@ function FolderNode({
               data-node-id={node.id}
               onClick={handleToggle}
               className={cn(
-                "peer flex flex-1 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+                "flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 isActive || selectionState === "selected" ? "text-foreground font-medium" : "text-muted-foreground/60",
                 isAncestor ? "text-foreground font-medium" : ""
               )}
@@ -203,38 +201,60 @@ function FolderNode({
               aria-setsize={setSize}
               title={node.name}
             >
-              <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
+              <span className={cn(
+                "inline-flex shrink-0 rounded-sm p-0.5 text-muted-foreground hover:text-foreground transition-colors",
+                (selectionState === "selected" || isActive) ? "hover:bg-white/10" : "hover:bg-muted/40",
+              )}>
+                <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-90" : "")} />
+              </span>
               <span className="truncate">{node.name || "(untitled)"}</span>
             </button>
             <div
               className={cn(
-                "flex shrink-0 items-center gap-1 pl-1 opacity-0 transition-opacity",
-                "peer-hover:opacity-100 peer-focus-visible:opacity-100 group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
-                showActions && "opacity-100",
+                "absolute right-0 inset-y-0 flex items-center",
+                "opacity-0 transition-opacity pointer-events-none",
+                "group-hover/folder:opacity-100 group-hover/folder:pointer-events-auto",
+                "group-focus-within/folder:opacity-100 group-focus-within/folder:pointer-events-auto",
+                showActions && "opacity-100 pointer-events-auto",
               )}
             >
-              <button
-                type="button"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                aria-label="New folder"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleCreateFolder();
-                }}
-              >
-                <FolderPlus className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                aria-label="New file"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleCreateFile();
-                }}
-              >
-                <FilePlus2 className="h-3.5 w-3.5" />
-              </button>
+              {/* Gradient-only fade strip — no pointer events, just masks text */}
+              <div className={cn(
+                "w-10 h-full pointer-events-none bg-gradient-to-r from-transparent",
+                (selectionState === "selected" || isActive)
+                  ? "to-sidebar-accent"
+                  : "to-sidebar group-hover/folder:to-[color-mix(in_oklch,var(--color-muted)_20%,var(--color-sidebar))]" 
+              )} />
+              {/* Solid icon container — bg matches row state so no color patch over selection */}
+              <div className={cn(
+                "flex items-center gap-1 pr-1 pl-0.5 h-full",
+                (selectionState === "selected" || isActive)
+                  ? "bg-sidebar-accent"
+                  : "bg-sidebar group-hover/folder:bg-[color-mix(in_oklch,var(--color-muted)_20%,var(--color-sidebar))]" 
+              )}>
+                <button
+                  type="button"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  aria-label="New folder"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCreateFolder();
+                  }}
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  aria-label="New file"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCreateFile();
+                  }}
+                >
+                  <FilePlus2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </ContextMenuTrigger>
