@@ -201,8 +201,8 @@ function FolderNode({
               aria-setsize={setSize}
               title={node.name}
             >
-              <span className="inline-flex shrink-0 rounded-sm p-0.5 group-hover/folder:bg-muted/40 transition-colors">
-                <ChevronRight className={cn("h-3.5 w-3.5 transition-transform opacity-50", isOpen ? "rotate-90" : "")} />
+              <span className="inline-flex shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors">
+                <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-90" : "")} />
               </span>
               <span className="truncate">{node.name || "(untitled)"}</span>
             </button>
