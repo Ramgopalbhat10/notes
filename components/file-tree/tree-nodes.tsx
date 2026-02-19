@@ -207,9 +207,10 @@ function FolderNode({
             <div
               className={cn(
                 "absolute right-0 inset-y-0 flex items-center",
-                "opacity-0 transition-opacity",
-                "group-hover/folder:opacity-100 group-focus-within/folder:opacity-100",
-                showActions && "opacity-100",
+                "opacity-0 transition-opacity pointer-events-none",
+                "group-hover/folder:opacity-100 group-hover/folder:pointer-events-auto",
+                "group-focus-within/folder:opacity-100 group-focus-within/folder:pointer-events-auto",
+                showActions && "opacity-100 pointer-events-auto",
               )}
             >
               {/* Gradient-only fade strip — no pointer events, just masks text */}
