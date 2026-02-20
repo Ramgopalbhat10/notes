@@ -22,131 +22,156 @@ import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/s3";
 import { basename, getParentPath } from "@/lib/paths";
 
-function computeChecksum(manifest: FileTreeManifest): string {
-  const checksumPayload = JSON.stringify({
-    version: manifest.metadata.version,
-    generatedAt: manifest.metadata.generatedAt,
-    nodes: manifest.nodes,
-    rootIds: manifest.rootIds,
-  });
-  return createHash("md5").update(checksumPayload).digest("hex");
-}
+class Manifest {
+  private manifest: FileTreeManifest;
 
-function ensureParentFolders(manifest: FileTreeManifest, childPath: string): void {
-  const parts: string[] = [];
-  const segments = childPath.split("/").filter(Boolean);
+  constructor(manifest: FileTreeManifest) {
+    this.manifest = manifest;
+  }
 
-  // Build all parent folder paths
-  for (let i = 0; i < segments.length - 1; i++) {
-    parts.push(segments[i]);
-    const folderPath = ensureFolderPath(parts.join("/"));
-    
-    // Check if folder already exists
-    const existingNode = manifest.nodes.find((n) => n.id === folderPath);
-    if (existingNode) {
-      continue;
-    }
+  public getRaw(): FileTreeManifest {
+    return this.manifest;
+  }
 
-    // Create folder node
-    const parentId = getParentPath(folderPath);
-    const folderNode: FileTreeFolderNode = {
-      id: folderPath,
-      type: "folder",
-      name: basename(folderPath),
-      path: folderPath,
-      parentId,
-      childrenIds: [],
-    };
-    manifest.nodes.push(folderNode);
+  private computeChecksum(): string {
+    const checksumPayload = JSON.stringify({
+      version: this.manifest.metadata.version,
+      generatedAt: this.manifest.metadata.generatedAt,
+      nodes: this.manifest.nodes,
+      rootIds: this.manifest.rootIds,
+    });
+    return createHash("md5").update(checksumPayload).digest("hex");
+  }
 
-    // Update parent's childrenIds or rootIds
-    if (parentId === null) {
-      if (!manifest.rootIds.includes(folderPath)) {
-        manifest.rootIds.push(folderPath);
+  public ensureParentFolders(childPath: string): void {
+    const parts: string[] = [];
+    const segments = childPath.split("/").filter(Boolean);
+
+    for (let i = 0; i < segments.length - 1; i++) {
+      parts.push(segments[i]);
+      const folderPath = ensureFolderPath(parts.join("/"));
+      
+      const existingNode = this.manifest.nodes.find((n) => n.id === folderPath);
+      if (existingNode) {
+        continue;
       }
-    } else {
-      const parent = manifest.nodes.find((n) => n.id === parentId);
-      if (parent && isFolderNode(parent)) {
-        if (!parent.childrenIds.includes(folderPath)) {
-          parent.childrenIds.push(folderPath);
+
+      const parentId = getParentPath(folderPath);
+      const folderNode: FileTreeFolderNode = {
+        id: folderPath,
+        type: "folder",
+        name: basename(folderPath),
+        path: folderPath,
+        parentId,
+        childrenIds: [],
+      };
+      this.manifest.nodes.push(folderNode);
+
+      if (parentId === null) {
+        if (!this.manifest.rootIds.includes(folderPath)) {
+          this.manifest.rootIds.push(folderPath);
+        }
+      } else {
+        const parent = this.manifest.nodes.find((n) => n.id === parentId);
+        if (parent && isFolderNode(parent)) {
+          if (!parent.childrenIds.includes(folderPath)) {
+            parent.childrenIds.push(folderPath);
+          }
         }
       }
     }
   }
-}
 
-function addChildToParent(manifest: FileTreeManifest, childId: FileTreeNodeId): void {
-  const childNode = manifest.nodes.find((n) => n.id === childId);
-  if (!childNode) {
-    return;
-  }
+  public addChildToParent(childId: FileTreeNodeId): void {
+    const childNode = this.manifest.nodes.find((n) => n.id === childId);
+    if (!childNode) return;
 
-  const parentId = childNode.parentId;
-  if (parentId === null) {
-    // Root level
-    if (!manifest.rootIds.includes(childId)) {
-      manifest.rootIds.push(childId);
-    }
-  } else {
-    // Find parent and add child
-    const parent = manifest.nodes.find((n) => n.id === parentId);
-    if (parent && isFolderNode(parent)) {
-      if (!parent.childrenIds.includes(childId)) {
-        parent.childrenIds.push(childId);
+    const parentId = childNode.parentId;
+    if (parentId === null) {
+      if (!this.manifest.rootIds.includes(childId)) {
+        this.manifest.rootIds.push(childId);
+      }
+    } else {
+      const parent = this.manifest.nodes.find((n) => n.id === parentId);
+      if (parent && isFolderNode(parent)) {
+        if (!parent.childrenIds.includes(childId)) {
+          parent.childrenIds.push(childId);
+        }
       }
     }
   }
-}
 
-function removeChildFromParent(
-  manifest: FileTreeManifest,
-  childId: FileTreeNodeId,
-  parentId: FileTreeNodeId | null
-): void {
-  if (parentId === null) {
-    // Remove from root
-    manifest.rootIds = manifest.rootIds.filter((id) => id !== childId);
-  } else {
-    // Remove from parent's children
-    const parent = manifest.nodes.find((n) => n.id === parentId);
-    if (parent && isFolderNode(parent)) {
-      parent.childrenIds = parent.childrenIds.filter((id) => id !== childId);
+  public removeChildFromParent(childId: FileTreeNodeId, parentId: FileTreeNodeId | null): void {
+    if (parentId === null) {
+      this.manifest.rootIds = this.manifest.rootIds.filter((id) => id !== childId);
+    } else {
+      const parent = this.manifest.nodes.find((n) => n.id === parentId);
+      if (parent && isFolderNode(parent)) {
+        parent.childrenIds = parent.childrenIds.filter((id) => id !== childId);
+      }
     }
   }
-}
 
-function sortManifest(manifest: FileTreeManifest): void {
-  manifest.nodes.sort((a, b) => a.id.localeCompare(b.id));
-  manifest.rootIds.sort((a, b) => a.localeCompare(b));
-  for (const node of manifest.nodes) {
-    if (isFolderNode(node)) {
-      node.childrenIds.sort((a, b) => a.localeCompare(b));
+  public sort(): void {
+    this.manifest.nodes.sort((a, b) => a.id.localeCompare(b.id));
+    this.manifest.rootIds.sort((a, b) => a.localeCompare(b));
+    for (const node of this.manifest.nodes) {
+      if (isFolderNode(node)) {
+        node.childrenIds.sort((a, b) => a.localeCompare(b));
+      }
     }
   }
-}
 
-async function saveManifest(manifest: FileTreeManifest): Promise<void> {
-  // Update metadata
-  manifest.metadata.generatedAt = new Date().toISOString();
-  manifest.metadata.nodeCount = manifest.nodes.length;
-  manifest.metadata.checksum = computeChecksum(manifest);
+  public async save(): Promise<void> {
+    this.manifest.metadata.generatedAt = new Date().toISOString();
+    this.manifest.metadata.nodeCount = this.manifest.nodes.length;
+    this.manifest.metadata.checksum = this.computeChecksum();
 
-  // Upload to S3
-  const { etag } = await uploadFileTreeManifest(manifest);
-  const payload = serializeFileTreeManifest(manifest);
-  const updatedAt = new Date().toISOString();
+    const { etag } = await uploadFileTreeManifest(this.manifest);
+    const payload = serializeFileTreeManifest(this.manifest);
+    const updatedAt = new Date().toISOString();
 
-  // Update Redis
-  const redisValue: RedisManifestValue = {
-    body: payload,
-    metadata: manifest.metadata,
-    etag,
-    updatedAt,
-  };
-  await writeManifestToRedis(redisValue);
+    const redisValue: RedisManifestValue = {
+      body: payload,
+      metadata: this.manifest.metadata,
+      etag,
+      updatedAt,
+    };
+    await writeManifestToRedis(redisValue);
+    await revalidateTag(MANIFEST_CACHE_TAG, "max");
+  }
 
-  // Revalidate cache
-  await revalidateTag(MANIFEST_CACHE_TAG, "max");
+  public findNode(id: string): FileTreeNode | undefined {
+    return this.manifest.nodes.find((n) => n.id === id);
+  }
+
+  public findIndex(id: string): number {
+    return this.manifest.nodes.findIndex((n) => n.id === id);
+  }
+
+  public getNode(index: number): FileTreeNode {
+    return this.manifest.nodes[index];
+  }
+
+  public updateNode(index: number, node: FileTreeNode): void {
+    this.manifest.nodes[index] = node;
+  }
+
+  public addNode(node: FileTreeNode): void {
+    this.manifest.nodes.push(node);
+  }
+
+  public removeNode(index: number): void {
+    this.manifest.nodes.splice(index, 1);
+  }
+
+  public filterNodes(predicate: (node: FileTreeNode) => boolean): void {
+    this.manifest.nodes = this.manifest.nodes.filter(predicate);
+  }
+
+  public getNodes(): FileTreeNode[] {
+    return this.manifest.nodes;
+  }
 }
 
 export interface AddFileParams {
@@ -162,14 +187,11 @@ export async function addOrUpdateFile(params: AddFileParams): Promise<void> {
     throw new Error("No manifest available for incremental update");
   }
 
-  const manifest = manifestRecord.manifest;
+  const manifest = new Manifest(manifestRecord.manifest);
   const { key, etag, lastModified, size } = params;
 
-  // Ensure all parent folders exist
-  ensureParentFolders(manifest, key);
-
-  // Check if file already exists
-  const existingIndex = manifest.nodes.findIndex((n) => n.id === key);
+  manifest.ensureParentFolders(key);
+  const existingIndex = manifest.findIndex(key);
   const parentId = getParentPath(key);
 
   const fileNode: FileTreeFileNode = {
@@ -184,16 +206,14 @@ export async function addOrUpdateFile(params: AddFileParams): Promise<void> {
   };
 
   if (existingIndex >= 0) {
-    // Update existing file
-    manifest.nodes[existingIndex] = fileNode;
+    manifest.updateNode(existingIndex, fileNode);
   } else {
-    // Add new file
-    manifest.nodes.push(fileNode);
-    addChildToParent(manifest, key);
+    manifest.addNode(fileNode);
+    manifest.addChildToParent(key);
   }
 
-  sortManifest(manifest);
-  await saveManifest(manifest);
+  manifest.sort();
+  await manifest.save();
 }
 
 export interface AddFolderParams {
@@ -206,19 +226,15 @@ export async function addFolder(params: AddFolderParams): Promise<void> {
     throw new Error("No manifest available for incremental update");
   }
 
-  const manifest = manifestRecord.manifest;
+  const manifest = new Manifest(manifestRecord.manifest);
   const folderId = ensureFolderPath(params.prefix);
 
-  // Check if folder already exists
-  const existingNode = manifest.nodes.find((n) => n.id === folderId);
-  if (existingNode) {
-    return; // Already exists
+  if (manifest.findNode(folderId)) {
+    return;
   }
 
-  // Ensure parent folders exist
-  ensureParentFolders(manifest, folderId);
+  manifest.ensureParentFolders(folderId);
 
-  // Create folder node
   const parentId = getParentPath(folderId);
   const folderNode: FileTreeFolderNode = {
     id: folderId,
@@ -229,11 +245,11 @@ export async function addFolder(params: AddFolderParams): Promise<void> {
     childrenIds: [],
   };
 
-  manifest.nodes.push(folderNode);
-  addChildToParent(manifest, folderId);
+  manifest.addNode(folderNode);
+  manifest.addChildToParent(folderId);
 
-  sortManifest(manifest);
-  await saveManifest(manifest);
+  manifest.sort();
+  await manifest.save();
 }
 
 export interface DeleteFileParams {
@@ -246,22 +262,21 @@ export async function deleteFile(params: DeleteFileParams): Promise<void> {
     throw new Error("No manifest available for incremental update");
   }
 
-  const manifest = manifestRecord.manifest;
+  const manifest = new Manifest(manifestRecord.manifest);
   const { key } = params;
 
-  // Remove file node
-  const fileIndex = manifest.nodes.findIndex((n) => n.id === key);
+  const fileIndex = manifest.findIndex(key);
   if (fileIndex < 0) {
-    return; // File doesn't exist in manifest
+    return;
   }
 
-  const fileNode = manifest.nodes[fileIndex];
-  const parentId = fileNode.parentId;  // Save parentId before removal
-  manifest.nodes.splice(fileIndex, 1);
-  removeChildFromParent(manifest, key, parentId);  // Pass parentId
+  const fileNode = manifest.getNode(fileIndex);
+  const parentId = fileNode.parentId;
+  manifest.removeNode(fileIndex);
+  manifest.removeChildFromParent(key, parentId);
 
-  sortManifest(manifest);
-  await saveManifest(manifest);
+  manifest.sort();
+  await manifest.save();
 }
 
 export interface DeleteFolderParams {
@@ -274,16 +289,14 @@ export async function deleteFolder(params: DeleteFolderParams): Promise<void> {
     throw new Error("No manifest available for incremental update");
   }
 
-  const manifest = manifestRecord.manifest;
+  const manifest = new Manifest(manifestRecord.manifest);
   const folderId = ensureFolderPath(params.prefix);
 
-  // Find the folder to get its parentId before removal
-  const folderNode = manifest.nodes.find((n) => n.id === folderId);
+  const folderNode = manifest.findNode(folderId);
   const folderParentId = folderNode?.parentId ?? null;
 
-  // Remove folder and all its children recursively
   const toRemove = new Set<FileTreeNodeId>();
-  const nodeById = new Map<FileTreeNodeId, FileTreeNode>(manifest.nodes.map((n) => [n.id, n]));
+  const nodeById = new Map<FileTreeNodeId, FileTreeNode>(manifest.getNodes().map((n) => [n.id, n]));
   const queue: FileTreeNodeId[] = [folderId];
   let qi = 0;
 
@@ -297,12 +310,11 @@ export async function deleteFolder(params: DeleteFolderParams): Promise<void> {
     }
   }
 
-  // Remove all marked nodes
-  manifest.nodes = manifest.nodes.filter((n) => !toRemove.has(n.id));
-  removeChildFromParent(manifest, folderId, folderParentId);  // Pass parentId
+  manifest.filterNodes((n) => !toRemove.has(n.id));
+  manifest.removeChildFromParent(folderId, folderParentId);
 
-  sortManifest(manifest);
-  await saveManifest(manifest);
+  manifest.sort();
+  await manifest.save();
 }
 
 export interface MoveFileParams {
@@ -316,19 +328,17 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     throw new Error("No manifest available for incremental update");
   }
 
-  const manifest = manifestRecord.manifest;
+  const manifest = new Manifest(manifestRecord.manifest);
   const { oldKey, newKey } = params;
 
-  // Find the file node
-  const fileIndex = manifest.nodes.findIndex((n) => n.id === oldKey);
+  const fileIndex = manifest.findIndex(oldKey);
   if (fileIndex < 0) {
-    return; // File doesn't exist
+    return;
   }
 
-  const fileNode = manifest.nodes[fileIndex] as FileTreeFileNode;
-  removeChildFromParent(manifest, oldKey, fileNode.parentId);
+  const fileNode = manifest.getNode(fileIndex) as FileTreeFileNode;
+  manifest.removeChildFromParent(oldKey, fileNode.parentId);
 
-  // Get updated metadata from S3
   const client = getS3Client();
   const bucket = getBucket();
   try {
@@ -339,9 +349,8 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
       }),
     );
 
-    // Update file node
     const newParentId = getParentPath(newKey);
-    ensureParentFolders(manifest, newKey);
+    manifest.ensureParentFolders(newKey);
 
     fileNode.id = newKey;
     fileNode.name = basename(newKey);
@@ -351,27 +360,26 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     fileNode.lastModified = head.LastModified?.toISOString();
     fileNode.size = typeof head.ContentLength === "number" ? head.ContentLength : undefined;
 
-    manifest.nodes[fileIndex] = fileNode;
-    addChildToParent(manifest, newKey);
+    manifest.updateNode(fileIndex, fileNode);
+    manifest.addChildToParent(newKey);
 
-    sortManifest(manifest);
-    await saveManifest(manifest);
+    manifest.sort();
+    await manifest.save();
   } catch (error) {
     console.error("Failed to fetch metadata for moved file", error);
-    // If we can't get S3 metadata, just update the IDs
     const newParentId = getParentPath(newKey);
-    ensureParentFolders(manifest, newKey);
+    manifest.ensureParentFolders(newKey);
 
     fileNode.id = newKey;
     fileNode.name = basename(newKey);
     fileNode.path = newKey;
     fileNode.parentId = newParentId;
 
-    manifest.nodes[fileIndex] = fileNode;
-    addChildToParent(manifest, newKey);
+    manifest.updateNode(fileIndex, fileNode);
+    manifest.addChildToParent(newKey);
 
-    sortManifest(manifest);
-    await saveManifest(manifest);
+    manifest.sort();
+    await manifest.save();
   }
 }
 
@@ -386,44 +394,37 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
     throw new Error("No manifest available for incremental update");
   }
 
-  const manifest = manifestRecord.manifest;
+  const manifest = new Manifest(manifestRecord.manifest);
   const oldFolderId = ensureFolderPath(params.oldPrefix);
   const newFolderId = ensureFolderPath(params.newPrefix);
 
-  // Find all nodes that start with oldFolderId
   const toUpdate: FileTreeNode[] = [];
-  for (const node of manifest.nodes) {
+  for (const node of manifest.getNodes()) {
     if (node.id === oldFolderId || node.id.startsWith(oldFolderId)) {
       toUpdate.push(node);
     }
   }
 
   if (toUpdate.length === 0) {
-    return; // Nothing to move
+    return;
   }
 
-  // Find the old folder node to get its parentId
-  const oldFolderNode = manifest.nodes.find((n) => n.id === oldFolderId);
+  const oldFolderNode = manifest.findNode(oldFolderId);
   const oldFolderParentId = oldFolderNode?.parentId ?? null;
 
-  // Remove the old folder from its parent
-  removeChildFromParent(manifest, oldFolderId, oldFolderParentId);
+  manifest.removeChildFromParent(oldFolderId, oldFolderParentId);
 
-  // Update all affected nodes
   for (const node of toUpdate) {
     const newId = node.id.replace(oldFolderId, newFolderId);
     const newParentId = getParentPath(newId);
 
-    // Ensure parent folders exist
-    ensureParentFolders(manifest, newId);
+    manifest.ensureParentFolders(newId);
 
-    // Update node
     node.id = newId;
     node.name = basename(newId);
     node.path = newId;
     node.parentId = newParentId;
 
-    // Update childrenIds for folders
     if (isFolderNode(node)) {
       node.childrenIds = node.childrenIds.map((childId) =>
         childId.startsWith(oldFolderId) ? childId.replace(oldFolderId, newFolderId) : childId,
@@ -431,9 +432,8 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
     }
   }
 
-  // Add the new folder to its parent
-  addChildToParent(manifest, newFolderId);
+  manifest.addChildToParent(newFolderId);
 
-  sortManifest(manifest);
-  await saveManifest(manifest);
+  manifest.sort();
+  await manifest.save();
 }

@@ -1,21 +1,18 @@
 # Progress
 
-Current story: `docs/stories/story-19.md`
+Current issue: `docs/issues/issue-9.md`
 
-Current section: Story 19 — UI Polish: Contrast, Typography & Interactive Depth
+Current section: Issue 9 — Refactor Manifest Updater to a Class
 
 Previous tasks (latest completed batch only):
-- [x] Update dark-mode CSS tokens + shadow system + heading font rule in globals.css
-- [x] Remove Space Grotesk from layout.tsx; compact body font (13px, lh 1.5, ls -0.01em)
-- [x] Raise --accent for popover hover visibility; button shadow-sm 3D pop
-- [x] Folder overlay: gradient-fade strip + solid icon container (text fully hidden under icons)
-- [x] Folder selected bg → sidebar-accent; overlay bg tracks row state in all 3 states
-- [x] Fix hover overlay alpha mismatch via color-mix group-hover
-- [x] pnpm lint — exit 0
-- [x] pnpm build — exit 0
+- [x] Create `Manifest` class in `lib/manifest-updater.ts` to encapsulate logic
+- [x] Migrate functions `computeChecksum`, `ensureParentFolders`, `addChildToParent`, `removeChildFromParent`, `sortManifest` to class methods
+- [x] Update `saveManifest`, `addOrUpdateFile`, `addFolder`, `deleteFile`, `deleteFolder`, `moveFile`, `moveFolder` to use the new class methods
+- [x] Verify refactor by running `pnpm lint` and `pnpm build`
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Lint and build both pass with 0 errors. Ready for PR.
+- Pre-code and post-code gates complete.
+- Linter and build scripts run and are successful. Code health issue has been effectively managed.
