@@ -99,5 +99,5 @@ Before creating a pull request, you MUST run this final verification and confirm
 
 ## 8) PR Creation Rule
 - MUST create a pull request from the current branch to `main`.
-- MUST refer to .github/PULL_REQUEST_TEMPLATE.md for the PR description.
+- MUST refer to .github/PULL_REQUEST_TEMPLATE.md for the PR description and checklist items to complete.
 - MUST NOT merge the PR.
