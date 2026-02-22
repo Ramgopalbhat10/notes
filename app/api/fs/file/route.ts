@@ -82,7 +82,8 @@ function handleS3Error(error: unknown) {
     return NextResponse.json({ error: "Precondition failed" }, { status: 412 });
   }
   if (status === 400) {
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("S3 Bad Request", error);
+    return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
   console.error("S3 operation failed", error);
   return NextResponse.json({ error: "Failed to process request" }, { status: 500 });

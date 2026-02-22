@@ -15,4 +15,5 @@ Issue template: `docs/issues/template.md`
 | 7 | Extract handleModalSubmit into a Custom Hook | resolved | None | `components/file-tree/index.tsx` |
 | 8 | O(N²) Complexity in Delete Folder Manifest Update | resolved | None | `lib/manifest-updater.ts` |
 | 9 | Refactor Manifest Updater to a Class | resolved | None | `lib/manifest-updater.ts` |
-| 10 | Optimize IndexedDB Deletion in Persistent Document Cache | in-progress | None | `lib/persistent-document-cache.ts` |
+| 10 | Optimize IndexedDB Deletion in Persistent Document Cache | resolved | None | `lib/persistent-document-cache.ts` |
+| 11 | Information Leakage in S3 Error Responses | resolved | None | `app/api/fs/file/route.ts` |
