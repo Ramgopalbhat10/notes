@@ -48,10 +48,11 @@ async function buildContext(): Promise<BuildContext> {
   const bucket = getBucket();
 
   const folderQueue: string[] = [""];
+  let queueIndex = 0;
   const visited = new Set<string>();
 
-  while (folderQueue.length > 0) {
-    const prefix = folderQueue.shift() ?? "";
+  while (queueIndex < folderQueue.length) {
+    const prefix = folderQueue[queueIndex++] ?? "";
     if (visited.has(prefix)) {
       continue;
     }
