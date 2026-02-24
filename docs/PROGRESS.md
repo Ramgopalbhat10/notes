@@ -1,14 +1,16 @@
 # Progress
 
-Current story: `docs/stories/story-20.md`
+Current story: `docs/stories/story-21.md`
 
-Current section: Story 20 — Workflow Enforcement via Git Hooks and CI Gates
+Current section: Story 21 — Public View Title, Rendering Stability, Outline Navigation, UX Polish, Highlight Parity, and Instant Mobile Close
 
 Previous tasks (latest completed batch only):
-- [x] Rename auth/CI secret env references from GITHUB_* to GH_*.
+- [x] Restore instant mobile sheet close on heading click while preserving transient highlight behavior.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm build`.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Execute manual smoke checks for title dedupe, bullet rendering, and public outline behavior.
 
 Notes:
-- Hooks and CI now enforce documentation gates; branch protection should require `workflow-gates` status.
+- Build passes with existing non-blocking workspace warnings about `baseline-browser-mapping` staleness and multiple lockfiles root inference.

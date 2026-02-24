@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
-import { MarkdownPreview } from "@/components/markdown-preview";
+import { PublicFileView } from "@/components/public/public-file-view";
 import { getCachedFile, getFileCacheTag } from "@/lib/file-cache";
 import { getFileMeta, getFileMetaCacheTag } from "@/lib/file-meta";
 import { normalizeFileKey } from "@/lib/fs-validation";
@@ -26,11 +26,7 @@ function stripExtension(name: string): string {
   return name.replace(/\.md$/i, "");
 }
 
-function deriveTitle(key: string, content: string): string {
-  const headingMatch = content.match(/^#\s+(.+)$/m);
-  if (headingMatch && headingMatch[1]) {
-    return headingMatch[1].trim();
-  }
+function deriveTitle(key: string): string {
   const parts = key.split("/");
   const last = parts[parts.length - 1] ?? key;
   const fallback = stripExtension(last) || "Untitled";
@@ -74,7 +70,7 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
 
   try {
     const cached = await getCachedFile(key);
-    const title = deriveTitle(key, cached.content);
+    const title = deriveTitle(key);
     return {
       key,
       title,
@@ -174,19 +170,7 @@ async function PublicFileContent({ paramsPromise }: { paramsPromise: Promise<{ p
       })
     : null;
 
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <article className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-16">
-        <header className="mb-8 space-y-2 text-center md:text-left">
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{file.title}</h1>
-          {lastUpdated ? (
-            <p className="text-sm text-muted-foreground md:text-base">Last updated {lastUpdated}</p>
-          ) : null}
-        </header>
-        <MarkdownPreview content={file.content} />
-      </article>
-    </main>
-  );
+  return <PublicFileView title={file.title} lastUpdated={lastUpdated} content={file.content} />;
 }
 
 export default function PublicFilePage({

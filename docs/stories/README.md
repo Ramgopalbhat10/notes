@@ -26,3 +26,4 @@ Story template: `docs/stories/template.md`
 | 18 | Secure AI Action Endpoint | `docs/stories/story-18.md` |
 | 19 | UI Polish: Contrast, Typography & Interactive Depth | `docs/stories/story-19.md` |
 | 20 | Workflow Enforcement via Git Hooks and CI Gates | `docs/stories/story-20.md` |
+| 21 | Public View Title, Rendering Stability, Outline Navigation, UX Polish, and Highlight Parity | `docs/stories/story-21.md` |

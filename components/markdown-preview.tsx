@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 type MarkdownPreviewProps = {
   content: string;
   className?: string;
+  parseIncompleteMarkdown?: boolean;
 };
 
 type ThemeMode = "light" | "dark";
@@ -23,6 +24,24 @@ const STREAMDOWN_PLUGINS: NonNullable<StreamdownProps["plugins"]> = {
   code,
   mermaid: mermaidPlugin,
 };
+
+const SHIKI_FALLBACK_LANG_MAP: Record<string, string> = {
+  ascii: "text",
+  "ascii-art": "text",
+};
+
+function normalizeUnsupportedCodeFenceLanguages(markdown: string): string {
+  return markdown.replace(
+    /^(\s*(?:`{3,}|~{3,}))(\S+)([^\n]*)$/gm,
+    (fullMatch, fence, language, suffix) => {
+      const fallback = SHIKI_FALLBACK_LANG_MAP[language.toLowerCase()];
+      if (!fallback) {
+        return fullMatch;
+      }
+      return `${fence}${fallback}${suffix}`;
+    },
+  );
+}
 
 function getThemeMode(): ThemeMode {
   if (typeof document === "undefined") {
@@ -137,7 +156,11 @@ function MarkdownImage({ className, alt, src, ...props }: MarkdownImageProps) {
   );
 }
 
-export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
+export function MarkdownPreview({
+  content,
+  className,
+  parseIncompleteMarkdown = true,
+}: MarkdownPreviewProps) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getThemeMode());
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -161,13 +184,14 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
     () => ({ config: buildMermaidConfig(themeMode) }),
     [themeMode],
   );
-  const outline = useMemo(() => buildMarkdownOutline(content), [content]);
+  const normalizedContent = useMemo(() => normalizeUnsupportedCodeFenceLanguages(content), [content]);
+  const outline = useMemo(() => buildMarkdownOutline(normalizedContent), [normalizedContent]);
   const streamdownComponents = useMemo<NonNullable<StreamdownProps["components"]>>(
     () => ({ img: MarkdownImage }),
     [],
   );
 
-  const trimmed = content.trim();
+  const trimmed = normalizedContent.trim();
 
   useEffect(() => {
     const container = previewRef.current;
@@ -215,10 +239,10 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
         components={streamdownComponents}
         controls={{ code: true, mermaid: { copy: true, download: true, fullscreen: true, panZoom: true }, table: true }}
         mermaid={mermaidOptions}
-        parseIncompleteMarkdown
+        parseIncompleteMarkdown={parseIncompleteMarkdown}
         plugins={STREAMDOWN_PLUGINS}
       >
-        {content}
+        {normalizedContent}
       </Streamdown>
     </div>
   );
