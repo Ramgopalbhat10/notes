@@ -25,6 +25,8 @@ Goal: Enforce `docs/WORKFLOW.md` requirements with automated guardrails so undoc
 | 2026-02-24 | feat | Added strict workflow enforcement via repository git hooks, validation scripts, and PR CI gates. |
 | 2026-02-24 | chore | Improved workflow docs checker to print explicit success reasons for no-change and docs-only paths. |
 | 2026-02-24 | fix | Fixed commit-msg validator argument parsing to support pnpm hook invocation format. |
+| 2026-02-24 | fix | Fixed workflow docs checker branch detection for GitHub Actions detached HEAD and passed PR head branch from CI. |
+| 2026-02-24 | fix | Refined index enforcement to require story/issue index updates only when new story/issue files are added. |
 
 ## Issues
 

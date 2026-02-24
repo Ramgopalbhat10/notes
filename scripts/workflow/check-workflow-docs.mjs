@@ -7,9 +7,11 @@ const args = process.argv.slice(2)
 const staged = args.includes('--staged')
 const baseArg = args.find((arg) => arg.startsWith('--base='))
 const headArg = args.find((arg) => arg.startsWith('--head='))
+const branchArg = args.find((arg) => arg.startsWith('--branch='))
 
 const base = baseArg ? baseArg.slice('--base='.length) : null
 const head = headArg ? headArg.slice('--head='.length) : 'HEAD'
+const branchFromArg = branchArg ? branchArg.slice('--branch='.length) : ''
 
 const ALLOWED_BRANCH_PREFIXES = ['feature/', 'fix/', 'refactor/', 'chore/', 'docs/']
 
@@ -25,6 +27,34 @@ function fail(message, details = []) {
     }
   }
   process.exit(1)
+}
+
+function detectCurrentBranch() {
+  if (branchFromArg) {
+    return branchFromArg
+  }
+
+  const fromGitBranch = run('git branch --show-current')
+  if (fromGitBranch) {
+    return fromGitBranch
+  }
+
+  const fromGitRef = run('git rev-parse --abbrev-ref HEAD')
+  if (fromGitRef && fromGitRef !== 'HEAD') {
+    return fromGitRef
+  }
+
+  const fromGithubHeadRef = process.env.GITHUB_HEAD_REF ?? ''
+  if (fromGithubHeadRef) {
+    return fromGithubHeadRef
+  }
+
+  const fromGithubRefName = process.env.GITHUB_REF_NAME ?? ''
+  if (fromGithubRefName && fromGithubRefName !== 'HEAD') {
+    return fromGithubRefName
+  }
+
+  return ''
 }
 
 function pass(message, details = []) {
@@ -53,6 +83,53 @@ function getChangedFiles() {
     }
 
     fail('Unable to compute changed files from the supplied base/head refs.', [
+      `base=${targetBase}`,
+      `head=${head}`,
+      'Ensure the base ref exists locally (for CI, fetch with full history).',
+    ])
+  }
+
+  return []
+}
+
+function getChangedEntries() {
+  const parseNameStatus = (output) => {
+    if (!output) {
+      return []
+    }
+
+    return output
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split('\t').filter(Boolean)
+        const status = parts[0] ?? ''
+        const filePath = parts[parts.length - 1] ?? ''
+
+        return {
+          status,
+          filePath,
+        }
+      })
+      .filter((entry) => entry.filePath)
+  }
+
+  if (staged) {
+    const output = run('git diff --cached --name-status --diff-filter=ACMR')
+    return parseNameStatus(output)
+  }
+
+  const targetBase = base ?? 'origin/main'
+  try {
+    const output = run(`git diff --name-status --diff-filter=ACMR ${targetBase}...${head}`)
+    return parseNameStatus(output)
+  } catch {
+    if (!base) {
+      const fallback = run(`git diff --name-status --diff-filter=ACMR main...${head}`)
+      return parseNameStatus(fallback)
+    }
+
+    fail('Unable to compute changed file statuses from the supplied base/head refs.', [
       `base=${targetBase}`,
       `head=${head}`,
       'Ensure the base ref exists locally (for CI, fetch with full history).',
@@ -102,6 +179,7 @@ function validateProgressFile() {
 }
 
 const changedFiles = getChangedFiles()
+const changedEntries = getChangedEntries()
 
 if (changedFiles.length === 0) {
   pass('Workflow documentation gate passed (no changed files detected).')
@@ -121,8 +199,12 @@ if (implementationFiles.length === 0) {
   process.exit(0)
 }
 
-const currentBranch = run('git branch --show-current')
-if (!ALLOWED_BRANCH_PREFIXES.some((prefix) => currentBranch.startsWith(prefix))) {
+const currentBranch = detectCurrentBranch()
+if (!currentBranch) {
+  pass('Branch prefix check skipped (unable to resolve branch in detached HEAD context).', [
+    'This is expected in some CI environments.',
+  ])
+} else if (!ALLOWED_BRANCH_PREFIXES.some((prefix) => currentBranch.startsWith(prefix))) {
   fail('Current branch prefix is invalid for implementation work.', [
     `branch=${currentBranch}`,
     'Allowed prefixes: feature/, fix/, refactor/, chore/, docs/',
@@ -138,6 +220,12 @@ validateProgressFile()
 
 const touchedStoryFiles = changedFiles.filter((filePath) => /^docs\/stories\/story-\d+\.md$/.test(filePath))
 const touchedIssueFiles = changedFiles.filter((filePath) => /^docs\/issues\/issue-\d+\.md$/.test(filePath))
+const addedStoryFiles = changedEntries.filter(
+  (entry) => entry.status.startsWith('A') && /^docs\/stories\/story-\d+\.md$/.test(entry.filePath),
+)
+const addedIssueFiles = changedEntries.filter(
+  (entry) => entry.status.startsWith('A') && /^docs\/issues\/issue-\d+\.md$/.test(entry.filePath),
+)
 
 if (touchedStoryFiles.length === 0 && touchedIssueFiles.length === 0) {
   fail('Implementation changes must update a story or issue document.', [
@@ -147,12 +235,12 @@ if (touchedStoryFiles.length === 0 && touchedIssueFiles.length === 0) {
   ])
 }
 
-if (touchedStoryFiles.length > 0 && !changedFiles.includes('docs/stories/README.md')) {
-  fail('Story updates must include docs/stories/README.md index updates.')
+if (addedStoryFiles.length > 0 && !changedFiles.includes('docs/stories/README.md')) {
+  fail('New story files must include docs/stories/README.md index updates.')
 }
 
-if (touchedIssueFiles.length > 0 && !changedFiles.includes('docs/issues/README.md')) {
-  fail('Issue updates must include docs/issues/README.md index updates.')
+if (addedIssueFiles.length > 0 && !changedFiles.includes('docs/issues/README.md')) {
+  fail('New issue files must include docs/issues/README.md index updates.')
 }
 
 pass('Workflow documentation gate passed for implementation changes.', [
