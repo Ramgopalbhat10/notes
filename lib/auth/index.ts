@@ -5,17 +5,17 @@ import * as schema from "../../drizzle/schema";
 import { db } from "../db";
 
 const secretEnv = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || "";
-const githubClientId = process.env.GITHUB_CLIENT_ID || "";
-const githubClientSecret = process.env.GITHUB_CLIENT_SECRET || "";
+const githubClientId = process.env.GH_CLIENT_ID || "";
+const githubClientSecret = process.env.GH_CLIENT_SECRET || "";
 
 if (!secretEnv) {
   throw new Error("Missing BETTER_AUTH_SECRET or AUTH_SECRET");
 }
 if (!githubClientId) {
-  throw new Error("Missing GITHUB_CLIENT_ID");
+  throw new Error("Missing GH_CLIENT_ID");
 }
 if (!githubClientSecret) {
-  throw new Error("Missing GITHUB_CLIENT_SECRET");
+  throw new Error("Missing GH_CLIENT_SECRET");
 }
 
 export const auth = betterAuth({
@@ -55,7 +55,7 @@ export async function getSession() {
   return getServerSession();
 }
 
-const ALLOWED_LOGIN = (process.env.GITHUB_ALLOWED_LOGIN || "").trim().toLowerCase();
+const ALLOWED_LOGIN = (process.env.GH_ALLOWED_LOGIN || "").trim().toLowerCase();
 const INSECURE_ALLOW_ALL = process.env.AUTH_INSECURE_ALLOW_ALL === "true";
 
 type AuthSession = Awaited<

@@ -29,6 +29,7 @@ Goal: Enforce `docs/WORKFLOW.md` requirements with automated guardrails so undoc
 | 2026-02-24 | fix | Refined index enforcement to require story/issue index updates only when new story/issue files are added. |
 | 2026-02-24 | fix | Included deleted files in workflow changed-file detection so delete-only implementation commits cannot bypass docs gates. |
 | 2026-02-24 | fix | Injected required repository secrets into workflow-gates build step and documented exact GitHub settings path for repo-only secret setup. |
+| 2026-02-24 | fix | Renamed GitHub OAuth env references from `GITHUB_*` to `GH_*` in auth runtime, CI workflow secret wiring, and setup docs. |
 
 ## Issues
 

@@ -52,9 +52,9 @@ jobs:
           TIGRIS_S3_SECRET_ACCESS_KEY: ${{ secrets.TIGRIS_S3_SECRET_ACCESS_KEY }}
           TIGRIS_S3_BUCKET: ${{ secrets.TIGRIS_S3_BUCKET }}
           TIGRIS_S3_PREFIX: ${{ secrets.TIGRIS_S3_PREFIX }}
-          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
-          GITHUB_ALLOWED_LOGIN: ${{ secrets.GITHUB_ALLOWED_LOGIN }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GH_ALLOWED_LOGIN: ${{ secrets.GH_ALLOWED_LOGIN }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
         run: pnpm run build
