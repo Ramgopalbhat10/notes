@@ -31,6 +31,7 @@ Goal: Enforce `docs/WORKFLOW.md` requirements with automated guardrails so undoc
 | 2026-02-24 | fix | Injected required repository secrets into workflow-gates build step and documented exact GitHub settings path for repo-only secret setup. |
 | 2026-02-24 | fix | Renamed GitHub OAuth env references from `GITHUB_*` to `GH_*` in auth runtime, CI workflow secret wiring, and setup docs. |
 | 2026-02-24 | chore | Added workflow guidance to reuse relevant active branches/issues and made pre-push skip docs-only (markdown-only) pushes. |
+| 2026-02-24 | fix | Handled pre-push delete-ref updates by skipping all-zero local OIDs to prevent invalid diff range construction. |
 
 ## Issues
 
@@ -112,6 +113,24 @@ Sub-tasks
 Test Plan
 - Push markdown-only changes and verify checks are skipped.
 - Push code changes and verify checks still run.
+
+---
+
+## Story 20.5 — Pre-push Delete-ref Robustness
+- Components
+  - `.githooks/pre-push`
+- Behavior
+  - Handle remote ref deletion pushes where Git provides an all-zero local OID.
+  - Avoid constructing invalid revision ranges for delete-ref updates.
+
+Sub-tasks
+- [x] Skip delete-ref updates (`local_sha` = all zeros) when computing changed-file ranges.
+- [x] Keep existing new-branch and update-range logic unchanged for non-delete updates.
+- [x] Validate hook syntax and run quality gates.
+
+Test Plan
+- Simulate/delete ref update path and confirm no invalid range construction occurs.
+- Verify normal pushes still execute checks as before.
 
 ---
 

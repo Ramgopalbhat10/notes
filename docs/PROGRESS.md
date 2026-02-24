@@ -5,9 +5,9 @@ Current story: `docs/stories/story-20.md`
 Current section: Story 20 — Workflow Enforcement via Git Hooks and CI Gates
 
 Previous tasks (latest completed batch only):
-- [x] Add workflow instruction to check for relevant active branches/issues/stories before creating new work.
-- [x] Update pre-push hook to run workflow/lint/build only when non-markdown files changed.
-- [x] Update README hook documentation to explain docs-only skip behavior.
+- [x] Skip delete-ref updates (`local_sha` = all zeros) when computing changed-file ranges.
+- [x] Keep existing new-branch and update-range logic unchanged for non-delete updates.
+- [x] Validate hook syntax and run quality gates.
 
 Next tasks:
 - None - all tasks completed.
