@@ -170,7 +170,7 @@ async function PublicFileContent({ paramsPromise }: { paramsPromise: Promise<{ p
       })
     : null;
 
-  return <PublicFileView title={file.title} lastUpdated={lastUpdated} content={file.content} />;
+  return <PublicFileView fileKey={file.key} title={file.title} lastUpdated={lastUpdated} content={file.content} />;
 }
 
 export default function PublicFilePage({

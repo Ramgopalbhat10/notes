@@ -43,6 +43,7 @@ export function MarkdownOutlinePanel({
   const [query, setQuery] = useState("");
   const clearHighlightTimeoutRef = useRef<number | null>(null);
   const highlightedTargetRef = useRef<HTMLElement | null>(null);
+  const highlightTokenCounterRef = useRef(0);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filterActive = normalizedQuery.length > 0;
@@ -99,7 +100,8 @@ export function MarkdownOutlinePanel({
       target.classList.add("outline-target-highlight");
       highlightedTargetRef.current = target;
 
-      const highlightToken = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      highlightTokenCounterRef.current += 1;
+      const highlightToken = `outline-${highlightTokenCounterRef.current}`;
       target.setAttribute(OUTLINE_HIGHLIGHT_TOKEN_ATTR, highlightToken);
 
       if (clearHighlightTimeoutRef.current) {

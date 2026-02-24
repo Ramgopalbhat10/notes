@@ -30,17 +30,190 @@ const SHIKI_FALLBACK_LANG_MAP: Record<string, string> = {
   "ascii-art": "text",
 };
 
-function normalizeUnsupportedCodeFenceLanguages(markdown: string): string {
-  return markdown.replace(
-    /^(\s*(?:`{3,}|~{3,}))(\S+)([^\n]*)$/gm,
-    (fullMatch, fence, language, suffix) => {
-      const fallback = SHIKI_FALLBACK_LANG_MAP[language.toLowerCase()];
-      if (!fallback) {
-        return fullMatch;
+type FenceMarker = "`" | "~";
+type FenceState = {
+  marker: FenceMarker;
+  length: number;
+};
+
+type FenceOpener = FenceState & {
+  language: string | null;
+  languageStart: number;
+  languageEnd: number;
+};
+
+function splitLinesWithEndings(text: string): string[] {
+  if (!text) {
+    return [];
+  }
+
+  const lines: string[] = [];
+  let start = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] !== "\n") {
+      continue;
+    }
+    lines.push(text.slice(start, index + 1));
+    start = index + 1;
+  }
+
+  if (start < text.length) {
+    lines.push(text.slice(start));
+  }
+
+  return lines;
+}
+
+function isFenceWhitespace(char: string): boolean {
+  return char === " " || char === "\t";
+}
+
+function parseFencePrefix(line: string): {
+  marker: FenceMarker;
+  markerEnd: number;
+  markerLength: number;
+} | null {
+  let indent = 0;
+  while (indent < line.length && line[indent] === " ") {
+    indent += 1;
+  }
+  if (indent > 3) {
+    return null;
+  }
+
+  const marker = line[indent];
+  if (marker !== "`" && marker !== "~") {
+    return null;
+  }
+
+  let markerEnd = indent;
+  while (markerEnd < line.length && line[markerEnd] === marker) {
+    markerEnd += 1;
+  }
+
+  const markerLength = markerEnd - indent;
+  if (markerLength < 3) {
+    return null;
+  }
+
+  return {
+    marker,
+    markerEnd,
+    markerLength,
+  };
+}
+
+function parseFenceOpener(line: string): FenceOpener | null {
+  const prefix = parseFencePrefix(line);
+  if (!prefix) {
+    return null;
+  }
+
+  if (prefix.marker === "`") {
+    for (let index = prefix.markerEnd; index < line.length; index += 1) {
+      if (line[index] === "`") {
+        return null;
       }
-      return `${fence}${fallback}${suffix}`;
-    },
-  );
+    }
+  }
+
+  let infoStart = prefix.markerEnd;
+  while (infoStart < line.length && isFenceWhitespace(line[infoStart])) {
+    infoStart += 1;
+  }
+
+  if (infoStart >= line.length) {
+    return {
+      marker: prefix.marker,
+      length: prefix.markerLength,
+      language: null,
+      languageStart: infoStart,
+      languageEnd: infoStart,
+    };
+  }
+
+  let infoEnd = infoStart;
+  while (infoEnd < line.length && !isFenceWhitespace(line[infoEnd])) {
+    infoEnd += 1;
+  }
+
+  return {
+    marker: prefix.marker,
+    length: prefix.markerLength,
+    language: line.slice(infoStart, infoEnd),
+    languageStart: infoStart,
+    languageEnd: infoEnd,
+  };
+}
+
+function isFenceCloser(line: string, activeFence: FenceState): boolean {
+  const prefix = parseFencePrefix(line);
+  if (!prefix) {
+    return false;
+  }
+
+  if (prefix.marker !== activeFence.marker || prefix.markerLength < activeFence.length) {
+    return false;
+  }
+
+  for (let index = prefix.markerEnd; index < line.length; index += 1) {
+    if (!isFenceWhitespace(line[index])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function normalizeUnsupportedCodeFenceLanguages(markdown: string): string {
+  if (!markdown) {
+    return markdown;
+  }
+
+  const lines = splitLinesWithEndings(markdown);
+  let activeFence: FenceState | null = null;
+  const normalized: string[] = [];
+
+  for (const rawLine of lines) {
+    const hasLineFeed = rawLine.endsWith("\n");
+    const lineEnding = hasLineFeed ? "\n" : "";
+    const lineWithoutLineFeed = hasLineFeed ? rawLine.slice(0, -1) : rawLine;
+    const hasCarriageReturn = lineWithoutLineFeed.endsWith("\r");
+    const carriageReturn = hasCarriageReturn ? "\r" : "";
+    const lineBody = hasCarriageReturn ? lineWithoutLineFeed.slice(0, -1) : lineWithoutLineFeed;
+
+    if (activeFence) {
+      if (isFenceCloser(lineBody, activeFence)) {
+        activeFence = null;
+      }
+      normalized.push(rawLine);
+      continue;
+    }
+
+    const opener = parseFenceOpener(lineBody);
+    if (!opener) {
+      normalized.push(rawLine);
+      continue;
+    }
+
+    activeFence = { marker: opener.marker, length: opener.length };
+
+    if (!opener.language) {
+      normalized.push(rawLine);
+      continue;
+    }
+
+    const fallback = SHIKI_FALLBACK_LANG_MAP[opener.language.toLowerCase()];
+    if (!fallback) {
+      normalized.push(rawLine);
+      continue;
+    }
+
+    const rewrittenLine = `${lineBody.slice(0, opener.languageStart)}${fallback}${lineBody.slice(opener.languageEnd)}${carriageReturn}${lineEnding}`;
+    normalized.push(rewrittenLine);
+  }
+
+  return normalized.join("");
 }
 
 function getThemeMode(): ThemeMode {

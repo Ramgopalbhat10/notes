@@ -6,16 +6,17 @@ import { ListTree, X } from "lucide-react";
 import { MarkdownOutlinePanel } from "@/components/outline/markdown-outline-panel";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 type PublicFileViewProps = {
+  fileKey: string;
   title: string;
   lastUpdated: string | null;
   content: string;
 };
 
-export function PublicFileView({ title, lastUpdated, content }: PublicFileViewProps) {
+export function PublicFileView({ fileKey, title, lastUpdated, content }: PublicFileViewProps) {
   const [outlineOpen, setOutlineOpen] = useState(true);
   const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false);
 
@@ -59,7 +60,7 @@ export function PublicFileView({ title, lastUpdated, content }: PublicFileViewPr
           <div className="h-[calc(100vh-3.5rem)] overflow-y-auto">
             <MarkdownOutlinePanel
               content={content}
-              contextKey={`public-desktop:${title}`}
+              contextKey={`public-desktop:${fileKey}`}
               scrollBehaviorMode="instant"
             />
           </div>
@@ -79,14 +80,24 @@ export function PublicFileView({ title, lastUpdated, content }: PublicFileViewPr
               <span className="sr-only">Toggle outline</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="!w-full !max-w-none gap-0 p-0">
-            <SheetHeader className="border-b border-border/40 px-3 py-2">
+          <SheetContent side="right" className="!w-full !max-w-none gap-0 p-0 [&>button]:hidden">
+            <SheetHeader className="flex-row items-center justify-between gap-2 border-b border-border/40 px-3 py-2">
               <SheetTitle className="text-left text-sm">Outline</SheetTitle>
+              <SheetClose asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  aria-label="Close outline"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </SheetClose>
             </SheetHeader>
             <div className="h-[calc(100vh-2.625rem)] overflow-y-auto p-0">
               <MarkdownOutlinePanel
                 content={content}
-                contextKey={`public-mobile:${title}`}
+                contextKey={`public-mobile:${fileKey}`}
                 scrollBehaviorMode="instant"
                 onNavigateToSection={() => setMobileOutlineOpen(false)}
               />

@@ -36,6 +36,8 @@ Goal: Improve the public note experience by removing redundant title rendering, 
 | 2026-02-24 | fix | Standardized public outline trigger visuals across desktop/mobile, made mobile sheet full-screen and compact, closed mobile sheet on heading click, and enforced instant outline navigation scroll. |
 | 2026-02-24 | fix | Matched public mobile heading highlight feel with private files by delaying mobile sheet close after heading navigation so the existing highlight animation remains visible. |
 | 2026-02-24 | fix | Removed delayed mobile sheet close to restore instant close on heading click, and preserved transient highlight visibility by allowing shared outline timeout cleanup to complete across unmount. |
+| 2026-02-24 | fix | Addressed PR feedback hardening by keying public outline context by canonical file path, replacing regex fence fallback rewrite with fence-aware linear parsing, and removing `Math.random()` from outline highlight tokening. |
+| 2026-02-24 | fix | Aligned public mobile outline header close control with the "Outline" title by replacing the default absolute close placement with a header-row close action. |
 
 ## Issues
 
@@ -119,6 +121,44 @@ Test Plan
 Test Plan
 - Verify outline opens and navigates correctly on desktop/tablet/mobile.
 - Verify active section state updates while navigating headings.
+
+---
+
+## Story 21.6 — PR Feedback Hardening (Context Keys, Fence Parsing, Token Safety)
+- Components
+  - `app/p/[[...path]]/page.tsx`
+  - `components/public/public-file-view.tsx`
+  - `components/markdown-preview.tsx`
+  - `components/outline/markdown-outline-panel.tsx`
+- Behavior
+  - Public outline context keys use canonical file path (not display title).
+  - Fence-language normalization rewrites only actual code-fence opener lines with linear parsing.
+  - Outline highlight tokening avoids pseudorandom generation.
+
+Sub-tasks
+- [x] Key public outline panel context by canonical file key/path.
+- [x] Replace regex fence-language rewrite with a fence-aware linear parser.
+- [x] Replace `Math.random()` highlight token generation with deterministic monotonic tokening.
+
+Test Plan
+- Open two public files with same display title and verify outline state does not leak between files.
+- Verify ```ascii and ```ascii-art fences still render while literal ```ascii text inside fenced content is not rewritten.
+- Verify repeated outline heading clicks still produce transient highlight and proper cleanup.
+
+---
+
+## Story 21.7 — Public Mobile Outline Header Close Alignment
+- Components
+  - `components/public/public-file-view.tsx`
+- Behavior
+  - Mobile public outline header aligns close icon horizontally with the "Outline" label.
+
+Sub-tasks
+- [x] Replace the default absolute sheet close placement in public mobile outline with a header-row close action.
+
+Test Plan
+- Open the public mobile outline sheet and verify "Outline" and close icon are vertically centered on the same row.
+- Verify close icon still dismisses the sheet reliably.
 
 ---
 
