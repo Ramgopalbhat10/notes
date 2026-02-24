@@ -41,4 +41,20 @@ jobs:
         run: pnpm run lint
 
       - name: Build
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_DB_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TURSO_DB_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TIGRIS_S3_ENDPOINT: ${{ secrets.TIGRIS_S3_ENDPOINT }}
+          TIGRIS_S3_REGION: ${{ secrets.TIGRIS_S3_REGION }}
+          TIGRIS_S3_ACCESS_KEY_ID: ${{ secrets.TIGRIS_S3_ACCESS_KEY_ID }}
+          TIGRIS_S3_SECRET_ACCESS_KEY: ${{ secrets.TIGRIS_S3_SECRET_ACCESS_KEY }}
+          TIGRIS_S3_BUCKET: ${{ secrets.TIGRIS_S3_BUCKET }}
+          TIGRIS_S3_PREFIX: ${{ secrets.TIGRIS_S3_PREFIX }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          GITHUB_ALLOWED_LOGIN: ${{ secrets.GITHUB_ALLOWED_LOGIN }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
         run: pnpm run build

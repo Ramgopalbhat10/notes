@@ -64,6 +64,31 @@ Visit http://localhost:3000 – you’ll be redirected to `/files`, which render
   - `pre-push`: runs workflow docs gate + `pnpm lint` + `pnpm build`.
 - Non-bypassable enforcement also runs in CI on pull requests to `main`.
 
+### GitHub Actions Secrets (Repo-Only)
+The `workflow-gates` CI job runs `pnpm build`, so GitHub Actions must have the same required env vars that exist locally.
+
+Where to add (this repository only):
+1. Open the repo on GitHub: `Ramgopalbhat10/notes`.
+2. Go to `Settings` → `Secrets and variables` → `Actions`.
+3. Under `Repository secrets`, click `New repository secret`.
+4. Add each secret below (name must match exactly):
+
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `TIGRIS_S3_ENDPOINT`
+- `TIGRIS_S3_REGION`
+- `TIGRIS_S3_ACCESS_KEY_ID`
+- `TIGRIS_S3_SECRET_ACCESS_KEY`
+- `TIGRIS_S3_BUCKET`
+- `TIGRIS_S3_PREFIX` (optional; set to empty string if unused)
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+- `GITHUB_ALLOWED_LOGIN`
+- `BETTER_AUTH_SECRET`
+- `AI_GATEWAY_API_KEY`
+
+After saving secrets, re-run the failed `workflow-gates` job from the PR checks page.
+
 ### Database & Auth Setup
 
 BetterAuth now persists users, sessions, accounts, and verification tokens in Turso via Drizzle ORM. After configuring the environment variables above:
