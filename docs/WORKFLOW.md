@@ -10,6 +10,10 @@
 - MUST classify the request:
   - **Story** — new feature, feature enhancement, new capability, or anything that directly changes user-facing behavior.
   - **Issue** — bug fix, refactor, code cleanup, performance fix, or other non-feature work.
+- MUST check for relevant existing active work before creating new files/branches:
+  - Review open story/issue docs and active branches for the same problem area (e.g., same vulnerability class, module, or objective).
+  - If a matching active story/issue + branch already exists, continue on that branch and update that existing doc instead of creating a new story/issue.
+  - Create a new story/issue + branch only when the request is truly unrelated in scope, or prior work is completed/closed and should remain historically isolated.
 - If request is unrelated to current `docs/PROGRESS.md` work, MUST treat as new work:
   - **New Story:**
     1. MUST create from `docs/stories/template.md` → `docs/stories/story-<N>.md`.

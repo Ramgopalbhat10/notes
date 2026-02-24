@@ -30,6 +30,7 @@ Goal: Enforce `docs/WORKFLOW.md` requirements with automated guardrails so undoc
 | 2026-02-24 | fix | Included deleted files in workflow changed-file detection so delete-only implementation commits cannot bypass docs gates. |
 | 2026-02-24 | fix | Injected required repository secrets into workflow-gates build step and documented exact GitHub settings path for repo-only secret setup. |
 | 2026-02-24 | fix | Renamed GitHub OAuth env references from `GITHUB_*` to `GH_*` in auth runtime, CI workflow secret wiring, and setup docs. |
+| 2026-02-24 | chore | Added workflow guidance to reuse relevant active branches/issues and made pre-push skip docs-only (markdown-only) pushes. |
 
 ## Issues
 
@@ -91,6 +92,26 @@ Sub-tasks
 
 Test Plan
 - Confirm checks pass locally.
+
+---
+
+## Story 20.4 — Branch Reuse Guidance and Docs-only Push Optimization
+- Components
+  - `docs/WORKFLOW.md`
+  - `.githooks/pre-push`
+  - `README.md`
+- Behavior
+  - Clarify when to continue work on an existing relevant branch/story/issue instead of creating a new one.
+  - Skip pre-push workflow/lint/build checks for markdown-only pushes.
+
+Sub-tasks
+- [x] Add workflow instruction to check for relevant active branches/issues/stories before creating new work.
+- [x] Update pre-push hook to run workflow/lint/build only when non-markdown files changed.
+- [x] Update README hook documentation to explain docs-only skip behavior.
+
+Test Plan
+- Push markdown-only changes and verify checks are skipped.
+- Push code changes and verify checks still run.
 
 ---
 

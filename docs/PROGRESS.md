@@ -5,7 +5,9 @@ Current story: `docs/stories/story-20.md`
 Current section: Story 20 — Workflow Enforcement via Git Hooks and CI Gates
 
 Previous tasks (latest completed batch only):
-- [x] Rename auth/CI secret env references from GITHUB_* to GH_*.
+- [x] Add workflow instruction to check for relevant active branches/issues/stories before creating new work.
+- [x] Update pre-push hook to run workflow/lint/build only when non-markdown files changed.
+- [x] Update README hook documentation to explain docs-only skip behavior.
 
 Next tasks:
 - None - all tasks completed.
