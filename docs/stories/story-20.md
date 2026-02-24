@@ -27,6 +27,7 @@ Goal: Enforce `docs/WORKFLOW.md` requirements with automated guardrails so undoc
 | 2026-02-24 | fix | Fixed commit-msg validator argument parsing to support pnpm hook invocation format. |
 | 2026-02-24 | fix | Fixed workflow docs checker branch detection for GitHub Actions detached HEAD and passed PR head branch from CI. |
 | 2026-02-24 | fix | Refined index enforcement to require story/issue index updates only when new story/issue files are added. |
+| 2026-02-24 | fix | Included deleted files in workflow changed-file detection so delete-only implementation commits cannot bypass docs gates. |
 
 ## Issues
 

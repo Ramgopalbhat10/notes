@@ -68,17 +68,17 @@ function pass(message, details = []) {
 
 function getChangedFiles() {
   if (staged) {
-    const output = run('git diff --cached --name-only --diff-filter=ACMR')
+    const output = run('git diff --cached --name-only --diff-filter=ACMRD')
     return output ? output.split('\n').filter(Boolean) : []
   }
 
   const targetBase = base ?? 'origin/main'
   try {
-    const output = run(`git diff --name-only --diff-filter=ACMR ${targetBase}...${head}`)
+    const output = run(`git diff --name-only --diff-filter=ACMRD ${targetBase}...${head}`)
     return output ? output.split('\n').filter(Boolean) : []
   } catch {
     if (!base) {
-      const fallback = run(`git diff --name-only --diff-filter=ACMR main...${head}`)
+      const fallback = run(`git diff --name-only --diff-filter=ACMRD main...${head}`)
       return fallback ? fallback.split('\n').filter(Boolean) : []
     }
 
@@ -115,17 +115,17 @@ function getChangedEntries() {
   }
 
   if (staged) {
-    const output = run('git diff --cached --name-status --diff-filter=ACMR')
+    const output = run('git diff --cached --name-status --diff-filter=ACMRD')
     return parseNameStatus(output)
   }
 
   const targetBase = base ?? 'origin/main'
   try {
-    const output = run(`git diff --name-status --diff-filter=ACMR ${targetBase}...${head}`)
+    const output = run(`git diff --name-status --diff-filter=ACMRD ${targetBase}...${head}`)
     return parseNameStatus(output)
   } catch {
     if (!base) {
-      const fallback = run(`git diff --name-status --diff-filter=ACMR main...${head}`)
+      const fallback = run(`git diff --name-status --diff-filter=ACMRD main...${head}`)
       return parseNameStatus(fallback)
     }
 
