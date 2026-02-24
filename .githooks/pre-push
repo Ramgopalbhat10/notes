@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -eu
+
+pnpm run workflow:check-docs
+pnpm run lint
+pnpm run build

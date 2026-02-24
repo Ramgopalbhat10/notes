@@ -1,16 +1,14 @@
 # Progress
 
-Current issue: `docs/issues/issue-13.md`
+Current story: `docs/stories/story-20.md`
 
-Current section: Issue 13 — Clarify Skill Wording for Domain Relevance
+Current section: Story 20 — Workflow Enforcement via Git Hooks and CI Gates
 
 Previous tasks (latest completed batch only):
-- [x] Update wording in skill files for domain relevance and consistent PR template guidance
-- [x] Run quality gate (`pnpm lint`, `pnpm build`)
-- [x] Finalize issue docs and set status to `resolved`
+- [x] Fix commit-msg hook validator to handle pnpm argument separator.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Scope limited to `.agents/skills/{code-health,performance,security}/SKILL.md` wording updates.
+- Hooks and CI now enforce documentation gates; branch protection should require `workflow-gates` status.

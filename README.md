@@ -50,9 +50,19 @@ NEXT_PUBLIC_ENABLE_PWA_IN_DEV=false
 ## Install & Run
 ```bash
 pnpm install
+pnpm hooks:install
 pnpm dev
 ```
 Visit http://localhost:3000 – you’ll be redirected to `/files`, which renders the cached tree and workspace.
+
+## Workflow Enforcement Hooks
+- This repo ships repository-managed hooks in `.githooks/`.
+- Run `pnpm hooks:install` once per clone to activate strict local workflow checks.
+- Active local gates:
+  - `pre-commit`: enforces workflow documentation updates for implementation changes.
+  - `commit-msg`: enforces Conventional Commits (`feat|fix|refactor|docs|chore`).
+  - `pre-push`: runs workflow docs gate + `pnpm lint` + `pnpm build`.
+- Non-bypassable enforcement also runs in CI on pull requests to `main`.
 
 ### Database & Auth Setup
 
@@ -155,6 +165,10 @@ pnpm tree:refresh -- --push-redis
 | Command | Description |
 |---------|-------------|
 | `pnpm dev` | Start Next.js locally |
+| `pnpm hooks:install` | Configure git to use repository hooks from `.githooks/` |
+| `pnpm workflow:check-docs` | Validate workflow docs requirements against branch diff |
+| `pnpm workflow:check-docs:staged` | Validate workflow docs requirements for staged files |
+| `pnpm workflow:check-commit-msg -- <path>` | Validate Conventional Commit format from commit message file |
 | `pnpm tree:build` | Build manifest locally (dry-run, writes to `.cache/file-tree/manifest.json`) |
 | `pnpm tree:refresh [-- --push-redis]` | Build and upload manifest to S3, optionally syncing to Redis |
 | `pnpm auth:schema` | Generate/refresh BetterAuth Drizzle schema |
