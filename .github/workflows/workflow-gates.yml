@@ -1,0 +1,60 @@
+name: workflow-gates
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+jobs:
+  verify-workflow-gates:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Workflow documentation gate
+        run: pnpm run workflow:check-docs -- --base=origin/${{ github.base_ref }} --head=HEAD --branch=${{ github.head_ref }}
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_DB_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TURSO_DB_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          TIGRIS_S3_ENDPOINT: ${{ secrets.TIGRIS_S3_ENDPOINT }}
+          TIGRIS_S3_REGION: ${{ secrets.TIGRIS_S3_REGION }}
+          TIGRIS_S3_ACCESS_KEY_ID: ${{ secrets.TIGRIS_S3_ACCESS_KEY_ID }}
+          TIGRIS_S3_SECRET_ACCESS_KEY: ${{ secrets.TIGRIS_S3_SECRET_ACCESS_KEY }}
+          TIGRIS_S3_BUCKET: ${{ secrets.TIGRIS_S3_BUCKET }}
+          TIGRIS_S3_PREFIX: ${{ secrets.TIGRIS_S3_PREFIX }}
+          GH_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+          GH_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}
+          GH_ALLOWED_LOGIN: ${{ secrets.GH_ALLOWED_LOGIN }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+        run: pnpm run build

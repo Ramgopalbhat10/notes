@@ -25,7 +25,7 @@ Goal: Lock the Notes application behind GitHub OAuth using BetterAuth so only th
   - Add `app/api/auth/[...betterauth]/route.ts` forwarding GET/POST to BetterAuth `handleAuth`.
   - Export `auth`, `getSession`, and `requireUser` helpers from `lib/auth/betterauth.ts` for reuse.
 - Behavior
-  - Initialize BetterAuth with `github()` provider, restricting allowed accounts via `process.env.GITHUB_ALLOWED_LOGIN`.
+  - Initialize BetterAuth with `github()` provider, restricting allowed accounts via `process.env.GH_ALLOWED_LOGIN`.
   - Persist BetterAuth data with the [Drizzle adapter](https://www.better-auth.com/docs/adapters/drizzle) configured for Turso per [Drizzle’s Turso guide](https://orm.drizzle.team/docs/connect-turso).
   - Ensure the fallback cookie cache still functions, but database sessions survive restarts.
   - Surface clear errors when required env vars are missing at startup.
