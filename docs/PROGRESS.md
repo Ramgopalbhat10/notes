@@ -1,11 +1,11 @@
 # Progress
 
-Current issue: `docs/issues/issue-12.md`
+Current issue: `docs/issues/issue-13.md`
 
-Current section: Issue 12 — O(N²) Queue Dequeue in File Tree Builder
+Current section: Issue 13 — Clarify Skill Wording for Domain Relevance
 
 Previous tasks (latest completed batch only):
-- [x] Implement BFS-preserving queue optimization in `lib/file-tree-builder.ts` (`shift()` -> index dequeue)
+- [x] Update wording in skill files for domain relevance and consistent PR template guidance
 - [x] Run quality gate (`pnpm lint`, `pnpm build`)
 - [x] Finalize issue docs and set status to `resolved`
 
@@ -13,4 +13,4 @@ Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Scope limited to `lib/file-tree-builder.ts`; no changes to `lib/tree/mutation-queue.ts` in this unit.
+- Scope limited to `.agents/skills/{code-health,performance,security}/SKILL.md` wording updates.

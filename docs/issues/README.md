@@ -18,3 +18,4 @@ Issue template: `docs/issues/template.md`
 | 10 | Optimize IndexedDB Deletion in Persistent Document Cache | resolved | None | `lib/persistent-document-cache.ts` |
 | 11 | Information Leakage in S3 Error Responses | resolved | None | `app/api/fs/file/route.ts` |
 | 12 | O(N²) Queue Dequeue in File Tree Builder | resolved | None | `lib/file-tree-builder.ts` |
+| 13 | Clarify Skill Wording for Domain Relevance | resolved | None | `.agents/skills/*/SKILL.md` |
