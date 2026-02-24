@@ -1,16 +1,14 @@
 # Progress
 
-Current story: `docs/stories/story-20.md`
+Current story: `docs/stories/story-21.md`
 
-Current section: Story 20 — Workflow Enforcement via Git Hooks and CI Gates
+Current section: Story 21.7 — Public Mobile Outline Header Close Alignment
 
 Previous tasks (latest completed batch only):
-- [x] Skip delete-ref updates (`local_sha` = all zeros) when computing changed-file ranges.
-- [x] Keep existing new-branch and update-range logic unchanged for non-delete updates.
-- [x] Validate hook syntax and run quality gates.
+- [x] Replace the default absolute sheet close placement in public mobile outline with a header-row close action.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Execute manual smoke checks for title dedupe, bullet rendering, and public outline behavior.
 
 Notes:
-- Hooks and CI now enforce documentation gates; branch protection should require `workflow-gates` status.
+- Story 21.7 completed with public mobile outline header-row close alignment; `pnpm lint` and `pnpm build` pass (existing non-blocking workspace warnings remain about `baseline-browser-mapping` staleness and multiple lockfiles root inference).
