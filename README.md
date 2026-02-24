@@ -61,7 +61,7 @@ Visit http://localhost:3000 – you’ll be redirected to `/files`, which render
 - Active local gates:
   - `pre-commit`: enforces workflow documentation updates for implementation changes.
   - `commit-msg`: enforces Conventional Commits (`feat|fix|refactor|docs|chore`).
-  - `pre-push`: runs workflow docs gate + `pnpm lint` + `pnpm build`.
+  - `pre-push`: runs workflow docs gate + `pnpm lint` + `pnpm build` only when pushed changes include non-markdown files; markdown-only pushes are skipped.
 - Non-bypassable enforcement also runs in CI on pull requests to `main`.
 
 ### GitHub Actions Secrets (Repo-Only)
