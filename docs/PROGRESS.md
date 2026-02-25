@@ -16,5 +16,5 @@ Next tasks:
 - [ ] Execute manual smoke checks for fonts, date/reading time display, and outline default behavior.
 
 Notes:
-- Story 22 documents the public /p route look-and-feel polish shipped on branch `copilot/update-public-route-style`. `pnpm lint` passes. Build font-fetch errors occur only in the sandboxed environment (no internet access) — the same pre-existing JetBrains Mono font also fails in sandbox; CI with internet access will succeed. Manual smoke checks remain outstanding.
+- Story 22 documents the public /p route look-and-feel polish shipped on branch `feature/public-route-style-polish`. `pnpm lint` passes. Build font-fetch errors occur only in the sandboxed environment (no internet access) — the same pre-existing JetBrains Mono font also fails in sandbox; CI with internet access will succeed. Manual smoke checks remain outstanding.
 
