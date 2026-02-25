@@ -164,9 +164,10 @@ async function PublicFileContent({ paramsPromise }: { paramsPromise: Promise<{ p
   }
 
   const lastUpdated = file.lastModified
-    ? new Date(file.lastModified).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
+    ? new Date(file.lastModified).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       })
     : null;
 

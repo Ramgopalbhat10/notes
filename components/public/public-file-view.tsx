@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ListTree, X } from "lucide-react";
+import { CalendarDays, Clock, ListTree, X } from "lucide-react";
 
 import { MarkdownOutlinePanel } from "@/components/outline/markdown-outline-panel";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { computeReadingTimeLabel } from "@/lib/reading-time";
 import { cn } from "@/lib/utils";
 
 type PublicFileViewProps = {
@@ -17,18 +18,34 @@ type PublicFileViewProps = {
 };
 
 export function PublicFileView({ fileKey, title, lastUpdated, content }: PublicFileViewProps) {
-  const [outlineOpen, setOutlineOpen] = useState(true);
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false);
+  const readingTime = computeReadingTimeLabel(content);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0" style={{ fontFamily: "var(--font-onest, system-ui)" }}>
         <article className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-16">
           <header className="mb-8 text-center md:text-left">
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{title}</h1>
+              <h1
+                className="text-3xl font-semibold tracking-tight md:text-4xl"
+                style={{ fontFamily: "var(--font-roboto-serif, ui-serif)" }}
+              >
+                {title}
+              </h1>
               {lastUpdated ? (
-                <p className="text-sm text-muted-foreground md:text-base">Last updated {lastUpdated}</p>
+                <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground md:justify-start md:text-base">
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4" />
+                    {lastUpdated}
+                  </span>
+                  <span className="text-border" aria-hidden>·</span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4" />
+                    {readingTime}
+                  </span>
+                </div>
               ) : null}
             </div>
           </header>
