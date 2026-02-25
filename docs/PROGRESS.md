@@ -15,4 +15,3 @@ Next tasks:
 Notes:
 - Branch is `copilot/update-font-to-onset`; remote branch name cannot be changed programmatically.
 - node_modules not installed in sandbox; lint/build will be verified by CI.
-
