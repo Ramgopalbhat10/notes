@@ -337,6 +337,46 @@
     font-family: inherit;
   }
 
+  /* Scoped to public route only — does not affect workspace/AI markdown previews */
+  .markdown-preview.public-view {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .markdown-preview.public-view p {
+    font-size: 1rem;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .markdown-preview.public-view [data-streamdown="ordered-list"],
+  .markdown-preview.public-view [data-streamdown="unordered-list"] {
+    list-style-position: outside;
+    padding-left: 1.25rem;
+  }
+
+  .markdown-preview.public-view [data-streamdown="ordered-list"] [data-streamdown="list-item"],
+  .markdown-preview.public-view [data-streamdown="unordered-list"] [data-streamdown="list-item"] {
+    padding-left: 0 !important;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .markdown-preview.public-view [data-streamdown="list-item"] > p + p {
+    display: block;
+    margin-top: 0.75rem;
+  }
+
+  .markdown-preview.public-view a,
+  .markdown-preview.public-view button[data-streamdown="link"] {
+    overflow-wrap: break-word;
+    word-break: normal;
+    white-space: normal;
+  }
+
   .markdown-preview .outline-target-highlight {
     position: relative;
   }
