@@ -42,6 +42,7 @@ Goal: Improve the public note experience by removing redundant title rendering, 
 | 2026-02-25 | fix | Added desktop public outline FAB edge-floating positioning anchored to article width with viewport clamping; added public-route-only markdown wrapping/list/link rules to reduce premature mobile line breaks and keep references bullets/text aligned; lint/build pass. |
 | 2026-02-25 | fix | Converted desktop public outline to fixed slide-in overlay so article content no longer shifts on toggle; kept desktop FAB visually stable by removing toggle-time reposition updates; lint/build pass. |
 | 2026-02-25 | chore | Completed manual UX verification for Story 21.9/21.10 across mobile/desktop viewports; confirmed wrapping, references bullets, no desktop content shift, and stable outline toggle icon behavior. |
+| 2026-02-25 | fix | Resolved PR review feedback: preserved multi-paragraph list-item fidelity by removing forced inline list-item paragraph override and restoring block flow for subsequent paragraphs; auto-close mobile outline sheet when crossing to desktop breakpoint; lint/build pass. |
 
 ## Issues
 
@@ -275,6 +276,35 @@ Test Plan
 - Regression:
   - Verify mobile/tablet outline sheet flow is unchanged.
   - Verify outline section navigation and highlight behavior still work.
+
+---
+
+## Story 21.11 — PR Review Fixes (List Paragraph Fidelity + Mobile Sheet Desktop Transition)
+- Components
+  - `app/globals.css`
+  - `components/public/public-file-view.tsx`
+- Behavior
+  - Preserve markdown paragraph separation inside list items in public view (do not collapse multi-paragraph list items).
+  - Ensure mobile outline `Sheet` is automatically closed when viewport crosses to desktop (`lg+`), preventing mobile full-screen sheet overlay on desktop.
+
+Sub-tasks
+- [x] Remove/replace list-item paragraph display override that collapses valid multi-paragraph list content.
+- [x] Keep references/list wrapping improvements while preserving markdown fidelity for multi-paragraph list items.
+- [x] Add responsive viewport effect to force-close `mobileOutlineOpen` when entering desktop breakpoint.
+- [x] Keep mobile/tablet behavior unchanged when staying below desktop breakpoint.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm build`.
+- [ ] Execute manual checks for multi-paragraph list items and mobile->desktop resize transition behavior.
+
+Test Plan
+- Markdown list fidelity:
+  - Render list items with multiple paragraphs and confirm each paragraph remains visually separated.
+  - Verify references section still wraps cleanly without immediate post-bullet line break regressions.
+- Mobile sheet desktop transition:
+  - Open mobile outline sheet below `lg`, then resize to `lg+`; verify mobile sheet closes automatically.
+  - Verify desktop outline overlay behaves normally after transition.
+- Regression:
+  - Verify normal mobile sheet open/close flow remains unchanged on small screens.
 
 ---
 

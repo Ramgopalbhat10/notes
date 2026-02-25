@@ -365,9 +365,9 @@
     word-break: normal;
   }
 
-  .markdown-preview.public-view [data-streamdown="list-item"] > p {
-    display: inline;
-    margin: 0;
+  .markdown-preview.public-view [data-streamdown="list-item"] > p + p {
+    display: block;
+    margin-top: 0.75rem;
   }
 
   .markdown-preview.public-view a,

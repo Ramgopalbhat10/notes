@@ -2,17 +2,16 @@
 
 Current story: `docs/stories/story-21.md`
 
-Current section: Story 21.10 — Desktop Outline Overlay Without Content Shift
+Current section: Story 21.11 — PR Review Fixes (List Paragraph Fidelity + Mobile Sheet Desktop Transition)
 
 Previous tasks (latest completed batch only):
-- [x] Converted desktop outline panel to fixed right overlay slide-in/out so main content does not shift.
-- [x] Stabilized desktop FAB position during outline toggle by removing toggle-time reposition updates.
+- [x] Removed forced inline list-item paragraph override and preserved multi-paragraph list-item fidelity in public view.
+- [x] Added desktop breakpoint transition handling to close mobile outline sheet when crossing to `lg+`.
 - [x] Ran quality gate commands (`pnpm lint`, `pnpm build`) successfully.
-- [x] Completed manual desktop UX checks (no content shift, no icon jitter during outline toggle).
-- [x] Completed viewport manual checks at `320`, `375`, `425`, `768`, and `1024+` for wrapping/list behavior.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Execute manual checks for multi-paragraph list items and mobile->desktop resize transition behavior.
+- [ ] Push changes and resolve both PR review conversations on #83.
 
 Notes:
 - Scope guard: all layout/wrapping fixes must stay constrained to public route rendering (`MarkdownPreview` class `public-view` and `PublicFileView` desktop FAB container logic).

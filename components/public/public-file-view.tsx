@@ -77,6 +77,28 @@ export function PublicFileView({ fileKey, title, lastUpdated, content }: PublicF
     };
   }, [updateDesktopFabPosition]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const desktopMediaQuery = window.matchMedia("(min-width: 1024px)");
+    const handleDesktopTransition = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        setMobileOutlineOpen(false);
+      }
+    };
+
+    if (desktopMediaQuery.matches) {
+      setMobileOutlineOpen(false);
+    }
+
+    desktopMediaQuery.addEventListener("change", handleDesktopTransition);
+    return () => {
+      desktopMediaQuery.removeEventListener("change", handleDesktopTransition);
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <main className="flex-1 min-w-0" style={{ fontFamily: "var(--font-onest, system-ui)" }}>
