@@ -38,6 +38,10 @@ Goal: Improve the public note experience by removing redundant title rendering, 
 | 2026-02-24 | fix | Removed delayed mobile sheet close to restore instant close on heading click, and preserved transient highlight visibility by allowing shared outline timeout cleanup to complete across unmount. |
 | 2026-02-24 | fix | Addressed PR feedback hardening by keying public outline context by canonical file path, replacing regex fence fallback rewrite with fence-aware linear parsing, and removing `Math.random()` from outline highlight tokening. |
 | 2026-02-24 | fix | Aligned public mobile outline header close control with the "Outline" title by replacing the default absolute close placement with a header-row close action. |
+| 2026-02-25 | feat | Added Onest font scoped to /p route via app/p/layout.tsx; fixed mobile <p> font-size using scoped CSS (.public-view p); widened outline sidebar to w-96; compacted and uppercased outline header; converted outline FABs to always-visible toggles at fixed bottom-4 right-4 (mobile and desktop). |
+| 2026-02-25 | fix | Added desktop public outline FAB edge-floating positioning anchored to article width with viewport clamping; added public-route-only markdown wrapping/list/link rules to reduce premature mobile line breaks and keep references bullets/text aligned; lint/build pass. |
+| 2026-02-25 | fix | Converted desktop public outline to fixed slide-in overlay so article content no longer shifts on toggle; kept desktop FAB visually stable by removing toggle-time reposition updates; lint/build pass. |
+| 2026-02-25 | chore | Completed manual UX verification for Story 21.9/21.10 across mobile/desktop viewports; confirmed wrapping, references bullets, no desktop content shift, and stable outline toggle icon behavior. |
 
 ## Issues
 
@@ -171,11 +175,106 @@ Test Plan
 Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
-- [ ] Execute manual smoke checks for title dedupe, bullet rendering, and public outline behavior.
+- [x] Execute manual smoke checks for title dedupe, bullet rendering, and public outline behavior.
 
 Test Plan
 - Confirm lint/build pass.
 - Confirm all acceptance criteria scenarios pass manually.
+
+---
+
+## Story 21.8 — Public View UI Polish (Font, Typography, Outline Layout, Toggle)
+- Components
+  - `app/p/layout.tsx`
+  - `components/public/public-file-view.tsx`
+  - `app/globals.css`
+- Behavior
+  - Onest font applied to `/p` route only via a nested layout, leaving the rest of the app on system-ui.
+  - Mobile `<p>` text in the public markdown body renders at 16px (scoped to `.public-view`), without affecting headings, `pre`, or `code`.
+  - Outline sidebar widened from 320px → 384px to prevent long heading text from truncating.
+  - Outline sidebar header compacted (`h-14` → `h-10`) and label uppercased ("OUTLINE").
+  - Floating outline FABs replaced with always-visible toggle FABs at `fixed bottom-4 right-4` (same styling as original); removed conditional rendering so the button is always present and toggles open/close on both mobile and desktop.
+
+Sub-tasks
+- [x] Create `app/p/layout.tsx` loading Onest from `next/font/google`, scoped to `/p` route via `--font-family-sans` variable.
+- [x] Add `.markdown-preview.public-view p { font-size: 1rem; }` in `globals.css` scoped to public view only.
+- [x] Pass `className="public-view"` to `MarkdownPreview` in `public-file-view.tsx` to activate scoped rule.
+- [x] Widen desktop outline aside from `w-80` → `w-96`.
+- [x] Compact aside header to `h-10`, uppercase "OUTLINE" label, correct scroll area height.
+- [x] Replace mobile `SheetTrigger` FAB with a plain always-visible toggle `Button` at `fixed bottom-4 right-4 lg:hidden`.
+- [x] Replace conditional desktop re-open FAB with always-visible toggle `Button` at `fixed bottom-4 right-4 hidden lg:block`.
+
+Test Plan
+- Open `/p/<slug>` and verify Onest renders; open `/files/` and verify system-ui is still used there.
+- On mobile (<1024px): tap toggle in article header → sheet opens; tap again or hit X → sheet closes. Verify `<p>` text is 16px; headings/code size unchanged.
+- On desktop (≥1024px): toggle button always visible in header; clicking opens/closes aside; X inside aside header also closes it. Verify sidebar is wider and heading text fits better.
+
+---
+
+## Story 21.9 — Public `/p` Route: Outline Toggle Placement + Mobile Text Wrapping Fixes
+- Components
+  - `components/public/public-file-view.tsx`
+  - `app/globals.css`
+- Behavior
+  - Keep mobile outline FAB unchanged (`lg:hidden`), including overlap behavior on mobile.
+  - Move desktop outline FAB from viewport corner to an edge-floating position anchored to the content column width.
+  - Improve mobile/smaller-width text wrapping and list rendering in public markdown only.
+  - Prevent references list from breaking immediately after bullet marker when content can fit on the first line.
+
+Sub-tasks
+- [x] Add desktop FAB edge-floating positioning logic anchored to article right edge, with viewport clamping.
+- [x] Recompute desktop FAB horizontal position on resize and on outline open/close transitions.
+- [x] Add route-scoped `.markdown-preview.public-view` wrapping rules to reduce premature line breaks and overflow.
+- [x] Add route-scoped public list/link rules to keep bullet marker and first line content aligned when possible.
+- [x] Keep all CSS changes scoped to public view only; no workspace/editor style regressions.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm build`.
+- [x] Execute manual checks at `320`, `375`, `425`, `768`, and `1024+` widths.
+
+Test Plan
+- Desktop icon placement:
+  - At `>=1024px`, verify the desktop outline FAB is near the article edge (not fixed at viewport bottom-right).
+  - Verify icon remains off content with outline open and closed.
+  - Verify desktop icon still toggles outline reliably.
+- Mobile/smaller widths (`320`, `375`, `425`, `768`):
+  - Verify paragraph/link wrapping does not break too early.
+  - Verify no horizontal overflow.
+  - Verify content uses available container width consistently.
+- References list:
+  - Verify bullet marker and first text/link stay on the same line when possible.
+  - Verify long links still wrap without layout break.
+- Regression:
+  - Verify mobile FAB remains unchanged and can overlay content.
+  - Verify mobile outline sheet behavior is unchanged (open/close/navigate).
+
+---
+
+## Story 21.10 — Desktop Outline Overlay Without Content Shift
+- Components
+  - `components/public/public-file-view.tsx`
+- Behavior
+  - On desktop (`lg+`), opening/closing the outline must not move the main article content.
+  - Desktop outline should slide in as an overlay panel from the right edge.
+  - Desktop outline FAB should remain visually stable while toggling outline open/close.
+  - Mobile/tablet sheet behavior remains unchanged.
+
+Sub-tasks
+- [x] Convert desktop outline panel from layout-width toggle to fixed overlay slide-in/out behavior.
+- [x] Ensure overlay closed state is non-interactive (`pointer-events: none`) and open state is interactive.
+- [x] Keep desktop FAB anchored behavior without jitter while toggling outline.
+- [x] Preserve existing desktop outline header/content behavior and instant section navigation.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm build`.
+- [x] Execute manual desktop UX checks for no content shift and stable icon position during toggle.
+
+Test Plan
+- Desktop overlay behavior:
+  - At `>=1024px`, open/close outline repeatedly and verify article content position does not move.
+  - Verify desktop FAB does not jitter when toggling outline.
+  - Verify outline panel slides over content area from right and can be closed from toggle button and panel close icon.
+- Regression:
+  - Verify mobile/tablet outline sheet flow is unchanged.
+  - Verify outline section navigation and highlight behavior still work.
 
 ---
 

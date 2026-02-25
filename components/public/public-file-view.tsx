@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CalendarDays, Clock, ListTree, X } from "lucide-react";
 
 import { MarkdownOutlinePanel } from "@/components/outline/markdown-outline-panel";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { computeReadingTimeLabel } from "@/lib/reading-time";
 import { cn } from "@/lib/utils";
 
@@ -20,12 +20,67 @@ type PublicFileViewProps = {
 export function PublicFileView({ fileKey, title, lastUpdated, content }: PublicFileViewProps) {
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [mobileOutlineOpen, setMobileOutlineOpen] = useState(false);
+  const [desktopFabLeft, setDesktopFabLeft] = useState(16);
+  const articleRef = useRef<HTMLElement>(null);
   const readingTime = computeReadingTimeLabel(content);
+  const updateDesktopFabPosition = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const article = articleRef.current;
+    if (!article) {
+      return;
+    }
+
+    const rect = article.getBoundingClientRect();
+    const fabSize = 36;
+    const viewportPadding = 16;
+    const gapFromArticle = 16;
+    const preferredLeft = rect.right + gapFromArticle;
+    const maxLeft = Math.max(viewportPadding, window.innerWidth - viewportPadding - fabSize);
+    const clampedLeft = Math.min(Math.max(preferredLeft, viewportPadding), maxLeft);
+    setDesktopFabLeft(Math.round(clampedLeft));
+  }, []);
+
+  useLayoutEffect(() => {
+    updateDesktopFabPosition();
+  }, [updateDesktopFabPosition]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleResize = () => {
+      updateDesktopFabPosition();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [updateDesktopFabPosition]);
+
+  useEffect(() => {
+    const article = articleRef.current;
+    if (!article || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateDesktopFabPosition();
+    });
+    observer.observe(article);
+    return () => {
+      observer.disconnect();
+    };
+  }, [updateDesktopFabPosition]);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <main className="flex-1 min-w-0" style={{ fontFamily: "var(--font-onest, system-ui)" }}>
-        <article className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-16">
+        <article ref={articleRef} className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-16">
           <header className="mb-8 text-center md:text-left">
             <div className="space-y-2">
               <h1
@@ -50,31 +105,32 @@ export function PublicFileView({ fileKey, title, lastUpdated, content }: PublicF
             </div>
           </header>
 
-          <MarkdownPreview content={content} parseIncompleteMarkdown={false} />
+          <MarkdownPreview content={content} parseIncompleteMarkdown={false} className="public-view" />
         </article>
       </main>
 
       {/* Desktop Outline Sidebar */}
       <aside
         className={cn(
-          "hidden border-l border-border/40 bg-background transition-all duration-300 ease-in-out lg:block",
-          outlineOpen ? "w-80" : "w-0 border-l-0 overflow-hidden"
+          "pointer-events-none fixed inset-y-0 right-0 z-30 hidden w-96 border-l border-border/40 bg-background shadow-xl transition-transform duration-300 ease-in-out lg:block",
+          outlineOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full"
         )}
+        aria-hidden={!outlineOpen}
       >
         <div className="sticky top-0 h-screen overflow-hidden">
-          <div className="flex h-14 items-center justify-between border-b border-border/40 px-4">
-            <h2 className="text-sm font-medium">Outline</h2>
+          <div className="flex h-10 items-center justify-between border-b border-border/40 px-4">
+            <h2 className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">Outline</h2>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7"
               onClick={() => setOutlineOpen(false)}
               aria-label="Close outline"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <div className="h-[calc(100vh-3.5rem)] overflow-y-auto">
+          <div className="h-[calc(100vh-2.5rem)] overflow-y-auto">
             <MarkdownOutlinePanel
               content={content}
               contextKey={`public-desktop:${fileKey}`}
@@ -84,59 +140,58 @@ export function PublicFileView({ fileKey, title, lastUpdated, content }: PublicF
         </div>
       </aside>
 
-      {/* Mobile Toggle & Sheet */}
-      <div className="fixed bottom-4 right-4 lg:hidden">
-        <Sheet open={mobileOutlineOpen} onOpenChange={setMobileOutlineOpen}>
-          <SheetTrigger asChild>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="h-9 w-9 rounded-full border border-border/50 bg-background/95 text-foreground shadow"
-            >
-              <ListTree className="h-4 w-4" />
-              <span className="sr-only">Toggle outline</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="!w-full !max-w-none gap-0 p-0 [&>button]:hidden">
-            <SheetHeader className="flex-row items-center justify-between gap-2 border-b border-border/40 px-3 py-2">
-              <SheetTitle className="text-left text-sm">Outline</SheetTitle>
-              <SheetClose asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  aria-label="Close outline"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </SheetClose>
-            </SheetHeader>
-            <div className="h-[calc(100vh-2.625rem)] overflow-y-auto p-0">
-              <MarkdownOutlinePanel
-                content={content}
-                contextKey={`public-mobile:${fileKey}`}
-                scrollBehaviorMode="instant"
-                onNavigateToSection={() => setMobileOutlineOpen(false)}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+      {/* Mobile Toggle FAB */}
+      <div className="fixed right-4 bottom-4 z-40 lg:hidden">
+        <Button
+          size="icon"
+          variant="secondary"
+          className="h-9 w-9 rounded-full border border-border/50 bg-background/95 text-foreground shadow"
+          onClick={() => setMobileOutlineOpen((prev) => !prev)}
+          aria-label="Toggle outline"
+        >
+          <ListTree className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Desktop Toggle Button (Only visible when closed) */}
-      {!outlineOpen && (
-        <div className="fixed bottom-4 right-4 hidden lg:block">
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-9 w-9 rounded-full border border-border/50 bg-background/95 text-foreground shadow"
-            onClick={() => setOutlineOpen(true)}
-            aria-label="Open outline"
-          >
-            <ListTree className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      {/* Desktop Toggle FAB (always visible) */}
+      <div className="fixed bottom-4 z-40 hidden lg:block" style={{ left: `${desktopFabLeft}px` }}>
+        <Button
+          size="icon"
+          variant="secondary"
+          className="h-9 w-9 rounded-full border border-border/50 bg-background/95 text-foreground shadow"
+          onClick={() => setOutlineOpen((prev) => !prev)}
+          aria-label={outlineOpen ? "Close outline" : "Open outline"}
+        >
+          <ListTree className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Mobile Outline Sheet (controlled) */}
+      <Sheet open={mobileOutlineOpen} onOpenChange={setMobileOutlineOpen}>
+        <SheetContent side="right" className="!w-full !max-w-none gap-0 p-0 [&>button]:hidden">
+          <SheetHeader className="flex-row items-center justify-between gap-2 border-b border-border/40 px-3 py-2">
+            <SheetTitle className="text-left text-xs font-semibold tracking-widest uppercase text-muted-foreground">Outline</SheetTitle>
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                aria-label="Close outline"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </SheetClose>
+          </SheetHeader>
+          <div className="h-[calc(100vh-2.625rem)] overflow-y-auto p-0">
+            <MarkdownOutlinePanel
+              content={content}
+              contextKey={`public-mobile:${fileKey}`}
+              scrollBehaviorMode="instant"
+              onNavigateToSection={() => setMobileOutlineOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
