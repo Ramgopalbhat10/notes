@@ -31,6 +31,7 @@ Goal: Improve the visual presentation of the public `/p` route with custom typog
 
 | Issue | Title | Status | File |
 |---|---|---|---|
+| 14 | Markdown Heading Font Falls Back to system-ui in Public /p Route | resolved | `app/globals.css` |
 
 ---
 

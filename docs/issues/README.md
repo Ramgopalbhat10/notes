@@ -19,3 +19,4 @@ Issue template: `docs/issues/template.md`
 | 11 | Information Leakage in S3 Error Responses | resolved | None | `app/api/fs/file/route.ts` |
 | 12 | O(N²) Queue Dequeue in File Tree Builder | resolved | None | `lib/file-tree-builder.ts` |
 | 13 | Clarify Skill Wording for Domain Relevance | resolved | None | `.agents/skills/*/SKILL.md` |
+| 14 | Markdown Heading Font Falls Back to system-ui in Public /p Route | resolved | Story 22 | `app/globals.css` |
