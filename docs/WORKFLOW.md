@@ -21,7 +21,7 @@
     3. MUST create branch `feature/<slug>` from `main`.
     4. MUST reset `docs/PROGRESS.md` (see §3 for format).
   - **New Issue:**
-    1. MUST create from `docs/issues/template.md` → `docs/issues/issue-<N>.md`.
+    1. MUST create from `docs/issues/template.md` → `docs/issues/issue-<N>.md`. Remove all the comments and placeholders.
     2. MUST add the row to `docs/issues/README.md`.
     3. If the issue relates to an existing story, MUST add cross-references in both files.
     4. MUST create branch `fix/<slug>` (or `refactor/<slug>`, `chore/<slug>`) from `main`.

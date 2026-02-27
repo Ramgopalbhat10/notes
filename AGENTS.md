@@ -8,10 +8,10 @@ On every request, scan for a `[label]` prefix first — before loading any files
 - `[code-only]` — Code implementation only. Skip docs, branch, quality, commit, PR.
 - `[docs-only]` — Create/update story or issue documentation only.
 - `[quality]` — Run lint, build, delete test files only.
-- `[commit]` — Gap-fill phases 1, 2, 4, 5 if incomplete, then commit.
+- `[commit]` — Gap-fill phases 2, 3, 5, 6 if incomplete, then commit.
 - `[push]` — Gap-fill ALL incomplete phases, then create PR.
 - **No label, conversational intent** (e.g. a question with no code/doc changes) — treat as `[ask]`.
-- **No label, implementation intent** — execute all 8 phases in `docs/WORKFLOW.md` in order.
+- **No label, implementation intent** — execute all 9 phases in `docs/WORKFLOW.md` in order.
 
 ## Constraints (Always Enforced)
 - NEVER commit to `main`. Branch: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`.
