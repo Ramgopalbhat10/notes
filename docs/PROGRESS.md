@@ -1,17 +1,21 @@
 # Progress
 
-Current story: `docs/stories/story-21.md`
+Current issue: `docs/issues/issue-15.md`
 
-Current section: Story 21.11 — PR Review Fixes (List Paragraph Fidelity + Mobile Sheet Desktop Transition)
+Current section: Issue 15 — Refactor Workflow to Label-Based Control System
 
 Previous tasks (latest completed batch only):
-- [x] Removed forced inline list-item paragraph override and preserved multi-paragraph list-item fidelity in public view.
-- [x] Added desktop breakpoint transition handling to close mobile outline sheet when crossing to `lg+`.
-- [x] Ran quality gate commands (`pnpm lint`, `pnpm build`) successfully.
-- [x] Pushed fix commit to PR branch and resolved both review conversations on #83.
+- [x] Implemented label-based workflow control system with 6 labels
+- [x] Compressed documentation to minimal references (AGENTS.md: 56 lines, WORKFLOW_LABELS.md: 33 lines)
+- [x] Added explicit label detection as first step in Session Bootstrap
+- [x] Created issue-15.md and updated issues/README.md index
 
 Next tasks:
-- [ ] Execute manual checks for multi-paragraph list items and mobile->desktop resize transition behavior.
+- [ ] Run quality gate checks (lint, build)
+- [ ] Commit changes with conventional commit format
+- [ ] Create PR with complete workflow verification
 
 Notes:
-- Scope guard: all layout/wrapping fixes must stay constrained to public route rendering (`MarkdownPreview` class `public-view` and `PublicFileView` desktop FAB container logic).
+- New labels: `[ask]` for conversational only, `[code-only]`, `[docs-only]`, `[quality]`, `[commit]`, `[push]`
+- Gap-filling logic implemented for `[commit]` and `[push]` labels
+- Progressive disclosure reduces token usage for simple queries

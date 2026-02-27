@@ -2,10 +2,10 @@
 
 ## 1) Mode
 - Planning: propose branch/story/approach only. No repo mutations.
-- Execution: follow this file in order.
+- Execution: follow this file in order (or as directed by label — see `docs/WORKFLOW_LABELS.md`).
 - No-op: if no code/docs impact, do nothing.
 
-## 2) Route The Request (Every Prompt)
+## 2) Route The Request
 - MUST treat each new request independently, even in the same chat.
 - MUST classify the request:
   - **Story** — new feature, feature enhancement, new capability, or anything that directly changes user-facing behavior.
@@ -28,8 +28,7 @@
     5. MUST reset `docs/PROGRESS.md` (see §3 for format).
 - NEVER implement unrelated work on the old branch.
 
-## 3) Mandatory Pre-Code Gate (Hard Stop — MUST complete before ANY code edits)
-You MUST NOT write, modify, or delete any source code until every checkbox below is checked:
+## 3) Pre-Code Gate
 - [ ] Read `docs/PROGRESS.md` and open its story or issue file.
 - [ ] Skim `docs/learnings/README.md`; search relevant keywords in `docs/learnings/` via `rg`.
 - [ ] If architecture/caching/data-flow/auth/AI routing changes are involved, skim `docs/decisions/README.md`.
@@ -53,14 +52,12 @@ You MUST NOT write, modify, or delete any source code until every checkbox below
   ```
 - [ ] `Next tasks` contains only the current workable sub-task(s), not completed tasks.
 - [ ] If adding/changing major UI, use Shadcn UI MCP server (fallback: existing `components/ui/*` conventions if MCP unavailable).
-- **STOP: If any checkbox above is incomplete, you MUST NOT proceed to implementation. This is non-negotiable.**
 
 ## 4) Execute One Unit Of Work
 - A unit of work is one legitimate, scoped change (code/behavior/docs).
 - Keep scope tight to the current section in `docs/PROGRESS.md`.
 
-## 5) Mandatory Post-Code Gate (Hard Stop — MUST complete before commit/PR)
-You MUST NOT commit, push, or create a PR until every checkbox below is checked:
+## 5) Post-Code Gate
 - [ ] Subtasks updated (`[ ]` -> `[x]` as applicable) in the story or issue file.
 - [ ] `## Dev Log` in the story/issue file has one new row for this unit.
 - [ ] Update `docs/PROGRESS.md` with strict task movement:
@@ -72,24 +69,24 @@ You MUST NOT commit, push, or create a PR until every checkbox below is checked:
   - Issue file `## Related Story` points to the story file.
   - Story file `## Issues` table has a row for this issue with correct status.
   - When resolving an issue, update status to `resolved` in both the issue file and the story's Issues table.
-- [ ] Quality gate run:
-  - If code changed: `pnpm lint`
-  - User-visible/risky change: `pnpm build`
-- [ ] If checks fail: fix first, or commit explicitly as WIP and note failure in Dev Log.
 - [ ] If major architecture changed: add/update `docs/decisions/*` and `docs/decisions/README.md`.
 - [ ] If non-obvious lesson emerged: add learning file and update `docs/learnings/README.md`.
 - [ ] Verify the relevant index includes the current work:
   - Stories: `docs/stories/README.md`
   - Issues: `docs/issues/README.md`
-- [ ] Delete any test files created during this unit (`*.test.*`, `*.spec.*`, `__tests__/`). This project relies on manual testing only.
-- **STOP: If any checkbox above is incomplete, the unit is NOT done. You MUST NOT commit or proceed to PR.**
 
-## 6) Commit Rule
+## 6) Quality Gate
+- [ ] If code changed: `pnpm lint`
+- [ ] User-visible/risky change: `pnpm build`
+- [ ] If checks fail: fix first, or commit explicitly as WIP and note failure in Dev Log.
+- [ ] Delete any test files created during this unit (`*.test.*`, `*.spec.*`, `__tests__/`). This project relies on manual testing only.
+
+## 7) Commit Rule
 - MUST commit with Conventional Commits on the current branch (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`).
 - MUST NOT commit to `main` directly.
 
-## 7) Pre-PR Verification (Hard Stop — MUST complete before creating PR)
-Before creating a pull request, you MUST run this final verification and confirm every item passes:
+## 8) Pre-PR Verification
+Before creating a pull request, confirm every item passes:
 - [ ] **Branch check:** `git branch --show-current` returns a correctly prefixed branch (`feature/`, `fix/`, `refactor/`, `chore/`, `docs/`). NEVER create a PR from `main`.
 - [ ] **Docs exist:** The story or issue file exists and is complete (not a skeleton).
 - [ ] **Index updated:** The story/issue appears in its respective `README.md` index with correct status.
@@ -99,9 +96,9 @@ Before creating a pull request, you MUST run this final verification and confirm
 - [ ] **Lint passes:** `pnpm lint` exits with code 0.
 - [ ] **Build passes:** `pnpm build` exits with code 0.
 - [ ] **Diff review:** `git diff main --stat` — confirm only expected files are changed.
-- **STOP: If any check above fails, fix it before creating the PR. A PR that skips these checks is a workflow violation.**
+- If any check fails, fix before creating the PR. Block PR if required phases are incomplete — list what's missing.
 
-## 8) PR Creation Rule
+## 9) PR Creation
 - MUST create a pull request from the current branch to `main`.
-- MUST refer to .github/PULL_REQUEST_TEMPLATE.md for the PR description and checklist items to complete.
+- MUST refer to `.github/PULL_REQUEST_TEMPLATE.md` for the PR description and checklist items to complete.
 - MUST NOT merge the PR.

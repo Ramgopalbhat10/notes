@@ -2,31 +2,43 @@
 
 This repo is a Next.js App Router markdown vault (S3-backed) with a cached tree manifest, editor/preview UX, and AI tools.
 
-## Critical Rules (MUST follow — no exceptions)
-- You MUST read and follow `docs/WORKFLOW.md` in order for every implementation request. No code edits are permitted until the pre-code gate (§3) is fully complete.
-- You MUST create or update the story/issue file AND its index BEFORE writing any code. Skipping documentation is a workflow violation.
-- You MUST work on the correct branch. NEVER commit to `main` directly. Branch naming conventions: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`.
-- You MUST complete the post-code gate (§5) and pre-PR verification (§7) in `docs/WORKFLOW.md` BEFORE creating a PR or marking work as done.
-- You MUST NOT create test files (`*.test.*`, `*.spec.*`, `__tests__/`). This project relies on manual testing only. Delete any test files before committing.
+## Workflow Labels
+On every request, scan for a `[label]` prefix first — before loading any files or taking any action.
+- `[ask]` — Conversational only. Answer directly. Do NOT load `PROGRESS.md`, `WORKFLOW.md`, or any workflow files.
+- `[code-only]` — Code implementation only. Skip docs, branch, quality, commit, PR.
+- `[docs-only]` — Create/update story or issue documentation only.
+- `[quality]` — Run lint, build, delete test files only.
+- `[commit]` — Gap-fill phases 1, 2, 4, 5 if incomplete, then commit.
+- `[push]` — Gap-fill ALL incomplete phases, then create PR.
+- **No label, conversational intent** (e.g. a question with no code/doc changes) — treat as `[ask]`.
+- **No label, implementation intent** — execute all 8 phases in `docs/WORKFLOW.md` in order.
+
+## Constraints (Always Enforced)
+- NEVER commit to `main`. Branch: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`.
+- NEVER create test files (`*.test.*`, `*.spec.*`, `__tests__/`). Delete any before committing.
+- NEVER create PR if any required phase is incomplete — list missing phases instead.
 
 ## Package Manager
 - Use `pnpm` (not `npm`).
 
 ## Workflow
-- Branching and docs update rules: `docs/WORKFLOW.md`
-- Current focus and checklist: `docs/PROGRESS.md`
-- Gotchas and lessons learned: `docs/learnings/README.md`
-- MUST enforce strict gates in `docs/WORKFLOW.md` (pre-code and post-code hard stops).
+- Phase execution rules: `docs/WORKFLOW.md`
+- Label reference: `docs/WORKFLOW_LABELS.md`
+- Current focus: `docs/PROGRESS.md`
+- Gotchas and lessons: `docs/learnings/README.md`
 
 ## Session Bootstrap (New Chat)
-- Load `AGENTS.md`, then load `docs/PROGRESS.md` and `docs/WORKFLOW.md` only.
-- Use those docs to navigate to deeper context (stories, learnings, PRD) as needed.
-- For each implementation request, follow `docs/WORKFLOW.md` in order; MUST NOT start code edits before the pre-code gate is complete.
+- **Step 1:** Scan the request for a `[label]` prefix or conversational intent before loading anything.
+  - `[ask]` or conversational → answer directly. Stop here; load nothing else.
+  - All other labels or implementation intent → continue to Step 2.
+- **Step 2:** Load `docs/PROGRESS.md` and `docs/WORKFLOW.md`.
+- **Step 3:** Use those docs to navigate to deeper context (stories, learnings, PRD) as needed.
+- Load `docs/WORKFLOW_LABELS.md` only when gap-fill phase sequencing needs clarification.
 
 ## Testing Policy
-- This project has no test files and intentionally relies on manual testing.
-- MUST NOT commit test files (e.g. `*.test.*`, `*.spec.*`, `__tests__/`).
-- If an agent creates test files during a PR review or code generation, they MUST be deleted before the final commit.
+- No test files. Manual testing only.
+- MUST NOT commit test files (`*.test.*`, `*.spec.*`, `__tests__/`).
+- Delete any test files generated before committing.
 
 ## Quick Commands
 - Install: `pnpm install`
