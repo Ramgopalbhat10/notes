@@ -11,18 +11,20 @@ import { cn } from "../lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUp, Clock3, Loader2, Maximize2, Minimize2, PanelRight, Plus, X } from "lucide-react";
+import { Maximize2, Minimize2, PanelRight, Plus, X } from "lucide-react";
 import { useWorkspaceLayoutStore, type RightSidebarPanel } from "@/stores/layout";
 import { useAppShellShortcuts } from "@/components/app-shell/use-app-shell-shortcuts";
 import { LeftDesktopSidebar } from "@/components/app-shell/left-desktop-sidebar";
 import { LeftSidebarFooter } from "@/components/app-shell/left-sidebar-footer";
+import { MainFooter } from "@/components/app-shell/main-footer";
+import { MainHeader } from "@/components/app-shell/main-header";
 import { SidebarAutoCollapse } from "@/components/app-shell/sidebar-auto-collapse";
 import { useLeftSidebarLayout } from "@/components/app-shell/use-left-sidebar-layout";
 import { useMainScroll } from "@/components/app-shell/use-main-scroll";
 import { RightDesktopSidebar } from "@/components/app-shell/right-desktop-sidebar";
 import { useRightMobileSheet } from "@/components/app-shell/use-right-mobile-sheet";
 import { useRightSidebarPanel } from "@/components/app-shell/use-right-sidebar-panel";
-import { buildStatusDescriptor, computeReadingTimeLabel, type StatusDescriptor } from "@/components/app-shell/status-utils";
+import { buildStatusDescriptor, computeReadingTimeLabel } from "@/components/app-shell/status-utils";
 import {
   SidebarInset,
   SidebarProvider,
@@ -318,7 +320,14 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
 
       {/* Main content inset */}
       <SidebarInset className="flex min-h-svh min-w-0 flex-col">
-        <MainHeader header={header} leftSidebarOpen={leftSidebarOpen} toggleLeftSidebar={toggleLeftSidebar} leftMobileOpen={leftMobileOpen} setLeftMobileOpen={setLeftMobileOpen} />
+        <MainHeader
+          header={header}
+          leftSidebarOpen={leftSidebarOpen}
+          toggleLeftSidebar={toggleLeftSidebar}
+          leftMobileOpen={leftMobileOpen}
+          setLeftMobileOpen={setLeftMobileOpen}
+          iconButtonClassName={ICON_BUTTON_BASE}
+        />
         <div ref={mainScrollRef} className="flex-1 min-h-0 w-full overflow-auto">
           <div className="space-y-3 sm:space-y-4 sm:px-8 sm:py-4 pt-0 min-w-0">{renderedChildren}</div>
         </div>
@@ -331,6 +340,9 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
           totalReadTime={totalReadTime}
           canScrollTop={isMainScrollable}
           onScrollTop={scrollMainToTop}
+          footerSurfaceClass={FOOTER_SURFACE_CLASS}
+          footerHeightClass={FOOTER_HEIGHT_CLASS}
+          iconButtonClassName={ICON_BUTTON_BASE}
         />
       </SidebarInset>
 
@@ -351,123 +363,5 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
         />
       ) : null}
     </SidebarProvider >
-  );
-}
-
-type MainFooterProps = {
-  descriptor: StatusDescriptor | null;
-  canRetry: boolean;
-  canReload: boolean;
-  onRetry?: () => void;
-  onReload?: () => void;
-  totalReadTime: string;
-  canScrollTop: boolean;
-  onScrollTop: () => void;
-};
-
-function MainFooter({
-  descriptor,
-  canRetry,
-  canReload,
-  onRetry,
-  onReload,
-  totalReadTime,
-  canScrollTop,
-  onScrollTop,
-}: MainFooterProps) {
-  const toneClass = descriptor
-    ? {
-      idle: "text-muted-foreground",
-      info: "text-foreground",
-      warning: "text-amber-500",
-      error: "text-destructive",
-    }[descriptor.tone]
-    : "text-muted-foreground";
-
-  return (
-    <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex items-center justify-between px-3 md:px-4 text-xs md:text-sm")}>
-      <div className="flex items-center gap-1.5 min-w-0">
-        {descriptor?.showLoader ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : null}
-        <span className={cn("truncate", toneClass)}>
-          {descriptor?.message ?? "Select a note to see save status"}
-        </span>
-        {canRetry && onRetry ? (
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onRetry}>
-            Retry
-          </Button>
-        ) : null}
-        {canReload && onReload ? (
-          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onReload}>
-            Reload
-          </Button>
-        ) : null}
-      </div>
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <div className="flex items-center gap-1 whitespace-nowrap">
-          <Clock3 className="h-4 w-4" />
-          <span className="text-xs md:text-sm">{totalReadTime}</span>
-        </div>
-        {canScrollTop ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn("size-7", ICON_BUTTON_BASE)}
-                onClick={onScrollTop}
-                aria-label="Scroll to top"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Scroll to top</TooltipContent>
-          </Tooltip>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function MainHeader({ header, leftSidebarOpen, toggleLeftSidebar, leftMobileOpen, setLeftMobileOpen }: {
-  header?: React.ReactNode;
-  leftSidebarOpen: boolean;
-  toggleLeftSidebar: () => void;
-  leftMobileOpen: boolean;
-  setLeftMobileOpen: (open: boolean) => void;
-}) {
-  const { isMobile } = useSidebar();
-
-  return (
-    <header className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-10 md:h-11 items-center gap-1 md:gap-1.5 px-3 md:px-4 border-b border-border/40">
-        {/* Show left toggle in main: always on mobile (for sheet); on md+ only when sidebar is closed */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "size-7",
-            ICON_BUTTON_BASE,
-            // On mobile: always show (controls Sheet)
-            // On desktop: only show when sidebar is closed
-            isMobile ? "inline-flex" : leftSidebarOpen ? "hidden" : "inline-flex",
-          )}
-          onClick={() => {
-            if (isMobile) {
-              setLeftMobileOpen(!leftMobileOpen);
-            } else {
-              toggleLeftSidebar();
-            }
-          }}
-          aria-label="Toggle sidebar"
-        >
-          <PanelRight className="h-4 w-4" />
-        </Button>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-0.5">{header}</div>
-        </div>
-      </div>
-    </header>
   );
 }

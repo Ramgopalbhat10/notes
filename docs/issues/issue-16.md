@@ -44,7 +44,11 @@
 - [x] Continue Phase 3 by extracting status/reading-time utility logic from `AppShell`.
 - [x] Continue Phase 3 by extracting desktop sidebar shell sections (left/right) into dedicated components.
 - [x] Continue Phase 3 by extracting auth/settings footer controls and auto-collapse behavior from `AppShell`.
-- [ ] Close Phase 3 by extracting `MainHeader` and `MainFooter` into dedicated app-shell modules.
+- [x] Close Phase 3 by extracting `MainHeader` and `MainFooter` into dedicated app-shell modules.
+- [x] Start Phase 4 decomposition of `stores/tree.ts` internals into focused modules.
+- [x] Continue Phase 4 by extracting additional tree state mutator helpers from `stores/tree.ts`.
+- [x] Continue Phase 4 by extracting route selection/history helpers from `stores/tree.ts`.
+- [ ] Continue Phase 4 by extracting snapshot creation and editor-store lookup helpers from `stores/tree.ts`.
 
 ## Files Changed
 - `lib/http/client.ts`
@@ -73,7 +77,13 @@
 - `components/app-shell/right-desktop-sidebar.tsx`
 - `components/app-shell/left-sidebar-footer.tsx`
 - `components/app-shell/sidebar-auto-collapse.tsx`
+- `components/app-shell/main-header.tsx`
+- `components/app-shell/main-footer.tsx`
 - `components/app-shell.tsx`
+- `lib/tree/state-from-manifest.ts`
+- `lib/tree/state-mutators.ts`
+- `lib/tree/store-selection.ts`
+- `stores/tree.ts`
 - `components/file-tree/tree-nodes.tsx`
 - `components/file-tree/hooks/use-modal-submit.ts`
 - `components/ai-chat/sidebar-chat.tsx`
@@ -95,6 +105,10 @@
 | 2026-03-02 | refactor | Continued Phase 3 by extracting right panel derivation into `use-right-sidebar-panel` and status/read-time helpers into `status-utils`. |
 | 2026-03-02 | refactor | Continued Phase 3 by extracting desktop left/right sidebar shell sections into `left-desktop-sidebar` and `right-desktop-sidebar` components. |
 | 2026-03-02 | refactor | Continued Phase 3 by extracting auth/settings footer controls to `left-sidebar-footer` and moving auto-collapse behavior to `sidebar-auto-collapse`. |
+| 2026-03-02 | refactor | Closed Phase 3 by extracting `main-header` and `main-footer` modules and simplifying `AppShell` to orchestration composition. |
+| 2026-03-02 | refactor | Started Phase 4 by extracting `buildStateFromManifest` from `stores/tree.ts` into `lib/tree/state-from-manifest.ts`. |
+| 2026-03-02 | refactor | Continued Phase 4 by extracting tree `addNodeToState`/`removeNodeFromState` mutators into `lib/tree/state-mutators.ts`. |
+| 2026-03-02 | refactor | Continued Phase 4 by extracting tree route selection/history helpers (`parentKey`, `appendToHistoryIfNew`, `persistLastViewedFile`) into `lib/tree/store-selection.ts`. |
 
 ## Test Plan
 - Run `pnpm lint`.

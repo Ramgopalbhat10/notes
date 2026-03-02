@@ -4,7 +4,6 @@ import { create } from "zustand";
 
 import { normalizeName } from "@/lib/fs-validation";
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
-import { isFolderNode } from "@/lib/file-tree-manifest";
 import { getErrorMessage, parseJsonOrFallback } from "@/lib/http/client";
 import {
   removePersistentDocument,
@@ -39,13 +38,20 @@ import {
   fetchManifest,
 } from "@/lib/tree/manifest-client";
 import { createMutationQueue } from "@/lib/tree/mutation-queue";
+import {
+  appendToHistoryIfNew,
+  parentKey,
+  persistLastViewedFile,
+  ROOT_PARENT_KEY,
+} from "@/lib/tree/store-selection";
+import { buildStateFromManifest } from "@/lib/tree/state-from-manifest";
+import { addNodeToState, removeNodeFromState } from "@/lib/tree/state-mutators";
 import { captureTreeSnapshot, restoreTreeSnapshot } from "@/lib/tree/snapshots";
 type EditorStoreHook = typeof import("./editor")["useEditorStore"];
 
 export type Node = TreeNode;
 export type { NodeId, FileNode, FolderNode, SelectByPathResult } from "@/lib/tree/types";
-
-export const ROOT_PARENT_KEY = "__root__";
+export { ROOT_PARENT_KEY } from "@/lib/tree/store-selection";
 
 const EDITOR_STORE_GLOBAL_KEY = "__MRGB_EDITOR_STORE__";
 
@@ -105,27 +111,6 @@ type TreeState = {
   getPreviousInHistory: () => NodeId | null;
 };
 
-function parentKey(id: NodeId | null): string {
-  return id ?? ROOT_PARENT_KEY;
-}
-
-/**
- * Appends an ID to history if it's not already the last entry.
- */
-function appendToHistoryIfNew(history: NodeId[], id: NodeId): NodeId[] {
-  const lastId = history.length > 0 ? history[history.length - 1] : null;
-  return lastId === id ? history : [...history, id];
-}
-
-/**
- * Saves the last viewed file to persistent preferences.
- */
-function persistLastViewedFile(id: NodeId): void {
-  void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
-    void saveLastViewedFile(id);
-  });
-}
-
 function createSnapshot(state: TreeState): TreeSnapshot {
   return {
     nodes: state.nodes,
@@ -136,123 +121,6 @@ function createSnapshot(state: TreeState): TreeSnapshot {
     selectedId: state.selectedId,
     routeTarget: state.routeTarget,
     selectionOrigin: state.selectionOrigin,
-  };
-}
-
-function buildStateFromManifest(manifest: FileTreeManifest): {
-  nodes: Record<NodeId, TreeNode>;
-  rootIds: NodeId[];
-  slugToId: Record<string, NodeId>;
-  idToSlug: Record<NodeId, string>;
-} {
-  const nodes: Record<NodeId, TreeNode> = {};
-
-  manifest.nodes.forEach((entry) => {
-    if (isFolderNode(entry)) {
-      const path = entry.path.endsWith("/") ? entry.path : `${entry.path}/`;
-      nodes[entry.id] = {
-        id: entry.id,
-        type: "folder",
-        name: entry.name,
-        path,
-        parentId: entry.parentId,
-        children: [...entry.childrenIds].sort(),
-        childrenLoaded: true,
-        lastModified: entry.lastModified,
-      } satisfies FolderNode;
-    } else {
-      nodes[entry.id] = {
-        id: entry.id,
-        type: "file",
-        name: entry.name,
-        path: entry.path,
-        parentId: entry.parentId,
-        etag: entry.etag,
-        lastModified: entry.lastModified,
-        size: entry.size,
-      } satisfies FileNode;
-    }
-  });
-
-  const { slugToId, idToSlug } = buildSlugState(nodes);
-
-  return {
-    nodes,
-    rootIds: [...manifest.rootIds].sort(),
-    slugToId,
-    idToSlug,
-  };
-}
-
-function addNodeToState(state: TreeState, node: TreeNode): TreeState {
-  const nodes = { ...state.nodes, [node.id]: node };
-  let rootIds = state.rootIds;
-  const openFolders = { ...state.openFolders };
-
-  if (node.parentId) {
-    const parent = nodes[node.parentId];
-    if (parent && parent.type === "folder") {
-      const children = new Set(parent.children ?? []);
-      children.add(node.id);
-      nodes[node.parentId] = {
-        ...parent,
-        children: Array.from(children).sort(),
-        childrenLoaded: true,
-      };
-    }
-    openFolders[node.parentId] = true;
-  } else {
-    rootIds = Array.from(new Set([...state.rootIds, node.id])).sort();
-  }
-
-  const { slugToId, idToSlug } = buildSlugState(nodes);
-
-  return {
-    ...state,
-    nodes,
-    rootIds,
-    openFolders,
-    slugToId,
-    idToSlug,
-  };
-}
-
-function removeNodeFromState(state: TreeState, id: NodeId): TreeState {
-  const node = state.nodes[id];
-  if (!node) {
-    return state;
-  }
-  const nodes = { ...state.nodes };
-  delete nodes[id];
-  if (node.type === "folder") {
-    removeNodesWithPrefix(nodes, node.path);
-  }
-
-  let rootIds = state.rootIds;
-  const openFolders = { ...state.openFolders };
-  if (!node.parentId) {
-    rootIds = state.rootIds.filter((rootId) => rootId !== id);
-  } else {
-    const parent = nodes[node.parentId];
-    if (parent && parent.type === "folder") {
-      nodes[node.parentId] = {
-        ...parent,
-        children: parent.children.filter((childId: NodeId) => childId !== id),
-      };
-    }
-  }
-  delete openFolders[id];
-
-  const { slugToId, idToSlug } = buildSlugState(nodes);
-
-  return {
-    ...state,
-    nodes,
-    rootIds,
-    openFolders,
-    selectedId: state.selectedId === id ? null : state.selectedId,
-    slugToId,
-    idToSlug,
   };
 }
 

@@ -5,14 +5,16 @@ Current issue: `docs/issues/issue-16.md`
 Current section: Issue 16 — Massive Refactor Roadmap Execution (Stability-First)
 
 Previous tasks (latest completed batch only):
-- [x] Continued Phase 3 by extracting auth/settings footer controls into `components/app-shell/left-sidebar-footer.tsx`.
-- [x] Continued Phase 3 by extracting auto-collapse behavior into `components/app-shell/sidebar-auto-collapse.tsx`.
-- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after these extractions.
+- [x] Started Phase 4 by extracting `buildStateFromManifest` into `lib/tree/state-from-manifest.ts`.
+- [x] Continued Phase 4 by extracting `addNodeToState` and `removeNodeFromState` into `lib/tree/state-mutators.ts`.
+- [x] Continued Phase 4 by extracting `parentKey`, `appendToHistoryIfNew`, and `persistLastViewedFile` into `lib/tree/store-selection.ts`.
+- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after these changes.
 
 Next tasks:
-- [ ] Close Phase 3 by extracting `MainHeader` and `MainFooter` into dedicated app-shell modules.
+- [ ] Continue Phase 4 by extracting snapshot creation and editor-store lookup helpers from `stores/tree.ts`.
 
 Notes:
 - Phase 1 shared client I/O/error extraction completed with no behavioral intent changes.
 - Phase 2 decomposition now includes `use-file-sharing`, `use-resolved-path`, `use-sibling-navigation`, `use-workspace-settings-sync`, `use-workspace-file-sync`, `workspace-body`, and `use-workspace-header`.
-- Phase 3 decomposition is in-progress in `AppShell` with responsive/layout/shortcut/panel/state helpers, desktop shell sections, footer controls, and auto-collapse extracted.
+- Phase 3 decomposition of `AppShell` is complete and the component now primarily orchestrates extracted modules.
+- Phase 4 tree-store decomposition is in-progress.
