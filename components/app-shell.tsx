@@ -1,37 +1,31 @@
 "use client";
 
 import {
-  cloneElement,
-  isValidElement,
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type CSSProperties,
-  type ReactElement,
 } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "../lib/utils";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, PanelLeft, PanelRight, Plus, Settings, X } from "lucide-react";
-import { authClient } from "@/lib/auth/client";
+import { ArrowUp, Clock3, Loader2, Maximize2, Minimize2, PanelRight, Plus, X } from "lucide-react";
 import { useWorkspaceLayoutStore, type RightSidebarPanel } from "@/stores/layout";
-import { SettingsModal } from "@/components/settings";
 import { useAppShellShortcuts } from "@/components/app-shell/use-app-shell-shortcuts";
+import { LeftDesktopSidebar } from "@/components/app-shell/left-desktop-sidebar";
+import { LeftSidebarFooter } from "@/components/app-shell/left-sidebar-footer";
+import { SidebarAutoCollapse } from "@/components/app-shell/sidebar-auto-collapse";
 import { useLeftSidebarLayout } from "@/components/app-shell/use-left-sidebar-layout";
+import { useMainScroll } from "@/components/app-shell/use-main-scroll";
+import { RightDesktopSidebar } from "@/components/app-shell/right-desktop-sidebar";
+import { useRightMobileSheet } from "@/components/app-shell/use-right-mobile-sheet";
+import { useRightSidebarPanel } from "@/components/app-shell/use-right-sidebar-panel";
+import { buildStatusDescriptor, computeReadingTimeLabel, type StatusDescriptor } from "@/components/app-shell/status-utils";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
   SidebarInset,
   SidebarProvider,
-  SidebarRail,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useEditorStore } from "@/stores/editor";
@@ -63,8 +57,6 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   const LEFT_SIDEBAR_EXPANDED_REM = 28; // ~448px expanded width
   const REM_IN_PX = 16;
   const MIN_MAIN_CONTENT_RATIO = 0.45;
-  const mainScrollRef = useRef<HTMLDivElement>(null);
-  const [isMainScrollable, setIsMainScrollable] = useState(false);
 
   // Right sidebar state from global store (persists across route changes)
   const rightSidebarOpen = useWorkspaceLayoutStore((state) => state.rightSidebarOpen);
@@ -92,9 +84,26 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
 
   // Mobile-specific state (doesn't need to persist)
   const [leftMobileOpen, setLeftMobileOpen] = useState(false);
-  const [rightMobileOpen, setRightMobileOpen] = useState(false);
-  const [rightMobileExpanded, setRightMobileExpanded] = useState(false);
   const hasRight = Boolean(right);
+
+  const {
+    rightMobileOpen,
+    rightMobileExpanded,
+    setRightMobileOpen,
+    handleRightMobileOpenChange,
+    toggleRightMobileExpansion,
+    toggleRight,
+    openRightPanel,
+    openChatSidebar,
+    openOutlineSidebar,
+    handleOutlineNavigateOnMobile,
+  } = useRightMobileSheet({
+    hasRight,
+    rightSidebarPanel,
+    setRightSidebarPanel,
+    openRightSidebar,
+    toggleRightSidebar,
+  });
 
   useAppShellShortcuts({
     hasRight,
@@ -105,52 +114,19 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     toggleRightSidebar,
   });
 
-  const toggleRight = useCallback(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-      toggleRightSidebar("chat");
-    } else {
-      if (rightMobileOpen) {
-        if (rightSidebarPanel !== "chat") {
-          setRightSidebarPanel("chat");
-        } else {
-          setRightMobileOpen(false);
-        }
-      } else {
-        setRightSidebarPanel("chat");
-        setRightMobileOpen(true);
-      }
-    }
-  }, [rightMobileOpen, rightSidebarPanel, setRightSidebarPanel, toggleRightSidebar]);
-
-  const openRightPanel = useCallback((panel: RightSidebarPanel) => {
-    if (!hasRight) {
-      return;
-    }
-    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-      openRightSidebar(panel);
-    } else {
-      setRightSidebarPanel(panel);
-      setRightMobileOpen(true);
-    }
-  }, [hasRight, openRightSidebar, setRightSidebarPanel]);
-  const openChatSidebar = useCallback(() => {
-    openRightPanel("chat");
-  }, [openRightPanel]);
-  const openOutlineSidebar = useCallback(() => {
-    openRightPanel("outline");
-  }, [openRightPanel]);
-
   const toggleRightExpansion = useCallback(() => {
     toggleRightSidebarExpansion();
   }, [toggleRightSidebarExpansion]);
 
-  const toggleRightMobileExpansion = useCallback(() => {
-    setRightMobileExpanded((value) => !value);
-  }, []);
+  const handleCloseRightSidebar = useCallback(() => {
+    setRightSidebarOpen(false);
+    setRightSidebarExpanded(false);
+  }, [setRightSidebarOpen, setRightSidebarExpanded]);
 
   const renderedChildren = typeof children === "function"
     ? children({ toggleRight, openRightPanel, openChatSidebar, openOutlineSidebar })
     : children;
+  const { mainScrollRef, isMainScrollable, scrollMainToTop } = useMainScroll({ dependency: renderedChildren });
   const editorStatus = useEditorStore((state) => state.status);
   const dirty = useEditorStore((state) => state.dirty);
   const lastSavedAt = useEditorStore((state) => state.lastSavedAt);
@@ -186,77 +162,17 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     }
     void loadFile(fileKey);
   }, [dirty, fileKey, loadFile]);
-  const scrollMainToTop = useCallback(() => {
-    const el = mainScrollRef.current;
-    if (!el) {
-      return;
-    }
-    el.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
 
   const rightSidebarWidthClass = !rightSidebarOpen
     ? "w-0 border-transparent"
     : rightSidebarExpanded
       ? "w-1/2 border-border"
       : "w-[30rem] border-border";
-  const rightSidebarTitle = rightSidebarPanel === "outline" ? "Outline" : "Chat";
-  const showNewChatAction = rightSidebarPanel === "chat";
-  const handleOutlineNavigateOnMobile = useCallback(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (window.matchMedia("(min-width: 1024px)").matches) {
-      return;
-    }
-    setRightMobileOpen(false);
-    setRightMobileExpanded(false);
-  }, []);
-  const renderedRight = useMemo(() => {
-    if (rightSidebarPanel !== "outline" || !isValidElement(right)) {
-      return right;
-    }
-    return cloneElement(
-      right as ReactElement<{ onNavigateToSection?: () => void }>,
-      { onNavigateToSection: handleOutlineNavigateOnMobile },
-    );
-  }, [handleOutlineNavigateOnMobile, right, rightSidebarPanel]);
-  const updateMainScrollMetrics = useCallback(() => {
-    const el = mainScrollRef.current;
-    if (!el) {
-      return;
-    }
-    const scrollable = el.scrollHeight - el.clientHeight > 8;
-    setIsMainScrollable(scrollable);
-  }, []);
-
-  useEffect(() => {
-    const el = mainScrollRef.current;
-    if (!el) {
-      return;
-    }
-    updateMainScrollMetrics();
-    const handleScroll = () => updateMainScrollMetrics();
-    el.addEventListener("scroll", handleScroll);
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => updateMainScrollMetrics()) : null;
-    if (resizeObserver) {
-      resizeObserver.observe(el);
-    }
-    return () => {
-      el.removeEventListener("scroll", handleScroll);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
-    };
-  }, [updateMainScrollMetrics]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const id = window.requestAnimationFrame(() => updateMainScrollMetrics());
-    return () => window.cancelAnimationFrame(id);
-  }, [renderedChildren, updateMainScrollMetrics]);
+  const { rightSidebarTitle, showNewChatAction, renderedRight } = useRightSidebarPanel({
+    right,
+    rightSidebarPanel,
+    onOutlineNavigateOnMobile: handleOutlineNavigateOnMobile,
+  });
 
   return (
     <SidebarProvider
@@ -298,18 +214,17 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
             <div className="flex-1 min-h-0 overflow-auto p-3">
               {left}
             </div>
-            <LeftSidebarFooter />
+            <LeftSidebarFooter
+              footerSurfaceClass={FOOTER_SURFACE_CLASS}
+              footerHeightClass={FOOTER_HEIGHT_CLASS}
+              iconButtonClassName={ICON_BUTTON_BASE}
+            />
           </div>
         </SheetContent>
       </Sheet>
       {/* Right mobile sheet */}
       {hasRight ? (
-        <Sheet open={rightMobileOpen} onOpenChange={(open) => {
-          setRightMobileOpen(open);
-          if (!open) {
-            setRightMobileExpanded(false);
-          }
-        }}>
+        <Sheet open={rightMobileOpen} onOpenChange={handleRightMobileOpenChange}>
           <SheetContent
             side="right"
             className="h-[100dvh] w-auto bg-transparent shadow-none border-none p-0 [&>button]:hidden"
@@ -384,76 +299,22 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
         </Sheet>
       ) : null}
 
-      {/* Left sidebar container with smooth width animation (desktop only) */}
-      <div
-        className={cn(
-          "hidden md:block overflow-hidden transition-[width] duration-300 ease-in-out border-r border-solid border-border/40 relative",
-          !leftSidebarOpen && "w-0 border-transparent",
+      <LeftDesktopSidebar
+        leftSidebarOpen={leftSidebarOpen}
+        leftSidebarExpanded={leftSidebarExpanded}
+        leftSidebarWidthValue={leftSidebarWidthValue}
+        onToggleLeftSidebarExpansion={toggleLeftSidebarExpansion}
+        onToggleLeftSidebar={toggleLeftSidebar}
+        left={left}
+        footer={(
+          <LeftSidebarFooter
+            footerSurfaceClass={FOOTER_SURFACE_CLASS}
+            footerHeightClass={FOOTER_HEIGHT_CLASS}
+            iconButtonClassName={ICON_BUTTON_BASE}
+          />
         )}
-        style={{
-          width: leftSidebarOpen ? leftSidebarWidthValue : 0,
-        } as CSSProperties}
-        aria-hidden={!leftSidebarOpen}
-      >
-        <div className="absolute left-0 top-0 bottom-0 transition-[width] duration-300 ease-in-out" style={{
-          width: leftSidebarWidthValue,
-        } as CSSProperties}>
-          <Sidebar
-            side="left"
-            collapsible="none"
-            className="h-svh w-full"
-            style={{
-              "--sidebar-width": leftSidebarWidthValue,
-            } as CSSProperties}
-          >
-            <SidebarHeader className="h-10 md:h-11 shrink-0 border-b border-solid border-border/40">
-              <div className="flex h-full items-center justify-between px-2.5 md:px-3">
-                <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">
-                  Vault
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(ICON_BUTTON_BASE, "inline-flex size-7")}
-                        onClick={toggleLeftSidebarExpansion}
-                        aria-label={leftSidebarExpanded ? "Shrink sidebar" : "Expand sidebar"}
-                      >
-                        {leftSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">{leftSidebarExpanded ? "Shrink sidebar" : "Expand sidebar"}</TooltipContent>
-                  </Tooltip>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn("inline-flex size-7 relative", ICON_BUTTON_BASE)}
-                    onClick={toggleLeftSidebar}
-                    aria-label="Close sidebar"
-                  >
-                    <PanelRight
-                      className="h-4 w-4 absolute inset-0 m-auto transition-all duration-200 opacity-0 scale-0 rotate-90"
-                      aria-hidden={true}
-                    />
-                    <PanelLeft
-                      className="h-4 w-4 absolute inset-0 m-auto transition-all duration-200 opacity-100 scale-100 rotate-0"
-                      aria-hidden={false}
-                    />
-                  </Button>
-                </div>
-              </div>
-            </SidebarHeader>
-            <SidebarContent className="flex-1 min-h-0">
-              <div className="p-3 md:p-4">{left}</div>
-            </SidebarContent>
-            <SidebarFooter className="mt-auto p-0 sticky bottom-0">
-              <LeftSidebarFooter />
-            </SidebarFooter>
-          </Sidebar>
-        </div>
-      </div>
+        iconButtonClassName={ICON_BUTTON_BASE}
+      />
 
       {/* Main content inset */}
       <SidebarInset className="flex min-h-svh min-w-0 flex-col">
@@ -473,175 +334,25 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
         />
       </SidebarInset>
 
-      {/* Right sidebar container with smooth width animation (desktop only) */}
-      {
-        hasRight ? (
-          <div
-            className={cn(
-              "hidden lg:block overflow-hidden transition-[width] duration-300 ease-in-out border-l border-solid border-border/40 relative",
-              rightSidebarWidthClass,
-            )}
-            aria-hidden={!rightSidebarOpen}
-          >
-            <div className="absolute right-0 top-0 bottom-0 transition-[width] duration-300 ease-in-out" style={{
-              width: rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
-            } as CSSProperties}>
-              <Sidebar
-                side="right"
-                collapsible="none"
-                className="h-svh w-full"
-                style={{
-                  "--sidebar-width": rightSidebarExpanded ? "50vw" : `${RIGHT_SIDEBAR_WIDTH_REM}rem`,
-                } as CSSProperties}
-              >
-                <SidebarHeader className="h-10 md:h-11 border-b border-solid border-border/40">
-                  <div className="flex h-full items-center justify-between px-2.5 md:px-3">
-                    <div className="font-semibold text-sm md:text-base h-7 flex items-center uppercase tracking-wide">
-                      {rightSidebarTitle}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {showNewChatAction ? (
-                        <>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                                onClick={onNewChat}
-                                aria-label="New chat"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">New chat</TooltipContent>
-                          </Tooltip>
-                          <div className="h-4 w-px bg-border/60 mx-1.5" />
-                        </>
-                      ) : null}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                        onClick={toggleRightExpansion}
-                        aria-label={rightSidebarExpanded ? "Shrink panel" : "Expand panel"}
-                        disabled={!rightSidebarOpen}
-                      >
-                        {rightSidebarExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("inline-flex size-7", ICON_BUTTON_BASE)}
-                        onClick={() => {
-                          setRightSidebarOpen(false);
-                          setRightSidebarExpanded(false);
-                        }}
-                        aria-label="Collapse right sidebar"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </SidebarHeader>
-                <SidebarContent className="min-h-0 gap-0 p-0 overflow-hidden">
-                  <div
-                    key={rightSidebarPanel}
-                    className="h-full animate-in fade-in-0 slide-in-from-right-2 duration-200"
-                  >
-                    {renderedRight}
-                  </div>
-                </SidebarContent>
-              </Sidebar>
-            </div>
-          </div>
-        ) : null
-      }
+      {hasRight ? (
+        <RightDesktopSidebar
+          rightSidebarWidthClass={rightSidebarWidthClass}
+          rightSidebarOpen={rightSidebarOpen}
+          rightSidebarExpanded={rightSidebarExpanded}
+          rightSidebarTitle={rightSidebarTitle}
+          rightSidebarPanel={rightSidebarPanel}
+          showNewChatAction={showNewChatAction}
+          onNewChat={onNewChat}
+          onToggleRightExpansion={toggleRightExpansion}
+          onCloseRightSidebar={handleCloseRightSidebar}
+          renderedRight={renderedRight}
+          rightSidebarWidthRem={RIGHT_SIDEBAR_WIDTH_REM}
+          iconButtonClassName={ICON_BUTTON_BASE}
+        />
+      ) : null}
     </SidebarProvider >
   );
 }
-
-function LeftSidebarFooter() {
-  const router = useRouter();
-  const sessionState = authClient.useSession();
-  const user = sessionState.data?.user;
-  const [signingOut, setSigningOut] = useState(false);
-  const { settingsOpen, setSettingsOpen, openSettings } = useWorkspaceLayoutStore();
-
-  const displayName = user?.name || user?.email || "";
-  const avatarImage = user?.image ?? undefined;
-  const avatarFallback = (displayName || "?").slice(0, 1).toUpperCase();
-
-  const handleSignOut = useCallback(async () => {
-    if (signingOut) {
-      return;
-    }
-    setSigningOut(true);
-    try {
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/auth/sign-in");
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Failed to sign out", error);
-      setSigningOut(false);
-    }
-  }, [router, signingOut]);
-
-  return (
-    <>
-      <div className={cn(FOOTER_SURFACE_CLASS, FOOTER_HEIGHT_CLASS, "flex w-full items-center justify-between px-3 md:px-4")}>
-        <Avatar className="h-9 w-9">
-          {avatarImage ? <AvatarImage src={avatarImage} alt={displayName || "Profile"} /> : null}
-          <AvatarFallback>{avatarFallback}</AvatarFallback>
-        </Avatar>
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn("size-7", ICON_BUTTON_BASE)}
-                onClick={openSettings}
-                aria-label="Settings"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Settings</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn("size-7", ICON_BUTTON_BASE)}
-                onClick={handleSignOut}
-                disabled={signingOut}
-                aria-label="Sign out"
-              >
-                {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Sign out</TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
-    </>
-  );
-}
-
-type StatusDescriptor = {
-  message: string;
-  tone: "idle" | "info" | "warning" | "error";
-  showLoader?: boolean;
-};
 
 type MainFooterProps = {
   descriptor: StatusDescriptor | null;
@@ -716,134 +427,6 @@ function MainFooter({
       </div>
     </div>
   );
-}
-
-type StatusDescriptorInput = {
-  status: string;
-  dirty: boolean;
-  lastSavedAt: string | null;
-  error: string | null;
-  conflictMessage: string | null;
-  errorSource: "load" | "save" | null;
-  hasFile: boolean;
-};
-
-function buildStatusDescriptor({
-  status,
-  dirty,
-  lastSavedAt,
-  error,
-  conflictMessage,
-  errorSource,
-  hasFile,
-}: StatusDescriptorInput): StatusDescriptor | null {
-  if (!hasFile) {
-    return { message: "Select a file to begin", tone: "idle" };
-  }
-
-  if (status === "loading") {
-    return { message: "Loading…", tone: "info", showLoader: true };
-  }
-
-  if (status === "saving") {
-    return { message: "Saving…", tone: "info", showLoader: true };
-  }
-
-  if (status === "error") {
-    const prefix = errorSource === "load" ? "Failed to load" : "Failed to save";
-    const detail = error ? `: ${error}` : "";
-    return { message: `${prefix}${detail}`, tone: "error" };
-  }
-
-  if (status === "conflict") {
-    const detail = conflictMessage ? `: ${conflictMessage}` : "";
-    return { message: `Save blocked by remote changes${detail}`, tone: "error" };
-  }
-
-  if (dirty) {
-    return { message: "Unsaved changes", tone: "warning" };
-  }
-
-  const formatted = lastSavedAt ? formatTimestamp(lastSavedAt) : null;
-  return { message: formatted ? `Saved • ${formatted}` : "Saved", tone: "idle" };
-}
-
-function computeReadingTimeLabel(content: string, hasFile: boolean): string {
-  if (!hasFile) {
-    return "—";
-  }
-  const words = content.trim().split(/\s+/).filter(Boolean).length;
-  if (!words) {
-    return "< 1 min";
-  }
-  const minutes = words / 200;
-  if (minutes < 1) {
-    return "< 1 min";
-  }
-  if (minutes < 60) {
-    return `${Math.max(1, Math.round(minutes))} min`;
-  }
-  const hours = minutes / 60;
-  return `${hours.toFixed(1)} hr`;
-}
-
-function formatTimestamp(value: string): string | null {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-  const datePart = date.toLocaleDateString([], {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-  const timePart = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  return `${datePart} ${timePart}`;
-}
-
-function SidebarAutoCollapse({
-  leftWidthPx,
-  rightWidthPx,
-  minMainRatio,
-  rightSidebarOpen,
-  rightSidebarExpanded,
-}: {
-  leftWidthPx: number;
-  rightWidthPx: number;
-  minMainRatio: number;
-  rightSidebarOpen: boolean;
-  rightSidebarExpanded: boolean;
-}) {
-  const { open, setOpen } = useSidebar();
-
-  useEffect(() => {
-    if (!rightSidebarOpen) {
-      return;
-    }
-
-    const evaluate = () => {
-      if (typeof window === "undefined") {
-        return;
-      }
-      const viewportWidth = window.innerWidth;
-      if (!viewportWidth) {
-        return;
-      }
-
-      const leftWidth = open ? leftWidthPx : 0;
-      const effectiveRightWidth = rightSidebarExpanded ? viewportWidth * 0.5 : rightWidthPx;
-      const mainWidth = viewportWidth - leftWidth - effectiveRightWidth;
-      if (open && mainWidth / viewportWidth < minMainRatio) {
-        setOpen(false);
-      }
-    };
-
-    evaluate();
-    window.addEventListener("resize", evaluate);
-    return () => window.removeEventListener("resize", evaluate);
-  }, [leftWidthPx, minMainRatio, open, rightSidebarOpen, rightSidebarExpanded, rightWidthPx, setOpen]);
-
-  return null;
 }
 
 function MainHeader({ header, leftSidebarOpen, toggleLeftSidebar, leftMobileOpen, setLeftMobileOpen }: {

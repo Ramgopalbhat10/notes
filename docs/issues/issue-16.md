@@ -38,7 +38,13 @@
 - [x] Continue Phase 2 by decomposing `WorkspaceHeader` composition concerns from `VaultWorkspace`.
 - [x] Start Phase 3 decomposition of `components/app-shell.tsx` into responsive/layout/shortcut modules.
 - [x] Continue Phase 3 by extracting global keyboard shortcut orchestration from `AppShell`.
-- [ ] Continue Phase 3 by extracting right sidebar mobile sheet state/handlers from `AppShell`.
+- [x] Continue Phase 3 by extracting right sidebar mobile sheet state/handlers from `AppShell`.
+- [x] Continue Phase 3 by extracting main scroll metrics/handlers from `AppShell`.
+- [x] Continue Phase 3 by extracting right sidebar panel derivation (`title`, `new chat action`, outline render wiring).
+- [x] Continue Phase 3 by extracting status/reading-time utility logic from `AppShell`.
+- [x] Continue Phase 3 by extracting desktop sidebar shell sections (left/right) into dedicated components.
+- [x] Continue Phase 3 by extracting auth/settings footer controls and auto-collapse behavior from `AppShell`.
+- [ ] Close Phase 3 by extracting `MainHeader` and `MainFooter` into dedicated app-shell modules.
 
 ## Files Changed
 - `lib/http/client.ts`
@@ -59,6 +65,14 @@
 - `components/vault-workspace/index.tsx`
 - `components/app-shell/use-left-sidebar-layout.ts`
 - `components/app-shell/use-app-shell-shortcuts.ts`
+- `components/app-shell/use-right-mobile-sheet.ts`
+- `components/app-shell/use-main-scroll.ts`
+- `components/app-shell/use-right-sidebar-panel.tsx`
+- `components/app-shell/status-utils.ts`
+- `components/app-shell/left-desktop-sidebar.tsx`
+- `components/app-shell/right-desktop-sidebar.tsx`
+- `components/app-shell/left-sidebar-footer.tsx`
+- `components/app-shell/sidebar-auto-collapse.tsx`
 - `components/app-shell.tsx`
 - `components/file-tree/tree-nodes.tsx`
 - `components/file-tree/hooks/use-modal-submit.ts`
@@ -76,6 +90,11 @@
 | 2026-03-02 | refactor | Continued Phase 2 by extracting header composition to `use-workspace-header.tsx`, reducing `VaultWorkspace` orchestration complexity. |
 | 2026-03-02 | refactor | Started Phase 3 by extracting responsive left sidebar width/layout calculations from `AppShell` into `use-left-sidebar-layout`. |
 | 2026-03-02 | refactor | Continued Phase 3 by extracting AppShell global keyboard shortcut orchestration into `use-app-shell-shortcuts`. |
+| 2026-03-02 | refactor | Continued Phase 3 by extracting right mobile sheet state/handlers into `use-right-mobile-sheet` and wiring `AppShell` to use it. |
+| 2026-03-02 | refactor | Continued Phase 3 by extracting main scroll metrics/behavior into `use-main-scroll`. |
+| 2026-03-02 | refactor | Continued Phase 3 by extracting right panel derivation into `use-right-sidebar-panel` and status/read-time helpers into `status-utils`. |
+| 2026-03-02 | refactor | Continued Phase 3 by extracting desktop left/right sidebar shell sections into `left-desktop-sidebar` and `right-desktop-sidebar` components. |
+| 2026-03-02 | refactor | Continued Phase 3 by extracting auth/settings footer controls to `left-sidebar-footer` and moving auto-collapse behavior to `sidebar-auto-collapse`. |
 
 ## Test Plan
 - Run `pnpm lint`.
