@@ -44,34 +44,14 @@ import {
   persistLastViewedFile,
   ROOT_PARENT_KEY,
 } from "@/lib/tree/store-selection";
+import { createSnapshot, getEditorStore } from "@/lib/tree/store-runtime";
 import { buildStateFromManifest } from "@/lib/tree/state-from-manifest";
 import { addNodeToState, removeNodeFromState } from "@/lib/tree/state-mutators";
 import { captureTreeSnapshot, restoreTreeSnapshot } from "@/lib/tree/snapshots";
-type EditorStoreHook = typeof import("./editor")["useEditorStore"];
 
 export type Node = TreeNode;
 export type { NodeId, FileNode, FolderNode, SelectByPathResult } from "@/lib/tree/types";
 export { ROOT_PARENT_KEY } from "@/lib/tree/store-selection";
-
-const EDITOR_STORE_GLOBAL_KEY = "__MRGB_EDITOR_STORE__";
-
-function getEditorStore(): EditorStoreHook | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-  const globalWindow = window as typeof window & { [EDITOR_STORE_GLOBAL_KEY]?: EditorStoreHook };
-  if (globalWindow[EDITOR_STORE_GLOBAL_KEY]) {
-    return globalWindow[EDITOR_STORE_GLOBAL_KEY] ?? null;
-  }
-  void import("./editor")
-    .then((module) => {
-      globalWindow[EDITOR_STORE_GLOBAL_KEY] = module.useEditorStore;
-    })
-    .catch(() => {
-      // ignore load failures; selection will proceed without dirty guard
-    });
-  return globalWindow[EDITOR_STORE_GLOBAL_KEY] ?? null;
-}
 type TreeState = {
   nodes: Record<NodeId, TreeNode>;
   rootIds: NodeId[];
@@ -110,19 +90,6 @@ type TreeState = {
   removeFromHistory: (id: NodeId) => void;
   getPreviousInHistory: () => NodeId | null;
 };
-
-function createSnapshot(state: TreeState): TreeSnapshot {
-  return {
-    nodes: state.nodes,
-    rootIds: state.rootIds,
-    openFolders: state.openFolders,
-    slugToId: state.slugToId,
-    idToSlug: state.idToSlug,
-    selectedId: state.selectedId,
-    routeTarget: state.routeTarget,
-    selectionOrigin: state.selectionOrigin,
-  };
-}
 
 export const useTreeStore = create<TreeState>((set, get) => {
   const loadManifest = async ({ force = false }: { force?: boolean } = {}) => {
