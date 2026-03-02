@@ -27,10 +27,8 @@ import {
   ensureFilePath,
   ensureFolderPath,
   filterOpenFolders,
-  getParentPath,
   openAncestorFolders,
   removeNodesWithPrefix,
-  slugifySegment,
 } from "@/lib/tree/utils";
 import {
   createManifestRefresher,
@@ -46,12 +44,16 @@ import {
 import { createMutationQueue } from "@/lib/tree/mutation-queue";
 import {
   appendToHistoryIfNew,
+  buildRouteSlugKey,
+  findRouteTargetNode,
   parentKey,
   persistLastViewedFile,
   ROOT_PARENT_KEY,
 } from "@/lib/tree/store-selection";
 import {
+  buildMoveMutationRequest,
   getPreviousHistorySelection,
+  prepareQueuedMoveNode,
   resolveNodeTargetPath,
 } from "@/lib/tree/store-actions";
 import { createSnapshot, getEditorStore } from "@/lib/tree/store-runtime";
@@ -176,24 +178,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
     }
 
     const snapshot = captureTreeSnapshot(createSnapshot(state));
-    const newParentId = getParentPath(targetPath);
-    const newName = basename(targetPath);
-
-    const updatedNode: TreeNode = node.type === "folder"
-      ? {
-        ...node,
-        id: targetPath,
-        path: targetPath,
-        name: newName,
-        parentId: newParentId,
-      }
-      : {
-        ...node,
-        id: targetPath,
-        path: targetPath,
-        name: newName,
-        parentId: newParentId,
-      };
+    const updatedNode = prepareQueuedMoveNode(node, targetPath);
 
     set((current) => {
       const without = removeNodeFromState(current, node.id);
@@ -212,14 +197,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
     enqueueMutation({
       description: `move:${nodeId}`,
       perform: async () => {
-        const body: { from: string; to: string; type: "file" | "folder"; ifMatchEtag?: string } = {
-          from: node.path,
-          to: targetPath,
-          type: node.type,
-        };
-        if (node.type === "file" && node.etag) {
-          body.ifMatchEtag = node.etag;
-        }
+        const body = buildMoveMutationRequest(node, targetPath);
         const data = await moveNodeRequest(body);
         if (updatedNode.type === "file" && typeof data?.etag === "string") {
           set((current) => ({
@@ -350,38 +328,12 @@ export const useTreeStore = create<TreeState>((set, get) => {
         return { status: "pending" } satisfies SelectByPathResult;
       }
 
-      const trimmedLeading = path.replace(/^\/+/, "");
-      const hasTrailingSlash = /\/$/.test(trimmedLeading);
-      const withoutTrailing = trimmedLeading.replace(/\/+$/, "");
-      const segments = withoutTrailing ? withoutTrailing.split("/").filter((segment) => segment.length > 0) : [];
-
-      const slugSegments = segments.map((segment, index: number) => {
-        const isLast = index === segments.length - 1;
-        return slugifySegment(segment, isLast && !hasTrailingSlash);
-      });
-      const baseSlug = slugSegments.join("/");
-      const slugKey = hasTrailingSlash ? (baseSlug ? `${baseSlug}/` : "") : baseSlug;
-
       const nodes = state.nodes;
-      let target: TreeNode | undefined;
-      if (slugKey) {
-        target = state.slugToId[slugKey] ? nodes[state.slugToId[slugKey]] : undefined;
-        if (!target && !slugKey.endsWith("/")) {
-          const folderKey = `${slugKey}/`;
-          target = state.slugToId[folderKey] ? nodes[state.slugToId[folderKey]] : undefined;
-        }
-      }
+      const { canonicalPath, slugKey } = buildRouteSlugKey(path);
+      const target = findRouteTargetNode(nodes, state.slugToId, slugKey, canonicalPath);
 
       if (!target) {
-        const canonicalCandidate = trimmedLeading;
-        target = nodes[canonicalCandidate];
-        if (!target && !canonicalCandidate.endsWith("/")) {
-          target = nodes[`${canonicalCandidate}/`];
-        }
-      }
-
-      if (!target) {
-        const missingSlug = slugKey || trimmedLeading;
+        const missingSlug = slugKey || canonicalPath;
         console.warn("[tree] Route path not found", missingSlug);
         set((current) => ({
           ...current,

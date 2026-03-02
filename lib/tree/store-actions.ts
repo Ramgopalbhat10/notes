@@ -1,5 +1,5 @@
 import type { Node, NodeId } from "@/lib/tree/types";
-import { ensureFilePath, ensureFolderPath } from "@/lib/tree/utils";
+import { basename, ensureFilePath, ensureFolderPath, getParentPath } from "@/lib/tree/utils";
 
 export function resolveNodeTargetPath(node: Node, parentPath: string, name: string): string {
   return node.type === "folder"
@@ -20,4 +20,34 @@ export function getPreviousHistorySelection(
   }
 
   return null;
+}
+
+export function prepareQueuedMoveNode(node: Node, targetPath: string): Node {
+  return {
+    ...node,
+    id: targetPath,
+    path: targetPath,
+    name: basename(targetPath),
+    parentId: getParentPath(targetPath),
+  };
+}
+
+export function buildMoveMutationRequest(
+  node: Node,
+  targetPath: string,
+): { from: string; to: string; type: "file" | "folder"; ifMatchEtag?: string } {
+  if (node.type === "file" && node.etag) {
+    return {
+      from: node.path,
+      to: targetPath,
+      type: node.type,
+      ifMatchEtag: node.etag,
+    };
+  }
+
+  return {
+    from: node.path,
+    to: targetPath,
+    type: node.type,
+  };
 }

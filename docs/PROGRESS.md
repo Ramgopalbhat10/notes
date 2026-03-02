@@ -5,17 +5,14 @@ Current issue: `docs/issues/issue-16.md`
 Current section: Issue 16 — Massive Refactor Roadmap Execution (Stability-First)
 
 Previous tasks (latest completed batch only):
-- [x] Started Phase 4 by extracting `buildStateFromManifest` into `lib/tree/state-from-manifest.ts`.
-- [x] Continued Phase 4 by extracting `addNodeToState` and `removeNodeFromState` into `lib/tree/state-mutators.ts`.
-- [x] Continued Phase 4 by extracting selection/runtime/action helpers into `lib/tree/store-selection.ts`, `lib/tree/store-runtime.ts`, and `lib/tree/store-actions.ts`.
-- [x] Continued Phase 4 by extracting mutation request wrappers into `lib/tree/mutation-api.ts` and wiring `stores/tree.ts` to use them.
-- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after these changes.
+- [x] Continued Phase 4 by extracting queue-move preparation and route selection helpers from `stores/tree.ts` into shared tree modules.
+- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after this batch.
 
 Next tasks:
-- [ ] Continue Phase 4 by extracting queue-move preparation and route selection helpers from `stores/tree.ts`.
+- None - all tasks completed.
 
 Notes:
 - Phase 1 shared client I/O/error extraction completed with no behavioral intent changes.
 - Phase 2 decomposition now includes `use-file-sharing`, `use-resolved-path`, `use-sibling-navigation`, `use-workspace-settings-sync`, `use-workspace-file-sync`, `workspace-body`, and `use-workspace-header`.
 - Phase 3 decomposition of `AppShell` is complete and the component now primarily orchestrates extracted modules.
-- Phase 4 tree-store decomposition is in-progress.
+- Phase 4 tree-store decomposition is complete.
