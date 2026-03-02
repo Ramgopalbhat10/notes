@@ -49,7 +49,8 @@
 - [x] Continue Phase 4 by extracting additional tree state mutator helpers from `stores/tree.ts`.
 - [x] Continue Phase 4 by extracting route selection/history helpers from `stores/tree.ts`.
 - [x] Continue Phase 4 by extracting snapshot creation and editor-store lookup helpers from `stores/tree.ts`.
-- [ ] Continue Phase 4 by extracting remaining tree-store action helpers (`move/rename/select` support) into focused modules.
+- [x] Continue Phase 4 by extracting tree mutation API request wrappers from `stores/tree.ts`.
+- [ ] Continue Phase 4 by extracting queue-move preparation and route selection helpers from `stores/tree.ts`.
 
 ## Files Changed
 - `lib/http/client.ts`
@@ -85,6 +86,8 @@
 - `lib/tree/state-mutators.ts`
 - `lib/tree/store-selection.ts`
 - `lib/tree/store-runtime.ts`
+- `lib/tree/store-actions.ts`
+- `lib/tree/mutation-api.ts`
 - `stores/tree.ts`
 - `components/file-tree/tree-nodes.tsx`
 - `components/file-tree/hooks/use-modal-submit.ts`
@@ -112,6 +115,8 @@
 | 2026-03-02 | refactor | Continued Phase 4 by extracting tree `addNodeToState`/`removeNodeFromState` mutators into `lib/tree/state-mutators.ts`. |
 | 2026-03-02 | refactor | Continued Phase 4 by extracting tree route selection/history helpers (`parentKey`, `appendToHistoryIfNew`, `persistLastViewedFile`) into `lib/tree/store-selection.ts`. |
 | 2026-03-02 | refactor | Continued Phase 4 by extracting tree runtime helpers (`getEditorStore`, `createSnapshot`) into `lib/tree/store-runtime.ts`. |
+| 2026-03-02 | refactor | Continued Phase 4 by extracting tree action helpers (`resolveNodeTargetPath`, `getPreviousHistorySelection`) into `lib/tree/store-actions.ts`. |
+| 2026-03-02 | refactor | Continued Phase 4 by extracting tree mutation request wrappers into `lib/tree/mutation-api.ts` and wiring `stores/tree.ts` to use them. |
 
 ## Test Plan
 - Run `pnpm lint`.

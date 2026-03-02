@@ -7,12 +7,12 @@ Current section: Issue 16 — Massive Refactor Roadmap Execution (Stability-Firs
 Previous tasks (latest completed batch only):
 - [x] Started Phase 4 by extracting `buildStateFromManifest` into `lib/tree/state-from-manifest.ts`.
 - [x] Continued Phase 4 by extracting `addNodeToState` and `removeNodeFromState` into `lib/tree/state-mutators.ts`.
-- [x] Continued Phase 4 by extracting `parentKey`, `appendToHistoryIfNew`, and `persistLastViewedFile` into `lib/tree/store-selection.ts`.
-- [x] Continued Phase 4 by extracting `getEditorStore` and `createSnapshot` into `lib/tree/store-runtime.ts`.
+- [x] Continued Phase 4 by extracting selection/runtime/action helpers into `lib/tree/store-selection.ts`, `lib/tree/store-runtime.ts`, and `lib/tree/store-actions.ts`.
+- [x] Continued Phase 4 by extracting mutation request wrappers into `lib/tree/mutation-api.ts` and wiring `stores/tree.ts` to use them.
 - [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after these changes.
 
 Next tasks:
-- [ ] Continue Phase 4 by extracting remaining tree-store action helpers (`move/rename/select` support) from `stores/tree.ts`.
+- [ ] Continue Phase 4 by extracting queue-move preparation and route selection helpers from `stores/tree.ts`.
 
 Notes:
 - Phase 1 shared client I/O/error extraction completed with no behavioral intent changes.

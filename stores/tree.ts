@@ -4,7 +4,7 @@ import { create } from "zustand";
 
 import { normalizeName } from "@/lib/fs-validation";
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
-import { getErrorMessage, parseJsonOrFallback } from "@/lib/http/client";
+import { getErrorMessage } from "@/lib/http/client";
 import {
   removePersistentDocument,
   removePersistentDocumentsWithPrefix,
@@ -34,9 +34,15 @@ import {
 } from "@/lib/tree/utils";
 import {
   createManifestRefresher,
-  extractTreeError,
   fetchManifest,
 } from "@/lib/tree/manifest-client";
+import {
+  createFileRequest,
+  createFolderRequest,
+  deleteFileRequest,
+  deleteFolderRequest,
+  moveNodeRequest,
+} from "@/lib/tree/mutation-api";
 import { createMutationQueue } from "@/lib/tree/mutation-queue";
 import {
   appendToHistoryIfNew,
@@ -44,6 +50,10 @@ import {
   persistLastViewedFile,
   ROOT_PARENT_KEY,
 } from "@/lib/tree/store-selection";
+import {
+  getPreviousHistorySelection,
+  resolveNodeTargetPath,
+} from "@/lib/tree/store-actions";
 import { createSnapshot, getEditorStore } from "@/lib/tree/store-runtime";
 import { buildStateFromManifest } from "@/lib/tree/state-from-manifest";
 import { addNodeToState, removeNodeFromState } from "@/lib/tree/state-mutators";
@@ -200,25 +210,17 @@ export const useTreeStore = create<TreeState>((set, get) => {
     });
 
     enqueueMutation({
-      description: `move:${node.path}->${targetPath}`,
+      description: `move:${nodeId}`,
       perform: async () => {
-        const body: Record<string, unknown> = {
-          fromKey: node.path,
-          toKey: targetPath,
-          overwrite: false,
+        const body: { from: string; to: string; type: "file" | "folder"; ifMatchEtag?: string } = {
+          from: node.path,
+          to: targetPath,
+          type: node.type,
         };
         if (node.type === "file" && node.etag) {
           body.ifMatchEtag = node.etag;
         }
-        const response = await fetch("/api/fs/move", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!response.ok) {
-          throw new Error(await extractTreeError(response));
-        }
-        const data = await parseJsonOrFallback<{ etag?: string }>(response, {});
+        const data = await moveNodeRequest(body);
         if (updatedNode.type === "file" && typeof data?.etag === "string") {
           set((current) => ({
             nodes: {
@@ -473,14 +475,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       enqueueMutation({
         description: `create-folder:${newPath}`,
         perform: async () => {
-          const response = await fetch("/api/fs/mkdir", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prefix: newPath }),
-          });
-          if (!response.ok) {
-            throw new Error(await extractTreeError(response));
-          }
+          await createFolderRequest(newPath);
         },
         rollback: () => restoreTreeSnapshot(set, snapshot),
       });
@@ -506,15 +501,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       enqueueMutation({
         description: `create-file:${newPath}`,
         perform: async () => {
-          const response = await fetch("/api/fs/file", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: newPath, content: initialContent }),
-          });
-          if (!response.ok) {
-            throw new Error(await extractTreeError(response));
-          }
-          const data = await parseJsonOrFallback<{ etag?: string }>(response, {});
+          const data = await createFileRequest(newPath, initialContent);
           if (data?.etag) {
             set((state) => ({
               nodes: {
@@ -540,9 +527,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
       }
       const parentPath = node.parentId ?? "";
       const safeName = normalizeName(newName);
-      const targetPath = node.type === "folder"
-        ? ensureFolderPath(parentPath, safeName)
-        : ensureFilePath(parentPath, safeName);
+      const targetPath = resolveNodeTargetPath(node, parentPath, safeName);
       queueMove(id, targetPath);
       return Promise.resolve();
     },
@@ -559,24 +544,10 @@ export const useTreeStore = create<TreeState>((set, get) => {
         description: `delete:${id}`,
         perform: async () => {
           if (node.type === "folder") {
-            const response = await fetch("/api/fs/folder", {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ prefix: node.path, recursive: true }),
-            });
-            if (!response.ok && response.status !== 204) {
-              throw new Error(await extractTreeError(response));
-            }
+            await deleteFolderRequest(node.path);
             await removePersistentDocumentsWithPrefix(node.path);
           } else {
-            const response = await fetch("/api/fs/file", {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ key: node.path, ifMatchEtag: node.etag }),
-            });
-            if (!response.ok && response.status !== 204) {
-              throw new Error(await extractTreeError(response));
-            }
+            await deleteFileRequest(node.path, node.etag);
             await removePersistentDocument(node.path);
           }
         },
@@ -592,9 +563,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         return;
       }
       const parentPath = targetParentId ?? "";
-      const targetPath = node.type === "folder"
-        ? ensureFolderPath(parentPath, node.name)
-        : ensureFilePath(parentPath, node.name);
+      const targetPath = resolveNodeTargetPath(node, parentPath, node.name);
       queueMove(id, targetPath);
       return Promise.resolve();
     },
@@ -616,16 +585,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
     getPreviousInHistory: () => {
       const state = get();
-      const history = state.viewHistory;
-      const currentId = state.selectedId;
-      // Find the last entry that's not the current selection and still exists
-      for (let i = history.length - 1; i >= 0; i--) {
-        const id = history[i];
-        if (id !== currentId && state.nodes[id]) {
-          return id;
-        }
-      }
-      return null;
+      return getPreviousHistorySelection(state.viewHistory, state.selectedId, state.nodes);
     },
   };
 });
