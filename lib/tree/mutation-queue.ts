@@ -1,4 +1,5 @@
 import type { RefreshState } from "./types";
+import { getErrorMessage } from "@/lib/http/client";
 
 type StoreSetter<TState> = (updater: Partial<TState> | ((state: TState) => Partial<TState>)) => void;
 type StoreGetter<TState> = () => TState;
@@ -39,7 +40,7 @@ export function createMutationQueue<TState extends MutationState>(
         await reloadManifest();
       } catch (error) {
         job.rollback();
-        const message = error instanceof Error ? error.message : "Failed to update file tree";
+        const message = getErrorMessage(error, "Failed to update file tree");
         set((state) => ({
           pendingMutations: Math.max(0, state.pendingMutations - 1),
           refreshError: message,

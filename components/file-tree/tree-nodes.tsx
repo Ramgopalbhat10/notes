@@ -18,6 +18,7 @@ import {
   ContextMenuTrigger,
   ContextMenuShortcut,
 } from "@/components/ui/context-menu";
+import { extractResponseError, getErrorMessage, parseJsonOrFallback } from "@/lib/http/client";
 import { useTreeStore, type Node, type NodeId } from "@/stores/tree";
 import { INDENT_SIZE, type MatchMeta, type ModalState } from "./types";
 import { useToast } from "@/hooks/use-toast";
@@ -371,18 +372,9 @@ function FileNode({
     try {
       const response = await fetch(`/api/fs/file?key=${encodeURIComponent(node.path)}`);
       if (!response.ok) {
-        let message = response.statusText;
-        try {
-          const data = await response.json();
-          if (typeof data?.error === "string") {
-            message = data.error;
-          }
-        } catch {
-          // ignore
-        }
-        throw new Error(message || "Failed to download file");
+        throw new Error(await extractResponseError(response, "Failed to download file"));
       }
-      const data = (await response.json()) as { content: string };
+      const data = await parseJsonOrFallback<{ content?: string }>(response, {});
       const blob = new Blob([data.content ?? ""], { type: "text/markdown" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -393,7 +385,7 @@ function FileNode({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to download file";
+      const message = getErrorMessage(error, "Failed to download file");
       toast({ title: "Download failed", description: message, variant: "destructive" });
     }
   };

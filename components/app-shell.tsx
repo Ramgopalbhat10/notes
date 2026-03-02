@@ -21,6 +21,8 @@ import { ArrowUp, Clock3, Loader2, LogOut, Maximize2, Minimize2, PanelLeft, Pane
 import { authClient } from "@/lib/auth/client";
 import { useWorkspaceLayoutStore, type RightSidebarPanel } from "@/stores/layout";
 import { SettingsModal } from "@/components/settings";
+import { useAppShellShortcuts } from "@/components/app-shell/use-app-shell-shortcuts";
+import { useLeftSidebarLayout } from "@/components/app-shell/use-left-sidebar-layout";
 import {
   Sidebar,
   SidebarContent,
@@ -81,21 +83,12 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   const setLeftSidebarOpen = useWorkspaceLayoutStore((state) => state.setLeftSidebarOpen);
   const toggleLeftSidebar = useWorkspaceLayoutStore((state) => state.toggleLeftSidebar);
   const toggleLeftSidebarExpansion = useWorkspaceLayoutStore((state) => state.toggleLeftSidebarExpansion);
-  // Track mobile state for sidebar width calculation
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768); // md breakpoint
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-  // On mobile, expanded means full width; on desktop, use expanded rem value
-  const leftSidebarWidthValue = leftSidebarExpanded
-    ? (isMobile ? '100vw' : `${LEFT_SIDEBAR_EXPANDED_REM}rem`)
-    : (isMobile ? '100vw' : `${LEFT_SIDEBAR_WIDTH_REM}rem`);
-  const leftSidebarWidthPx = leftSidebarExpanded
-    ? (isMobile ? window.innerWidth : LEFT_SIDEBAR_EXPANDED_REM * REM_IN_PX)
-    : LEFT_SIDEBAR_WIDTH_REM * REM_IN_PX;
+  const { isMobile, leftSidebarWidthValue, leftSidebarWidthPx } = useLeftSidebarLayout({
+    leftSidebarExpanded,
+    leftSidebarWidthRem: LEFT_SIDEBAR_WIDTH_REM,
+    leftSidebarExpandedRem: LEFT_SIDEBAR_EXPANDED_REM,
+    remInPx: REM_IN_PX,
+  });
 
   // Mobile-specific state (doesn't need to persist)
   const [leftMobileOpen, setLeftMobileOpen] = useState(false);
@@ -103,49 +96,14 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   const [rightMobileExpanded, setRightMobileExpanded] = useState(false);
   const hasRight = Boolean(right);
 
-  // Global keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // Close overlays on Escape
-      if (e.key === "Escape") {
-        setRightMobileOpen(false);
-        return;
-      }
-
-      // Ctrl/Cmd+J: Toggle right sidebar
-      if (e.key === "j" && (e.metaKey || e.ctrlKey) && hasRight) {
-        e.preventDefault();
-        if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
-          toggleRightSidebar("chat");
-        } else {
-          if (rightMobileOpen) {
-            if (rightSidebarPanel !== "chat") {
-              setRightSidebarPanel("chat");
-            } else {
-              setRightMobileOpen(false);
-            }
-          } else {
-            setRightSidebarPanel("chat");
-            setRightMobileOpen(true);
-          }
-        }
-        return;
-      }
-
-      // Ctrl/Cmd+S: Save current file
-      if (e.key === "s" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        // Get latest editor state directly to avoid stale closure
-        const editorState = useEditorStore.getState();
-        if (editorState.fileKey && editorState.dirty && editorState.status !== "saving" && editorState.status !== "conflict") {
-          void editorState.save("manual");
-        }
-        return;
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [hasRight, rightMobileOpen, rightSidebarPanel, setRightSidebarPanel, toggleRightSidebar]);
+  useAppShellShortcuts({
+    hasRight,
+    rightMobileOpen,
+    rightSidebarPanel,
+    setRightSidebarPanel,
+    setRightMobileOpen,
+    toggleRightSidebar,
+  });
 
   const toggleRight = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {

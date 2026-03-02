@@ -1,22 +1,18 @@
 # Progress
 
-Current issue: `docs/issues/issue-15.md`
+Current issue: `docs/issues/issue-16.md`
 
-Current section: Issue 15 — Refactor Workflow to Label-Based Control System
+Current section: Issue 16 — Massive Refactor Roadmap Execution (Stability-First)
 
 Previous tasks (latest completed batch only):
-- [x] Implemented label-based workflow control system with 6 labels
-- [x] Compressed documentation to minimal references (AGENTS.md: 56 lines, WORKFLOW_LABELS.md: 33 lines)
-- [x] Added explicit label detection as first step in Session Bootstrap
-- [x] Created issue-15.md and updated issues/README.md index
-- [x] Ran quality gate checks (lint, build) - both passed
-- [x] Committed changes with conventional commit format
-- [x] Created PR #84 with complete workflow verification
+- [x] Started Phase 3 by extracting responsive left-sidebar layout calculations into `components/app-shell/use-left-sidebar-layout.ts`.
+- [x] Continued Phase 3 by extracting global keyboard shortcuts into `components/app-shell/use-app-shell-shortcuts.ts`.
+- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after these extractions.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Continue Phase 3 by extracting right sidebar mobile sheet state/handlers from `components/app-shell.tsx`.
 
 Notes:
-- New labels: `[ask]` for conversational only, `[code-only]`, `[docs-only]`, `[quality]`, `[commit]`, `[push]`
-- Gap-filling logic implemented for `[commit]` and `[push]` labels
-- Progressive disclosure reduces token usage for simple queries
+- Phase 1 shared client I/O/error extraction completed with no behavioral intent changes.
+- Phase 2 decomposition now includes `use-file-sharing`, `use-resolved-path`, `use-sibling-navigation`, `use-workspace-settings-sync`, `use-workspace-file-sync`, `workspace-body`, and `use-workspace-header`.
+- Phase 3 decomposition is in-progress in `AppShell`.

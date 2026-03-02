@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { normalizeName } from "@/lib/fs-validation";
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
 import { isFolderNode } from "@/lib/file-tree-manifest";
+import { getErrorMessage, parseJsonOrFallback } from "@/lib/http/client";
 import {
   removePersistentDocument,
   removePersistentDocumentsWithPrefix,
@@ -301,7 +302,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         };
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load file tree";
+      const message = getErrorMessage(error, "Failed to load file tree");
       set((current) => ({
         loadingByParent: { ...current.loadingByParent, [ROOT_PARENT_KEY]: false },
         errorByParent: { ...current.errorByParent, [ROOT_PARENT_KEY]: message },
@@ -382,7 +383,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         if (!response.ok) {
           throw new Error(await extractTreeError(response));
         }
-        const data = await response.json().catch(() => ({})) as { etag?: string };
+        const data = await parseJsonOrFallback<{ etag?: string }>(response, {});
         if (updatedNode.type === "file" && typeof data?.etag === "string") {
           set((current) => ({
             nodes: {
@@ -678,7 +679,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
           if (!response.ok) {
             throw new Error(await extractTreeError(response));
           }
-          const data = (await response.json().catch(() => ({}))) as { etag?: string };
+          const data = await parseJsonOrFallback<{ etag?: string }>(response, {});
           if (data?.etag) {
             set((state) => ({
               nodes: {

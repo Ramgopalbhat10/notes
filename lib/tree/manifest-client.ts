@@ -1,4 +1,5 @@
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
+import { extractResponseError, getErrorMessage } from "@/lib/http/client";
 import { formatIfNoneMatch, sanitizeEtag } from "./utils";
 import type { RefreshSource, RefreshState } from "./types";
 
@@ -75,7 +76,7 @@ export function createManifestRefresher<TState extends RefreshableState>(
         refreshLastSource: source,
       } as Partial<TState>));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to refresh file tree";
+      const message = getErrorMessage(error, "Failed to refresh file tree");
       set((state) => ({
         refreshState: state.pendingMutations > 0 ? "pending" : "idle",
         refreshError: message,
@@ -112,13 +113,5 @@ export function createManifestRefresher<TState extends RefreshableState>(
 }
 
 export async function extractTreeError(response: Response): Promise<string> {
-  try {
-    const data = await response.json();
-    if (typeof data?.error === "string") {
-      return data.error;
-    }
-  } catch {
-    // ignore
-  }
-  return response.statusText || "Request failed";
+  return extractResponseError(response, "Request failed");
 }
