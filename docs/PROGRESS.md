@@ -30,6 +30,7 @@ Sonar/review fixes:
 - Promise misuse: converted async handleCopyPublicLink to sync void-returning function.
 - ReDoS-safe patterns: bounded quantifiers and string methods in markdown-outline.ts, markdown-image-policy.ts, store-selection.ts.
 - Move API field mismatch: client now sends fromKey/toKey matching server contract.
+- Additional ReDoS fix: replaced ATX_HEADING_RE regex with deterministic string parser to eliminate Sonar S5852 hotspot.
 
 Notes:
 - Follows consistent pattern established in `components/file-tree/hooks/`.
