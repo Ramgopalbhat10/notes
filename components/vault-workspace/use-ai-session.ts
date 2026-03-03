@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { extractResponseError, getErrorMessage } from "@/lib/http/client";
 import type { AiActionType, AiSessionState } from "./types";
 
 const INITIAL_STATE: AiSessionState = {
@@ -138,9 +139,7 @@ export function useAiSession({
         });
 
         if (!response.ok) {
-          const errorBody = await response.json().catch(() => ({}));
-          const message = typeof errorBody?.error === "string" ? errorBody.error : "Failed to run AI action";
-          throw new Error(message);
+          throw new Error(await extractResponseError(response, "Failed to run AI action"));
         }
 
         const truncated = response.headers.get("x-ai-input-truncated") === "1";
@@ -172,7 +171,7 @@ export function useAiSession({
           return;
         }
 
-        const message = error instanceof Error ? error.message : "Failed to run AI action";
+        const message = getErrorMessage(error, "Failed to run AI action");
         setState((prev) => ({ ...prev, status: "error", error: message }));
         toast({ variant: "destructive", description: message });
       } finally {

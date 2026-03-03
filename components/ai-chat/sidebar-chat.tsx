@@ -6,6 +6,7 @@ import { TextStreamChatTransport, type UIMessage } from "ai";
 import { ArrowDownLeft, BrainCircuit, Check, ChevronDown, Copy, Eye, File, FileText, ImageIcon, Loader2, Paperclip, RefreshCcw, Search, SendHorizontal, SlidersHorizontal, Square, Wrench, X } from "lucide-react";
 
 import { DEFAULT_CHAT_MODEL, FALLBACK_LANGUAGE_MODELS, parseModelId, type GatewayLanguageModelOption } from "@/lib/ai/models";
+import { extractResponseError } from "@/lib/http/client";
 import { cn } from "@/lib/utils";
 import {
   Conversation,
@@ -206,7 +207,7 @@ async function loadModelsState(): Promise<CachedModelsState> {
   sharedModelsPromise = (async () => {
     const response = await fetch("/api/ai/models");
     if (!response.ok) {
-      throw new Error(`Failed to load models (${response.status})`);
+      throw new Error(await extractResponseError(response, `Failed to load models (${response.status})`));
     }
     const payload = (await response.json()) as GatewayModelsResponse;
     const nextState = buildCachedModelsState(payload);

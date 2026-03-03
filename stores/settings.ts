@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { type UserSettings, defaultUserSettings } from "@/components/settings/types";
+import { extractResponseError } from "@/lib/http/client";
 
 type SettingsState = {
   settings: UserSettings;
@@ -21,9 +22,9 @@ async function saveToServer(settings: UserSettings): Promise<UserSettings> {
     body: JSON.stringify(settings),
   });
   if (!response.ok) {
-    throw new Error("Failed to save settings");
+    throw new Error(await extractResponseError(response, "Failed to save settings"));
   }
-  return response.json();
+  return (await response.json()) as UserSettings;
 }
 
 export const useSettingsStore = create<SettingsState>()((set, get) => ({
@@ -40,9 +41,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     try {
       const response = await fetch("/api/settings");
       if (!response.ok) {
-        throw new Error("Failed to fetch settings");
+        throw new Error(await extractResponseError(response, "Failed to fetch settings"));
       }
-      const settings = await response.json();
+      const settings = (await response.json()) as UserSettings;
       set({ settings, loading: false, initialized: true });
     } catch (error) {
       console.error("Failed to fetch settings:", error);

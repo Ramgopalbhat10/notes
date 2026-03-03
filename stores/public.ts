@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { extractResponseError, getErrorMessage } from "@/lib/http/client";
 
 type ShareRecord = {
   public: boolean;
@@ -17,10 +18,6 @@ type ShareStoreState = {
   clear: (key: string) => void;
 };
 
-type ApiError = {
-  error?: string;
-};
-
 const DEFAULT_RECORD: ShareRecord = {
   public: false,
   loading: false,
@@ -31,18 +28,6 @@ const DEFAULT_RECORD: ShareRecord = {
 
 const pendingLoads = new Map<string, number>();
 let loadSeq = 0;
-
-async function parseError(response: Response): Promise<string> {
-  try {
-    const data = (await response.json()) as ApiError;
-    if (data && typeof data.error === "string") {
-      return data.error;
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return response.statusText || "Request failed";
-}
 
 export const usePublicStore = create<ShareStoreState>((set, get) => ({
   records: {},
@@ -88,7 +73,7 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
         cache: "no-store",
       });
       if (!response.ok) {
-        throw new Error(await parseError(response));
+        throw new Error(await extractResponseError(response));
       }
       const data = (await response.json()) as { public: boolean };
 
@@ -113,7 +98,7 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
       if (pendingLoads.get(normalizedKey) !== requestId) {
         return;
       }
-      const message = error instanceof Error ? error.message : "Failed to load sharing state";
+      const message = getErrorMessage(error, "Failed to load sharing state");
       set((state) => ({
         records: {
           ...state.records,
@@ -162,7 +147,7 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
         body: JSON.stringify({ key: normalizedKey, public: nextPublic }),
       });
       if (!response.ok) {
-        throw new Error(await parseError(response));
+        throw new Error(await extractResponseError(response));
       }
       const data = (await response.json()) as { public: boolean };
       set((state) => ({
@@ -180,7 +165,7 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
       }));
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to update sharing state";
+      const message = getErrorMessage(error, "Failed to update sharing state");
       set((state) => ({
         records: {
           ...state.records,
