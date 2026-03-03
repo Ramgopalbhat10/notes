@@ -17,13 +17,14 @@ const REFRESH_DEBOUNCE_MS = 100;
 
 export async function fetchManifest(
   etag: string | null,
-  _force: boolean,
+  force: boolean,
 ): Promise<{ manifest?: FileTreeManifest; etag?: string | null }> {
-  void _force;
   const headers = new Headers();
-  const headerValue = formatIfNoneMatch(etag);
-  if (headerValue) {
-    headers.set("If-None-Match", headerValue);
+  if (!force) {
+    const headerValue = formatIfNoneMatch(etag);
+    if (headerValue) {
+      headers.set("If-None-Match", headerValue);
+    }
   }
 
   const response = await fetch("/api/tree", {
@@ -45,8 +46,13 @@ export async function fetchManifest(
   return { manifest, etag: nextEtag };
 }
 
+type RefreshResponse = {
+  manifest?: FileTreeManifest;
+  etag?: string | null;
+};
+
 export function createManifestRefresher<TState extends RefreshableState>(
-  loadManifest: (options?: { force?: boolean }) => Promise<void>,
+  loadManifest: (options?: { force?: boolean; prefetched?: { manifest: FileTreeManifest; etag: string | null } }) => Promise<void>,
   set: StoreSetter<TState>,
 ) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -68,7 +74,14 @@ export function createManifestRefresher<TState extends RefreshableState>(
       if (!response.ok) {
         throw new Error(await extractTreeError(response));
       }
-      await loadManifest({ force: true });
+      // Use the manifest directly from the refresh response to avoid stale
+      // data from Next.js "use cache" with stale-while-revalidate semantics.
+      const data = (await response.json()) as RefreshResponse;
+      if (data.manifest) {
+        await loadManifest({ prefetched: { manifest: data.manifest, etag: data.etag ?? null } });
+      } else {
+        await loadManifest({ force: true });
+      }
       set((state) => ({
         refreshState: state.pendingMutations > 0 ? "pending" : "idle",
         refreshSuccessAt: new Date().toISOString(),

@@ -57,6 +57,7 @@
 | 2026-03-03 | refactor | Restructured `lib/` into domain subfolders: `fs/` (6 files), `cache/` (2 files), `content/` (4 files), `platform/` (5 files). Updated ~40 files with new import paths. |
 | 2026-03-03 | fix | Fixed infinite re-render bug in `LeftSidebarFooter` caused by Zustand store destructuring without selectors. |
 | 2026-03-03 | fix | Fixed root-cause infinite re-render: inline arrow functions for `onToggleMode`/`onTriggerAction` in VaultWorkspace created new refs every render, invalidating `useWorkspaceHeader`'s `useMemo`, causing `setHeader` to fire every render cycle. Wrapped in `useCallback`. |
+| 2026-03-03 | fix | Fixed stale manifest cache bug: `revalidateTag(tag, "max")` in Next.js 16 uses stale-while-revalidate semantics, serving stale cached data on first request after invalidation. Mutations no longer reload manifest (preserves optimistic state), manual refresh returns full manifest in response (bypasses stale cache), and `fetchManifest` now respects force parameter. Fixes folder creation disappearing and deletion reappearing. |
 
 ## Test Plan
 - Run `pnpm lint`.

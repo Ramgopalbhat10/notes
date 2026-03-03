@@ -18,11 +18,16 @@ type MutationState = {
   refreshLastSource: "manual" | "silent" | "mutation" | null;
 };
 
-export function createMutationQueue<TState extends MutationState>(
+type ManifestEtagState = {
+  manifestEtag: string | null;
+};
+
+export function createMutationQueue<TState extends MutationState & ManifestEtagState>(
   set: StoreSetter<TState>,
   get: StoreGetter<TState>,
-  reloadManifest: ReloadManifest,
+  _reloadManifest: ReloadManifest,
 ) {
+  void _reloadManifest;
   const queue: MutationJob[] = [];
   let processing = false;
 
@@ -35,9 +40,15 @@ export function createMutationQueue<TState extends MutationState>(
       const job = queue.shift()!;
       try {
         await job.perform();
-        set((state) => ({ pendingMutations: Math.max(0, state.pendingMutations - 1) } as Partial<TState>));
-        // Reload manifest from server (already updated by API endpoint via incremental update)
-        await reloadManifest();
+        // Don't reload manifest after mutations. The optimistic state is already
+        // correct, and the server-side manifest was updated by the API route.
+        // With stale-while-revalidate caching (revalidateTag with 'max'), the
+        // first reload would receive stale data, overwriting the optimistic state.
+        // Clear manifestEtag so the next natural tree load fetches fresh data.
+        set((state) => ({
+          pendingMutations: Math.max(0, state.pendingMutations - 1),
+          manifestEtag: null,
+        } as Partial<TState>));
       } catch (error) {
         job.rollback();
         const message = getErrorMessage(error, "Failed to update file tree");

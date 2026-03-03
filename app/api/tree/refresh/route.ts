@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         status: "completed",
-        metadata: result.manifest.metadata,
+        manifest: result.manifest,
         etag: result.etag ?? null,
         updatedAt: result.updatedAt,
         statusUrl: "/api/tree/status",

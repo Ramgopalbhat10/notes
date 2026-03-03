@@ -138,7 +138,7 @@ class Manifest {
       updatedAt,
     };
     await writeManifestToRedis(redisValue);
-    await revalidateTag(MANIFEST_CACHE_TAG, "max");
+    revalidateTag(MANIFEST_CACHE_TAG, "max");
   }
 
   public findNode(id: string): FileTreeNode | undefined {

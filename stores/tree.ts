@@ -104,7 +104,37 @@ type TreeState = {
 };
 
 export const useTreeStore = create<TreeState>((set, get) => {
-  const loadManifest = async ({ force = false }: { force?: boolean } = {}) => {
+  const applyManifest = (manifest: FileTreeManifest, etag: string | null) => {
+    const { nodes, rootIds, slugToId, idToSlug } = buildStateFromManifest(manifest);
+
+    set((current) => {
+      const openFolders = filterOpenFolders(current.openFolders, nodes);
+      const selectedId = current.selectedId && nodes[current.selectedId]
+        ? current.selectedId
+        : null;
+
+      // Clean up viewHistory: remove IDs that no longer exist
+      const viewHistory = current.viewHistory.filter((id) => nodes[id] !== undefined);
+
+      return {
+        nodes,
+        rootIds,
+        openFolders,
+        selectedId,
+        manifestEtag: etag ?? current.manifestEtag,
+        manifestMetadata: manifest.metadata,
+        loadingByParent: { ...current.loadingByParent, [ROOT_PARENT_KEY]: false },
+        slugToId,
+        idToSlug,
+        viewHistory,
+      };
+    });
+  };
+
+  const loadManifest = async ({ force = false, prefetched }: {
+    force?: boolean;
+    prefetched?: { manifest: FileTreeManifest; etag: string | null };
+  } = {}) => {
     const state = get();
     if (state.loadingByParent[parentKey(null)]) {
       return;
@@ -116,6 +146,11 @@ export const useTreeStore = create<TreeState>((set, get) => {
     }));
 
     try {
+      if (prefetched) {
+        applyManifest(prefetched.manifest, prefetched.etag);
+        return;
+      }
+
       const { manifest, etag } = await fetchManifest(get().manifestEtag, force);
       if (!manifest) {
         set((current) => ({
@@ -124,30 +159,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         return;
       }
 
-      const { nodes, rootIds, slugToId, idToSlug } = buildStateFromManifest(manifest);
-
-      set((current) => {
-        const openFolders = filterOpenFolders(current.openFolders, nodes);
-        const selectedId = current.selectedId && nodes[current.selectedId]
-          ? current.selectedId
-          : null;
-
-        // Clean up viewHistory: remove IDs that no longer exist
-        const viewHistory = current.viewHistory.filter((id) => nodes[id] !== undefined);
-
-        return {
-          nodes,
-          rootIds,
-          openFolders,
-          selectedId,
-          manifestEtag: etag ?? current.manifestEtag,
-          manifestMetadata: manifest.metadata,
-          loadingByParent: { ...current.loadingByParent, [ROOT_PARENT_KEY]: false },
-          slugToId,
-          idToSlug,
-          viewHistory,
-        };
-      });
+      applyManifest(manifest, etag ?? null);
     } catch (error) {
       const message = getErrorMessage(error, "Failed to load file tree");
       set((current) => ({
