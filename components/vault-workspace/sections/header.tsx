@@ -357,6 +357,8 @@ export function WorkspaceHeader({
                   <DropdownMenuSeparator />
 
                   <div
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       "flex items-center justify-between px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer",
                       shareButtonDisabled && "opacity-50 pointer-events-none"
@@ -365,6 +367,14 @@ export function WorkspaceHeader({
                       e.preventDefault();
                       if (!shareButtonDisabled && sharingState) {
                         onTogglePublic?.();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!shareButtonDisabled && sharingState) {
+                          onTogglePublic?.();
+                        }
                       }
                     }}
                   >

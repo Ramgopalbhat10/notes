@@ -35,19 +35,19 @@ export function prepareQueuedMoveNode(node: Node, targetPath: string): Node {
 export function buildMoveMutationRequest(
   node: Node,
   targetPath: string,
-): { from: string; to: string; type: "file" | "folder"; ifMatchEtag?: string } {
+): { fromKey: string; toKey: string; type: "file" | "folder"; ifMatchEtag?: string } {
   if (node.type === "file" && node.etag) {
     return {
-      from: node.path,
-      to: targetPath,
+      fromKey: node.path,
+      toKey: targetPath,
       type: node.type,
       ifMatchEtag: node.etag,
     };
   }
 
   return {
-    from: node.path,
-    to: targetPath,
+    fromKey: node.path,
+    toKey: targetPath,
     type: node.type,
   };
 }

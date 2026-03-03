@@ -22,7 +22,7 @@ export function buildStateFromManifest(manifest: FileTreeManifest): BuiltManifes
         name: entry.name,
         path,
         parentId: entry.parentId,
-        children: [...entry.childrenIds].sort(),
+        children: [...entry.childrenIds].sort((a, b) => a.localeCompare(b)),
         childrenLoaded: true,
         lastModified: entry.lastModified,
       } satisfies FolderNode;
@@ -44,7 +44,7 @@ export function buildStateFromManifest(manifest: FileTreeManifest): BuiltManifes
 
   return {
     nodes,
-    rootIds: [...manifest.rootIds].sort(),
+    rootIds: [...manifest.rootIds].sort((a, b) => a.localeCompare(b)),
     slugToId,
     idToSlug,
   };

@@ -1,8 +1,8 @@
 import { extractResponseError, parseJsonOrFallback } from "@/lib/http/client";
 
 type MoveNodeRequestParams = {
-  from: string;
-  to: string;
+  fromKey: string;
+  toKey: string;
   type: "file" | "folder";
   ifMatchEtag?: string;
 };

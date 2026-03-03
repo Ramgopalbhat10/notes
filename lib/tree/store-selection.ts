@@ -19,9 +19,11 @@ export function persistLastViewedFile(id: NodeId): void {
 }
 
 export function buildRouteSlugKey(path: string): { canonicalPath: string; slugKey: string } {
-  const canonicalPath = path.replace(/^\/+/, "");
-  const hasTrailingSlash = /\/$/.test(canonicalPath);
-  const withoutTrailing = canonicalPath.replace(/\/+$/, "");
+  let canonicalPath = path;
+  while (canonicalPath.startsWith("/")) canonicalPath = canonicalPath.slice(1);
+  const hasTrailingSlash = canonicalPath.endsWith("/");
+  let withoutTrailing = canonicalPath;
+  while (withoutTrailing.endsWith("/")) withoutTrailing = withoutTrailing.slice(0, -1);
   const segments = withoutTrailing
     ? withoutTrailing.split("/").filter((segment) => segment.length > 0)
     : [];

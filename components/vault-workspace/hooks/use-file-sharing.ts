@@ -24,7 +24,7 @@ type UseFileSharingOptions = {
 type UseFileSharingResult = {
   sharingState: SharingState | undefined;
   handleTogglePublic: () => void;
-  handleCopyPublicLink: () => Promise<void>;
+  handleCopyPublicLink: () => void;
 };
 
 export function useFileSharing({
@@ -95,23 +95,25 @@ export function useFileSharing({
     });
   }, [shareKey, sharingState, toggleShareState, toast, publicUrl]);
 
-  const handleCopyPublicLink = useCallback(async () => {
+  const handleCopyPublicLink = useCallback(() => {
     if (!sharingState?.shareUrl) {
       return;
     }
-    try {
-      await navigator.clipboard.writeText(sharingState.shareUrl);
-      toast({
-        title: "Public link copied",
-        description: "Share it with anyone to give read-only access.",
-      });
-    } catch {
-      toast({
-        title: "Copy failed",
-        description: "Unable to copy the public link. Try again.",
-        variant: "destructive",
-      });
-    }
+    void navigator.clipboard.writeText(sharingState.shareUrl).then(
+      () => {
+        toast({
+          title: "Public link copied",
+          description: "Share it with anyone to give read-only access.",
+        });
+      },
+      () => {
+        toast({
+          title: "Copy failed",
+          description: "Unable to copy the public link. Try again.",
+          variant: "destructive",
+        });
+      },
+    );
   }, [sharingState?.shareUrl, toast]);
 
   return {

@@ -31,9 +31,9 @@ type ParsedFence = {
   markerLength: number;
 };
 
-const FENCE_OPEN_RE = /^\s*(`{3,}|~{3,})/;
-const ATX_HEADING_RE = /^\s{0,3}(#{1,6})\s+(.+?)\s*$/;
-const SETEXT_UNDERLINE_RE = /^\s{0,3}(=+|-+)\s*$/;
+const FENCE_OPEN_RE = /^\s{0,3}(`{3,}|~{3,})/;
+const ATX_HEADING_RE = /^\s{0,3}(#{1,6})\s+([^\n]+?)\s*$/;
+const SETEXT_UNDERLINE_RE = /^\s{0,3}(={1,}|-{1,})\s{0,}$/;
 
 export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
   const lines = content.split(/\r?\n/);
@@ -153,7 +153,7 @@ export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
 }
 
 function normalizeHeadingText(text: string): string {
-  const withoutTrailingHashes = text.replace(/\s+#+\s*$/, "");
+  const withoutTrailingHashes = text.replace(/\s#{1,6}\s{0,}$/, "");
   return withoutTrailingHashes.trim();
 }
 

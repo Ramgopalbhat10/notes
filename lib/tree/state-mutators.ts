@@ -22,13 +22,13 @@ export function addNodeToState<TState extends MutableTreeStateShape>(state: TSta
       children.add(node.id);
       nodes[node.parentId] = {
         ...parent,
-        children: Array.from(children).sort(),
+        children: Array.from(children).sort((a, b) => a.localeCompare(b)),
         childrenLoaded: true,
       };
     }
     openFolders[node.parentId] = true;
   } else {
-    rootIds = Array.from(new Set([...state.rootIds, node.id])).sort();
+    rootIds = Array.from(new Set([...state.rootIds, node.id])).sort((a, b) => a.localeCompare(b));
   }
 
   const { slugToId, idToSlug } = buildSlugState(nodes);
