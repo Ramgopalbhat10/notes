@@ -10,6 +10,7 @@ Previous tasks (latest completed batch only):
 - [x] Restructured `lib/` into domain-based subfolders (`fs/`, `cache/`, `content/`, `platform/`).
 - [x] Updated all imports across the codebase (~40 files).
 - [x] Fixed infinite re-render bug caused by Zustand store destructuring without selectors.
+- [x] Fixed root-cause infinite re-render: unstable inline callbacks in VaultWorkspace → useCallback.
 - [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully.
 
 Next tasks:

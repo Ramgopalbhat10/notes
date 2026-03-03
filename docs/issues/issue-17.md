@@ -56,6 +56,7 @@
 | 2026-03-03 | refactor | Restructured `components/vault-workspace/` into `hooks/` (7 hooks) and `sections/` (6 components), updated imports in `index.tsx` and `app/files/[[...path]]/page.tsx`. |
 | 2026-03-03 | refactor | Restructured `lib/` into domain subfolders: `fs/` (6 files), `cache/` (2 files), `content/` (4 files), `platform/` (5 files). Updated ~40 files with new import paths. |
 | 2026-03-03 | fix | Fixed infinite re-render bug in `LeftSidebarFooter` caused by Zustand store destructuring without selectors. |
+| 2026-03-03 | fix | Fixed root-cause infinite re-render: inline arrow functions for `onToggleMode`/`onTriggerAction` in VaultWorkspace created new refs every render, invalidating `useWorkspaceHeader`'s `useMemo`, causing `setHeader` to fire every render cycle. Wrapped in `useCallback`. |
 
 ## Test Plan
 - Run `pnpm lint`.

@@ -204,18 +204,24 @@ export function VaultWorkspace({
     }
   }, [selectedId, selectedPath, deleteNode, toast]);
 
+  const handleToggleMode = useCallback(() => {
+    setMode(mode === "preview" ? "edit" : "preview");
+  }, [mode, setMode]);
+
+  const handleTriggerAction = useCallback((action: Parameters<typeof start>[0]) => {
+    void start(action);
+  }, [start]);
+
   const headerContent = useWorkspaceHeader({
     segments,
     mode,
-    onToggleMode: () => setMode(mode === "preview" ? "edit" : "preview"),
+    onToggleMode: handleToggleMode,
     onSave: handleSave,
     canSave: dirty && status !== "saving" && status !== "conflict",
     saving: status === "saving",
     aiBusy: aiStreaming,
     aiDisabled: !hasFile || status === "loading" || !hasDocumentContent || aiStreaming,
-    onTriggerAction: (action) => {
-      void start(action);
-    },
+    onTriggerAction: handleTriggerAction,
     hasFile,
     onOpenChatSidebar,
     onOpenOutlineSidebar,
