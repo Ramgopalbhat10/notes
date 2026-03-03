@@ -6,7 +6,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { SidebarChat, type SidebarChatHandle } from "@/components/ai-chat/sidebar-chat";
 import { FileTree } from "@/components/file-tree";
-import { OutlineSidebar } from "@/components/vault-workspace/outline-sidebar";
+import { OutlineSidebar } from "@/components/vault-workspace/sections/outline-sidebar";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth/client";
@@ -75,7 +75,7 @@ function RouteSynchronizer() {
           }
         }
 
-        const { loadLastViewedFile } = await import("@/lib/persistent-preferences");
+        const { loadLastViewedFile } = await import("@/lib/platform/persistent-preferences");
         const lastViewed = await loadLastViewedFile();
 
         if (lastViewed && nodes[lastViewed]) {

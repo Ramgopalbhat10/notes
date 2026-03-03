@@ -6,8 +6,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Loader2 } from "lucide-react";
-import { AI_ACTIONS, AI_ICON } from "./constants";
-import type { AiActionType } from "./types";
+import { AI_ACTIONS, AI_ICON } from "../constants";
+import type { AiActionType } from "../types";
 
 export function AiActionDropdown({
   disabled,

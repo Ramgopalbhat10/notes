@@ -10,7 +10,7 @@ import {
   serializeFileTreeManifest,
   uploadFileTreeManifest,
 } from "@/lib/file-tree-builder";
-import { writeManifestToRedis } from "@/lib/manifest-store";
+import { writeManifestToRedis } from "@/lib/cache/manifest-store";
 
 interface CliOptions {
   dryRun: boolean;

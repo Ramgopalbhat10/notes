@@ -1,6 +1,6 @@
 import { HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
+import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeEtag } from "@/lib/etag";
 
 export interface WriteFileParams {

@@ -1,6 +1,6 @@
 import type { Node as TreeNode, NodeId } from "./types";
 
-export { basename, getParentPath } from "@/lib/paths";
+export { basename, getParentPath } from "@/lib/platform/paths";
 
 export function ensureFolderPath(parentPath: string, name: string): string {
   return `${parentPath}${name}/`;

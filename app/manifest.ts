@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { siteMetadata } from "@/lib/site-metadata";
+import { siteMetadata } from "@/lib/platform/site-metadata";
 
 const THEME_COLOR = "#09090b";
 

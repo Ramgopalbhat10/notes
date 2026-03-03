@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRedisClient } from "@/lib/redis-client";
+import { getRedisClient } from "@/lib/cache/redis-client";
 import { requireApiUser } from "@/lib/auth";
 
 const SETTINGS_KEY_PREFIX = "user:settings:";

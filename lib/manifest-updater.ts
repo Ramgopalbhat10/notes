@@ -16,11 +16,11 @@ import {
   loadLatestManifest,
   writeManifestToRedis,
   type RedisManifestValue,
-} from "@/lib/manifest-store";
+} from "@/lib/cache/manifest-store";
 import { serializeFileTreeManifest, uploadFileTreeManifest } from "@/lib/file-tree-builder";
 import { normalizeEtag } from "@/lib/etag";
-import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/s3";
-import { basename, getParentPath } from "@/lib/paths";
+import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/fs/s3";
+import { basename, getParentPath } from "@/lib/platform/paths";
 
 class Manifest {
   private manifest: FileTreeManifest;

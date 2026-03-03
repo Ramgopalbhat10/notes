@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { NextRequest } from "next/server";
 import * as schema from "../../drizzle/schema";
-import { db } from "../db";
+import { db } from "../platform/db";
 
 const secretEnv = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || "";
 const githubClientId = process.env.GH_CLIENT_ID || "";

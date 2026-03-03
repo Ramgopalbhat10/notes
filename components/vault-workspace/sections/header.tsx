@@ -23,7 +23,7 @@ import {
   Trash2,
   CircleHelp,
 } from "lucide-react";
-import { ShortcutsDialog } from "../shortcuts-help-dialog";
+import { ShortcutsDialog } from "@/components/shortcuts-help-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -34,8 +34,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { AI_ACTIONS } from "./constants";
-import type { AiActionType, BreadcrumbSegment } from "./types";
+import { AI_ACTIONS } from "../constants";
+import type { AiActionType, BreadcrumbSegment } from "../types";
 
 type SharingState = {
   isPublic: boolean;

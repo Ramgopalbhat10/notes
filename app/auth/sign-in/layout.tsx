@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { absoluteUrl, siteMetadata } from "@/lib/site-metadata";
+import { absoluteUrl, siteMetadata } from "@/lib/platform/site-metadata";
 
 export const metadata: Metadata = {
   title: "Sign in",

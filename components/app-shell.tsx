@@ -13,17 +13,17 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Maximize2, Minimize2, PanelRight, Plus, X } from "lucide-react";
 import { useWorkspaceLayoutStore, type RightSidebarPanel } from "@/stores/layout";
-import { useAppShellShortcuts } from "@/components/app-shell/use-app-shell-shortcuts";
-import { LeftDesktopSidebar } from "@/components/app-shell/left-desktop-sidebar";
-import { LeftSidebarFooter } from "@/components/app-shell/left-sidebar-footer";
-import { MainFooter } from "@/components/app-shell/main-footer";
-import { MainHeader } from "@/components/app-shell/main-header";
-import { SidebarAutoCollapse } from "@/components/app-shell/sidebar-auto-collapse";
-import { useLeftSidebarLayout } from "@/components/app-shell/use-left-sidebar-layout";
-import { useMainScroll } from "@/components/app-shell/use-main-scroll";
-import { RightDesktopSidebar } from "@/components/app-shell/right-desktop-sidebar";
-import { useRightMobileSheet } from "@/components/app-shell/use-right-mobile-sheet";
-import { useRightSidebarPanel } from "@/components/app-shell/use-right-sidebar-panel";
+import { useAppShellShortcuts } from "@/components/app-shell/hooks/use-app-shell-shortcuts";
+import { useLeftSidebarLayout } from "@/components/app-shell/hooks/use-left-sidebar-layout";
+import { useMainScroll } from "@/components/app-shell/hooks/use-main-scroll";
+import { useRightMobileSheet } from "@/components/app-shell/hooks/use-right-mobile-sheet";
+import { useRightSidebarPanel } from "@/components/app-shell/hooks/use-right-sidebar-panel";
+import { LeftDesktopSidebar } from "@/components/app-shell/sections/left-desktop-sidebar";
+import { LeftSidebarFooter } from "@/components/app-shell/sections/left-sidebar-footer";
+import { MainFooter } from "@/components/app-shell/sections/main-footer";
+import { MainHeader } from "@/components/app-shell/sections/main-header";
+import { RightDesktopSidebar } from "@/components/app-shell/sections/right-desktop-sidebar";
+import { SidebarAutoCollapse } from "@/components/app-shell/sections/sidebar-auto-collapse";
 import { buildStatusDescriptor, computeReadingTimeLabel } from "@/components/app-shell/status-utils";
 import {
   SidebarInset,

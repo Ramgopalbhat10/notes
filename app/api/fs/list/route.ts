@@ -7,7 +7,7 @@ import {
   getBucket,
   getS3Client,
   stripVaultPrefix,
-} from "@/lib/s3";
+} from "@/lib/fs/s3";
 
 const INVALID_PREFIX_PATTERN = /(^|\/)\.\.(\/|$)/;
 

@@ -2,13 +2,13 @@ import { DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
-import { normalizeFileKey } from "@/lib/fs-validation";
-import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/file-cache";
-import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
-import { deleteFileMeta } from "@/lib/file-meta";
+import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
+import { normalizeFileKey } from "@/lib/fs/fs-validation";
+import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
+import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
+import { deleteFileMeta } from "@/lib/fs/file-meta";
 import { normalizeEtag, parseIfNoneMatch } from "@/lib/etag";
-import { writeMarkdownFile } from "@/lib/file-writer";
+import { writeMarkdownFile } from "@/lib/fs/file-writer";
 
 type StatusError = Error & {
   status?: number;

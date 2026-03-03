@@ -10,15 +10,15 @@ import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useSettingsStore } from "@/stores/settings";
 import { useToast } from "@/hooks/use-toast";
 
-import { AiResultPanel } from "./ai-result-panel";
-import { WorkspaceBody } from "./workspace-body";
-import { useAiSession } from "./use-ai-session";
-import { useFileSharing } from "./use-file-sharing";
-import { useResolvedPath } from "./use-resolved-path";
-import { useSiblingNavigation } from "./use-sibling-navigation";
-import { useWorkspaceHeader } from "./use-workspace-header";
-import { useWorkspaceFileSync } from "./use-workspace-file-sync";
-import { useWorkspaceSettingsSync } from "./use-workspace-settings-sync";
+import { useAiSession } from "./hooks/use-ai-session";
+import { useFileSharing } from "./hooks/use-file-sharing";
+import { useResolvedPath } from "./hooks/use-resolved-path";
+import { useSiblingNavigation } from "./hooks/use-sibling-navigation";
+import { useWorkspaceFileSync } from "./hooks/use-workspace-file-sync";
+import { useWorkspaceHeader } from "./hooks/use-workspace-header";
+import { useWorkspaceSettingsSync } from "./hooks/use-workspace-settings-sync";
+import { AiResultPanel } from "./sections/ai-result-panel";
+import { WorkspaceBody } from "./sections/workspace-body";
 import type { BreadcrumbSegment } from "./types";
 
 export function VaultWorkspace({

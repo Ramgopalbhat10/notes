@@ -9,7 +9,7 @@ import {
   filesCanonicalPath,
   workspaceDescription,
   workspaceTitle,
-} from "@/lib/site-metadata";
+} from "@/lib/platform/site-metadata";
 
 export async function generateMetadata({
   params,

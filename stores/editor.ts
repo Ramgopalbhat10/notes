@@ -10,7 +10,7 @@ import {
   loadPersistentDocument,
   savePersistentDocument,
   subscribePersistentDocumentEvictions,
-} from "@/lib/persistent-document-cache";
+} from "@/lib/platform/persistent-document-cache";
 
 type EditorMode = "preview" | "edit";
 type EditorStatus = "idle" | "loading" | "saving" | "error" | "conflict";

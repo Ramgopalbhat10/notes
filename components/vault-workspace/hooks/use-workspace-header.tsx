@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 
-import { WorkspaceHeader } from "./header";
-import type { AiActionType, BreadcrumbSegment } from "./types";
+import { WorkspaceHeader } from "../sections/header";
+import type { AiActionType, BreadcrumbSegment } from "../types";
 
 type SharingState = {
   isPublic: boolean;

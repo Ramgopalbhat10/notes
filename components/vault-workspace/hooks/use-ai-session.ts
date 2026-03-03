@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { extractResponseError, getErrorMessage } from "@/lib/http/client";
-import type { AiActionType, AiSessionState } from "./types";
+import type { AiActionType, AiSessionState } from "../types";
 
 const INITIAL_STATE: AiSessionState = {
   status: "idle",

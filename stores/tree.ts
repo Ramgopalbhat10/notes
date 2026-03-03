@@ -2,13 +2,13 @@
 
 import { create } from "zustand";
 
-import { normalizeName } from "@/lib/fs-validation";
+import { normalizeName } from "@/lib/fs/fs-validation";
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
 import { getErrorMessage } from "@/lib/http/client";
 import {
   removePersistentDocument,
   removePersistentDocumentsWithPrefix,
-} from "@/lib/persistent-document-cache";
+} from "@/lib/platform/persistent-document-cache";
 import type {
   FileNode,
   FolderNode,

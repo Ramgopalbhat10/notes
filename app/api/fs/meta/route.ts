@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/auth";
-import { normalizeFileKey } from "@/lib/fs-validation";
-import { deleteFileMeta, getFileMeta, setFileMeta } from "@/lib/file-meta";
+import { normalizeFileKey } from "@/lib/fs/fs-validation";
+import { deleteFileMeta, getFileMeta, setFileMeta } from "@/lib/fs/file-meta";
 
 function invalidRequest(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });

@@ -2,9 +2,9 @@ import { HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
-import { normalizeFolderPrefix } from "@/lib/fs-validation";
-import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
+import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
+import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
+import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 
 type StatusError = Error & {
   status?: number;

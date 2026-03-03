@@ -2,10 +2,10 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { normalizeEtag } from "@/lib/etag";
-import { getRedisClient } from "@/lib/redis-client";
+import { getRedisClient } from "@/lib/cache/redis-client";
 import { FILE_TREE_MANIFEST_FILENAME, validateFileTreeManifest, type FileTreeManifest } from "@/lib/file-tree-manifest";
-import { getBucket, getS3Client } from "@/lib/s3";
-import { s3BodyToString } from "@/lib/s3-body";
+import { getBucket, getS3Client } from "@/lib/fs/s3";
+import { s3BodyToString } from "@/lib/fs/s3-body";
 
 export const MANIFEST_REDIS_KEY = "file-tree:manifest";
 export const MANIFEST_CACHE_TAG = "file-tree-manifest";

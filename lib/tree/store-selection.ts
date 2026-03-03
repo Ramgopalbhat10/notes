@@ -13,7 +13,7 @@ export function appendToHistoryIfNew(history: NodeId[], id: NodeId): NodeId[] {
 }
 
 export function persistLastViewedFile(id: NodeId): void {
-  void import("@/lib/persistent-preferences").then(({ saveLastViewedFile }) => {
+  void import("@/lib/platform/persistent-preferences").then(({ saveLastViewedFile }) => {
     void saveLastViewedFile(id);
   });
 }

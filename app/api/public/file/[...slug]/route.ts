@@ -1,9 +1,9 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-import { normalizeFileKey } from "@/lib/fs-validation";
-import { getCachedFile } from "@/lib/file-cache";
-import { getFileMeta } from "@/lib/file-meta";
+import { normalizeFileKey } from "@/lib/fs/fs-validation";
+import { getCachedFile } from "@/lib/fs/file-cache";
+import { getFileMeta } from "@/lib/fs/file-meta";
 import { normalizeEtag, parseIfNoneMatch } from "@/lib/etag";
 
 const CACHE_CONTROL_HEADER = "public, max-age=60, s-maxage=60, stale-while-revalidate=30";

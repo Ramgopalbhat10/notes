@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidateTag, updateTag } from "next/cache";
-import { normalizeFileKey } from "@/lib/fs-validation";
+import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getServerSession, isAllowedUser } from "@/lib/auth";
-import { writeMarkdownFile } from "@/lib/file-writer";
-import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
-import { getFileCacheTag, revalidateFileTags, setFileCacheRecord } from "@/lib/file-cache";
+import { writeMarkdownFile } from "@/lib/fs/file-writer";
+import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
+import { getFileCacheTag, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
 
 export type SaveDocumentInput = {
   key: string;

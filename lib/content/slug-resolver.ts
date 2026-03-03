@@ -1,4 +1,4 @@
-import { loadLatestManifest } from "@/lib/manifest-store";
+import { loadLatestManifest } from "@/lib/cache/manifest-store";
 import { isFolderNode, type FileTreeManifest } from "@/lib/file-tree-manifest";
 
 function slugifySegment(segment: string, stripExtension: boolean): string {

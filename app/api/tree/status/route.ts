@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/auth";
-import { loadLatestManifest } from "@/lib/manifest-store";
+import { loadLatestManifest } from "@/lib/cache/manifest-store";
 
 export async function GET(request: NextRequest) {
   const authRes = await requireApiUser(request);

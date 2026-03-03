@@ -1,7 +1,7 @@
 "use client";
 
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { normalizeFolderPrefix } from "@/lib/fs-validation";
+import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { getErrorMessage } from "@/lib/http/client";
 import { encodePath } from "@/lib/utils";
 import type { NodeId } from "@/stores/tree";

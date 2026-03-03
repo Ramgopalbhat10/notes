@@ -1,18 +1,20 @@
 # Progress
 
-Current issue: `docs/issues/issue-16.md`
+Current issue: `docs/issues/issue-17.md`
 
-Current section: Issue 16 — Massive Refactor Roadmap Execution (Stability-First)
+Current section: Issue 17 — App-Wide Folder Restructuring
 
 Previous tasks (latest completed batch only):
-- [x] Continued Phase 4 by extracting queue-move preparation and route selection helpers from `stores/tree.ts` into shared tree modules.
-- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully after this batch.
+- [x] Restructured `components/app-shell/` into `hooks/` and `sections/` subfolders.
+- [x] Restructured `components/vault-workspace/` into `hooks/` and `sections/` subfolders.
+- [x] Restructured `lib/` into domain-based subfolders (`fs/`, `cache/`, `content/`, `platform/`).
+- [x] Updated all imports across the codebase (~40 files).
+- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Phase 1 shared client I/O/error extraction completed with no behavioral intent changes.
-- Phase 2 decomposition now includes `use-file-sharing`, `use-resolved-path`, `use-sibling-navigation`, `use-workspace-settings-sync`, `use-workspace-file-sync`, `workspace-body`, and `use-workspace-header`.
-- Phase 3 decomposition of `AppShell` is complete and the component now primarily orchestrates extracted modules.
-- Phase 4 tree-store decomposition is complete.
+- Follows consistent pattern established in `components/file-tree/hooks/`.
+- Domain grouping for lib/: fs, cache, content, platform.
+- Issue 16 (massive refactor phases 1-4) complete and merged.
