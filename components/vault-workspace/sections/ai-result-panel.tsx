@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Copy, Eye, EyeOff, Loader2, Sparkles, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { ACTION_LABEL } from "./constants";
-import type { AiSessionState } from "./types";
+import { ACTION_LABEL } from "../constants";
+import type { AiSessionState } from "../types";
 
 export type AiResultPanelProps = {
   state: AiSessionState;

@@ -1,24 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 
-import { MarkdownEditor } from "@/components/markdown-editor";
-import { MarkdownPreview } from "@/components/markdown-preview";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SelectedFilePlaceholder } from "@/components/selected-file-placeholder";
 import { cn } from "@/lib/utils";
 import { slugifySegment, pathSegmentsForSlug } from "@/lib/tree/utils";
 import { useEditorStore } from "@/stores/editor";
 import { useTreeStore } from "@/stores/tree";
-import { usePublicStore } from "@/stores/public";
 import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useSettingsStore } from "@/stores/settings";
 import { useToast } from "@/hooks/use-toast";
 
-import { AiResultPanel } from "./ai-result-panel";
-import { WorkspaceHeader } from "./header";
-import { useAiSession } from "./use-ai-session";
+import { useAiSession } from "./hooks/use-ai-session";
+import { useFileSharing } from "./hooks/use-file-sharing";
+import { useResolvedPath } from "./hooks/use-resolved-path";
+import { useSiblingNavigation } from "./hooks/use-sibling-navigation";
+import { useWorkspaceFileSync } from "./hooks/use-workspace-file-sync";
+import { useWorkspaceHeader } from "./hooks/use-workspace-header";
+import { useWorkspaceSettingsSync } from "./hooks/use-workspace-settings-sync";
+import { AiResultPanel } from "./sections/ai-result-panel";
+import { WorkspaceBody } from "./sections/workspace-body";
 import type { BreadcrumbSegment } from "./types";
 
 export function VaultWorkspace({
@@ -71,124 +71,42 @@ export function VaultWorkspace({
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const settingsInitialized = useSettingsStore((state) => state.initialized);
 
-  // Fetch settings on mount
-  useEffect(() => {
-    void fetchSettings();
-  }, [fetchSettings]);
-
-  // Apply settings when they change
-  useEffect(() => {
-    if (settingsInitialized) {
-      setCentered(settings.appearance.centeredLayout);
-    }
-  }, [settingsInitialized, settings.appearance.centeredLayout, setCentered]);
+  useWorkspaceSettingsSync({
+    fetchSettings,
+    settingsInitialized,
+    centeredLayout: settings.appearance.centeredLayout,
+    setCentered,
+  });
 
   const hasFile = Boolean(selectedPath);
   const hasDocumentContent = Boolean(content.trim().length);
 
-  useEffect(() => {
-    if (selectedPath) {
-      if (selectedPath !== fileKey) {
-        void loadFile(selectedPath);
-      }
-    } else {
-      reset();
-    }
-  }, [fileKey, loadFile, reset, selectedPath]);
-
-  useEffect(() => {
-    if (!dirty) {
-      return;
-    }
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [dirty]);
+  useWorkspaceFileSync({
+    selectedPath,
+    fileKey,
+    loadFile,
+    reset,
+    dirty,
+  });
 
   // Resolve the display path: use selected file path if available, otherwise try to resolve routeTarget path
   const nodes = useTreeStore((state) => state.nodes);
   const rootIds = useTreeStore((state) => state.rootIds);
 
-  const resolvedPath = useMemo(() => {
-    if (selectedPath) return selectedPath;
-    if (!routeTarget?.path) return null;
-
-    // Try to resolve clean path from tree nodes if corresponding folders are loaded
-    const slugParts = routeTarget.path.split("/");
-    const resolvedParts: string[] = [];
-    let currentScopeIds = rootIds;
-
-    for (const slugPart of slugParts) {
-      let found = false;
-      for (const id of currentScopeIds) {
-        const node = nodes[id];
-        if (node) {
-          const slug = slugifySegment(node.name, node.type === "file");
-
-          // Allow loose match for now
-          if (slug === slugPart) {
-            resolvedParts.push(node.name);
-            if (node.type === "folder") {
-              currentScopeIds = node.children;
-            }
-            found = true;
-            break;
-          }
-        }
-      }
-      if (!found) {
-        // Fallback to title casing the slug part if not found in tree (e.g. not loaded yet)
-        resolvedParts.push(slugPart);
-      }
-    }
-    return resolvedParts.join("/");
-  }, [selectedPath, routeTarget?.path, nodes, rootIds]);
+  const resolvedPath = useResolvedPath({
+    selectedPath,
+    routeTarget,
+    nodes,
+    rootIds,
+  });
 
   const segments = useMemo(() => (resolvedPath ? buildSegments(resolvedPath) : []), [resolvedPath]);
 
-  const siblingNavigation = useMemo(() => {
-    if (!selectedId) {
-      return { prevId: null, nextId: null };
-    }
-
-    const selectedNode = nodes[selectedId];
-    if (!selectedNode || selectedNode.type !== "file") {
-      return { prevId: null, nextId: null };
-    }
-
-    const parentId = selectedNode.parentId;
-    if (!parentId) {
-      return { prevId: null, nextId: null };
-    }
-
-    const parentNode = nodes[parentId];
-    if (!parentNode || parentNode.type !== "folder") {
-      return { prevId: null, nextId: null };
-    }
-
-    const fileSiblingIds = parentNode.children.filter((childId) => nodes[childId]?.type === "file");
-    if (fileSiblingIds.length <= 1) {
-      return { prevId: null, nextId: null };
-    }
-
-    const currentIndex = fileSiblingIds.indexOf(selectedNode.id);
-    if (currentIndex === -1) {
-      return { prevId: null, nextId: null };
-    }
-
-    return {
-      prevId: currentIndex > 0 ? fileSiblingIds[currentIndex - 1] : null,
-      nextId: currentIndex < fileSiblingIds.length - 1 ? fileSiblingIds[currentIndex + 1] : null,
-    };
-  }, [nodes, selectedId]);
-
-  const canNavigatePrev = siblingNavigation.prevId !== null;
-  const canNavigateNext = siblingNavigation.nextId !== null;
+  const { canNavigatePrev, canNavigateNext, handleNavigatePrev, handleNavigateNext } = useSiblingNavigation({
+    selectedId,
+    nodes,
+    select,
+  });
 
   const handleSave = useCallback(() => {
     if (!dirty || status === "saving" || status === "conflict") {
@@ -196,20 +114,6 @@ export function VaultWorkspace({
     }
     void save("manual");
   }, [dirty, save, status]);
-
-  const handleNavigatePrev = useCallback(() => {
-    if (!siblingNavigation.prevId) {
-      return;
-    }
-    select(siblingNavigation.prevId);
-  }, [select, siblingNavigation.prevId]);
-
-  const handleNavigateNext = useCallback(() => {
-    if (!siblingNavigation.nextId) {
-      return;
-    }
-    select(siblingNavigation.nextId);
-  }, [select, siblingNavigation.nextId]);
 
   const {
     state: aiState,
@@ -235,15 +139,6 @@ export function VaultWorkspace({
   });
 
   const shareKey = selectedPath;
-  const shareRecord = usePublicStore((state) => (shareKey ? state.records[shareKey] : undefined));
-  const loadShareState = usePublicStore((state) => state.load);
-  const toggleShareState = usePublicStore((state) => state.toggle);
-
-  useEffect(() => {
-    if (shareKey) {
-      void loadShareState(shareKey);
-    }
-  }, [shareKey, loadShareState]);
 
   const publicPath = useMemo(() => (shareKey ? buildPublicPath(shareKey) : null), [shareKey]);
   const publicUrl = useMemo(() => {
@@ -260,77 +155,11 @@ export function VaultWorkspace({
     }
   }, [publicPath]);
 
-  const shareRecordPublic = Boolean(shareRecord?.public);
-  const shareRecordLoading = Boolean(shareRecord?.loading);
-  const shareRecordUpdating = Boolean(shareRecord?.updating);
-  const shareRecordHasData = Boolean(shareRecord);
-
-  const sharingState = useMemo(
-    () =>
-      shareKey
-        ? {
-          isPublic: shareRecordPublic,
-          loading: !shareRecordHasData || shareRecordLoading,
-          updating: shareRecordUpdating,
-          shareUrl: shareRecordPublic && publicUrl ? publicUrl : null,
-        }
-        : undefined,
-    [shareKey, shareRecordPublic, shareRecordHasData, shareRecordLoading, shareRecordUpdating, publicUrl],
-  );
-
-  const lastShareErrorRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!shareRecord?.error) {
-      lastShareErrorRef.current = null;
-      return;
-    }
-    if (shareRecord.error === lastShareErrorRef.current) {
-      return;
-    }
-    lastShareErrorRef.current = shareRecord.error;
-    toast({
-      title: "Sharing update failed",
-      description: shareRecord.error,
-      variant: "destructive",
-    });
-  }, [shareRecord?.error, toast]);
-
-  const handleTogglePublic = useCallback(() => {
-    if (!shareKey) {
-      return;
-    }
-    if (!sharingState || sharingState.loading || sharingState.updating) {
-      return;
-    }
-    const next = !(sharingState.isPublic ?? false);
-    void toggleShareState(shareKey, next).then((success) => {
-      if (success) {
-        toast({
-          title: next ? "Public link enabled" : "Public link disabled",
-          description: next && publicUrl ? "Anyone with the link can view this file." : undefined,
-        });
-      }
-    });
-  }, [shareKey, sharingState, toggleShareState, toast, publicUrl]);
-
-  const handleCopyPublicLink = useCallback(async () => {
-    if (!sharingState?.shareUrl) {
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(sharingState.shareUrl);
-      toast({
-        title: "Public link copied",
-        description: "Share it with anyone to give read-only access.",
-      });
-    } catch {
-      toast({
-        title: "Copy failed",
-        description: "Unable to copy the public link. Try again.",
-        variant: "destructive",
-      });
-    }
-  }, [sharingState?.shareUrl, toast]);
+  const { sharingState, handleTogglePublic, handleCopyPublicLink } = useFileSharing({
+    shareKey,
+    publicUrl,
+    toast,
+  });
 
   const handleDownload = useCallback((format: "markdown" | "text" | "pdf") => {
     if (!selectedPath || !content) {
@@ -375,129 +204,60 @@ export function VaultWorkspace({
     }
   }, [selectedId, selectedPath, deleteNode, toast]);
 
-  const headerContent = useMemo(
-    () => (
-      <WorkspaceHeader
-        segments={segments}
-        mode={mode}
-        onToggleMode={() => setMode(mode === "preview" ? "edit" : "preview")}
-        onSave={handleSave}
-        canSave={dirty && status !== "saving" && status !== "conflict"}
-        saving={status === "saving"}
-        aiBusy={aiStreaming}
-        aiDisabled={!hasFile || status === "loading" || !hasDocumentContent || aiStreaming}
-        onTriggerAction={(action) => {
-          void start(action);
-        }}
-        hasFile={hasFile}
-        onOpenChatSidebar={onOpenChatSidebar}
-        onOpenOutlineSidebar={onOpenOutlineSidebar}
-        sharingState={hasFile ? sharingState : undefined}
-        onTogglePublic={hasFile ? handleTogglePublic : undefined}
-        onCopyPublicLink={hasFile ? handleCopyPublicLink : undefined}
-        centered={centered}
-        onToggleCentered={toggleCentered}
-        canNavigatePrev={canNavigatePrev}
-        canNavigateNext={canNavigateNext}
-        onNavigatePrev={handleNavigatePrev}
-        onNavigateNext={handleNavigateNext}
-        onDownload={hasFile ? handleDownload : undefined}
-        onDelete={hasFile ? handleDelete : undefined}
-      />
-    ),
-    [
-      aiStreaming,
-      canNavigateNext,
-      canNavigatePrev,
-      centered,
-      dirty,
-      handleCopyPublicLink,
-      handleDelete,
-      handleDownload,
-      handleNavigateNext,
-      handleNavigatePrev,
-      handleSave,
-      toggleCentered,
-      handleTogglePublic,
-      hasDocumentContent,
-      hasFile,
-      mode,
-      onOpenChatSidebar,
-      onOpenOutlineSidebar,
-      segments,
-      setMode,
-      sharingState,
-      start,
-      status,
-    ],
-  );
+  const handleToggleMode = useCallback(() => {
+    setMode(mode === "preview" ? "edit" : "preview");
+  }, [mode, setMode]);
+
+  const handleTriggerAction = useCallback((action: Parameters<typeof start>[0]) => {
+    void start(action);
+  }, [start]);
+
+  const headerContent = useWorkspaceHeader({
+    segments,
+    mode,
+    onToggleMode: handleToggleMode,
+    onSave: handleSave,
+    canSave: dirty && status !== "saving" && status !== "conflict",
+    saving: status === "saving",
+    aiBusy: aiStreaming,
+    aiDisabled: !hasFile || status === "loading" || !hasDocumentContent || aiStreaming,
+    onTriggerAction: handleTriggerAction,
+    hasFile,
+    onOpenChatSidebar,
+    onOpenOutlineSidebar,
+    sharingState,
+    onTogglePublic: handleTogglePublic,
+    onCopyPublicLink: handleCopyPublicLink,
+    centered,
+    onToggleCentered: toggleCentered,
+    canNavigatePrev,
+    canNavigateNext,
+    onNavigatePrev: handleNavigatePrev,
+    onNavigateNext: handleNavigateNext,
+    onDownload: handleDownload,
+    onDelete: handleDelete,
+  });
 
   useEffect(() => {
     onHeaderChange?.(headerContent);
     return () => onHeaderChange?.(null);
   }, [headerContent, onHeaderChange]);
 
-  const body = useMemo(() => {
-    if (!selectedPath) {
-      if (routeTarget) {
-        const isMissing = routeTarget.status === "missing";
-        const cleanPath = resolvedPath || routeTarget.path;
-
-        const title = isMissing ? "File unavailable" : "Select a file";
-        const description = isMissing
-          ? `The path "${cleanPath}" could not be found. It may have been moved or deleted.`
-          : `You are viewing "${cleanPath}". Select a file from the sidebar to view its content and start editing.`;
-
-        return (
-          <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
-            <div className="font-medium">{title}</div>
-            <p className="text-muted-foreground">{description}</p>
-            {isMissing && (
-              <Button
-                size="sm"
-                className="w-fit"
-                onClick={() => void refreshTree()}
-                disabled={refreshState !== "idle"}
-              >
-                {refreshState === "idle" ? "Refresh tree" : "Refreshing..."}
-              </Button>
-            )}
-          </div>
-        );
-      }
-      return <SelectedFilePlaceholder />;
-    }
-    if (status === "loading") {
-      return (
-        <div className="space-y-2 pt-4 md:pt-6">
-          <Skeleton className="h-6 w-2/5" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-11/12" />
-          <Skeleton className="h-4 w-10/12" />
-          <Skeleton className="h-4 w-9/12" />
-        </div>
-      );
-    }
-
-    if (status === "error" && errorSource === "load") {
-      return (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
-          <div className="font-medium text-destructive">Failed to load file</div>
-          <p className="mt-1 text-muted-foreground">{error}</p>
-        </div>
-      );
-    }
-
-    if (mode === "edit") {
-      return <MarkdownEditor value={content} onChange={setContent} />;
-    }
-
-    return (
-      <div className="rounded-lg w-full overflow-hidden px-4 md:px-0">
-        <MarkdownPreview content={content} parseIncompleteMarkdown={false} />
-      </div>
-    );
-  }, [content, error, errorSource, mode, refreshState, refreshTree, routeTarget, selectedPath, setContent, status]);
+  const body = (
+    <WorkspaceBody
+      selectedPath={selectedPath}
+      routeTarget={routeTarget}
+      resolvedPath={resolvedPath}
+      refreshTree={refreshTree}
+      refreshState={refreshState}
+      status={status}
+      errorSource={errorSource}
+      error={error}
+      mode={mode}
+      content={content}
+      setContent={setContent}
+    />
+  );
 
   const aiPanelVisible = hasFile && panelOpen && aiState.status !== "idle";
 

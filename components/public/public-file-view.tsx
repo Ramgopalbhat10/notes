@@ -7,7 +7,7 @@ import { MarkdownOutlinePanel } from "@/components/outline/markdown-outline-pane
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { computeReadingTimeLabel } from "@/lib/reading-time";
+import { computeReadingTimeLabel } from "@/lib/content/reading-time";
 import { cn } from "@/lib/utils";
 
 type PublicFileViewProps = {

@@ -1,7 +1,8 @@
 "use client";
 
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { normalizeFolderPrefix } from "@/lib/fs-validation";
+import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
+import { getErrorMessage } from "@/lib/http/client";
 import { encodePath } from "@/lib/utils";
 import type { NodeId } from "@/stores/tree";
 import type { ModalState } from "../types";
@@ -99,7 +100,7 @@ export function useModalSubmit(params: UseModalSubmitParams) {
               const candidate = value.endsWith("/") ? value : `${value}/`;
               destination = normalizeFolderPrefix(candidate);
             } catch (error) {
-              setModalError(error instanceof Error ? error.message : "Invalid destination path.");
+              setModalError(getErrorMessage(error, "Invalid destination path."));
               setModalSubmitting(false);
               return;
             }
@@ -132,8 +133,8 @@ export function useModalSubmit(params: UseModalSubmitParams) {
 
       setModal(null);
     } catch (error) {
-      setModalError(error instanceof Error ? error.message : "Something went wrong. Please try again.");
-      const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      const message = getErrorMessage(error, "Something went wrong. Please try again.");
+      setModalError(message);
       toast({ title: "Action failed", description: message, variant: "destructive" });
     } finally {
       setModalSubmitting(false);

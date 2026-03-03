@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, ChevronsDown, ChevronsUp, Search, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { buildMarkdownOutline, type MarkdownOutlineNode } from "@/lib/markdown-outline";
+import { buildMarkdownOutline, type MarkdownOutlineNode } from "@/lib/content/markdown-outline";
 import { cn } from "@/lib/utils";
 
 const NODE_INDENT_PX = 14;

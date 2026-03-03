@@ -1,4 +1,5 @@
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
+import { extractResponseError, getErrorMessage } from "@/lib/http/client";
 import { formatIfNoneMatch, sanitizeEtag } from "./utils";
 import type { RefreshSource, RefreshState } from "./types";
 
@@ -16,13 +17,14 @@ const REFRESH_DEBOUNCE_MS = 100;
 
 export async function fetchManifest(
   etag: string | null,
-  _force: boolean,
+  force: boolean,
 ): Promise<{ manifest?: FileTreeManifest; etag?: string | null }> {
-  void _force;
   const headers = new Headers();
-  const headerValue = formatIfNoneMatch(etag);
-  if (headerValue) {
-    headers.set("If-None-Match", headerValue);
+  if (!force) {
+    const headerValue = formatIfNoneMatch(etag);
+    if (headerValue) {
+      headers.set("If-None-Match", headerValue);
+    }
   }
 
   const response = await fetch("/api/tree", {
@@ -44,8 +46,13 @@ export async function fetchManifest(
   return { manifest, etag: nextEtag };
 }
 
+type RefreshResponse = {
+  manifest?: FileTreeManifest;
+  etag?: string | null;
+};
+
 export function createManifestRefresher<TState extends RefreshableState>(
-  loadManifest: (options?: { force?: boolean }) => Promise<void>,
+  loadManifest: (options?: { force?: boolean; prefetched?: { manifest: FileTreeManifest; etag: string | null } }) => Promise<void>,
   set: StoreSetter<TState>,
 ) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -67,7 +74,14 @@ export function createManifestRefresher<TState extends RefreshableState>(
       if (!response.ok) {
         throw new Error(await extractTreeError(response));
       }
-      await loadManifest({ force: true });
+      // Use the manifest directly from the refresh response to avoid stale
+      // data from Next.js "use cache" with stale-while-revalidate semantics.
+      const data = (await response.json()) as RefreshResponse;
+      if (data.manifest) {
+        await loadManifest({ prefetched: { manifest: data.manifest, etag: data.etag ?? null } });
+      } else {
+        await loadManifest({ force: true });
+      }
       set((state) => ({
         refreshState: state.pendingMutations > 0 ? "pending" : "idle",
         refreshSuccessAt: new Date().toISOString(),
@@ -75,7 +89,7 @@ export function createManifestRefresher<TState extends RefreshableState>(
         refreshLastSource: source,
       } as Partial<TState>));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to refresh file tree";
+      const message = getErrorMessage(error, "Failed to refresh file tree");
       set((state) => ({
         refreshState: state.pendingMutations > 0 ? "pending" : "idle",
         refreshError: message,
@@ -112,13 +126,5 @@ export function createManifestRefresher<TState extends RefreshableState>(
 }
 
 export async function extractTreeError(response: Response): Promise<string> {
-  try {
-    const data = await response.json();
-    if (typeof data?.error === "string") {
-      return data.error;
-    }
-  } catch {
-    // ignore
-  }
-  return response.statusText || "Request failed";
+  return extractResponseError(response, "Request failed");
 }

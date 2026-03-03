@@ -5,7 +5,7 @@ import {
   MANIFEST_CACHE_TAG,
   loadLatestManifest,
   type ManifestRecord,
-} from "@/lib/manifest-store";
+} from "@/lib/cache/manifest-store";
 import { parseIfNoneMatch } from "@/lib/etag";
 
 const CACHE_CONTROL = "private, no-cache, must-revalidate";

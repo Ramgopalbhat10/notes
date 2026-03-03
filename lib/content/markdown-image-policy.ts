@@ -16,7 +16,10 @@ function normalizeHost(value: string): string | null {
     return null;
   }
 
-  return trimmed.replace(/^\/+/, "").replace(/\/+$/, "");
+  let result = trimmed;
+  while (result.startsWith("/")) result = result.slice(1);
+  while (result.endsWith("/")) result = result.slice(0, -1);
+  return result;
 }
 
 function parseAllowedHosts(raw: string | undefined): string[] {

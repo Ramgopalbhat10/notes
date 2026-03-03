@@ -8,7 +8,7 @@ import {
   MANIFEST_CACHE_TAG,
   writeManifestToRedis,
   type RedisManifestValue,
-} from "@/lib/manifest-store";
+} from "@/lib/cache/manifest-store";
 import { revalidateTag } from "next/cache";
 
 export interface RefreshResult {

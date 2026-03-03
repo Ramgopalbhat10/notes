@@ -6,11 +6,11 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
-import { normalizeFolderPrefix } from "@/lib/fs-validation";
-import { revalidateFileTags, toRelativeKeys } from "@/lib/file-cache";
-import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
-import { deleteFileMeta } from "@/lib/file-meta";
+import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
+import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
+import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
+import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
+import { deleteFileMeta } from "@/lib/fs/file-meta";
 
 type StatusError = Error & {
   status?: number;

@@ -64,7 +64,7 @@ function deepEqual(a: UserSettings, b: UserSettings): boolean {
 export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const [activeSection, setActiveSection] = React.useState<SettingsSection>("editor");
   const { settings, fetchSettings, saveSettings, resetToDefaults, initialized, loading, saving } = useSettingsStore();
-  const { setCentered } = useWorkspaceLayoutStore();
+  const setCentered = useWorkspaceLayoutStore((state) => state.setCentered);
   const { toast } = useToast();
 
   // Local draft state for form

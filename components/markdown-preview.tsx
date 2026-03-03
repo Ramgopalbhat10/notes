@@ -7,8 +7,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 import type { StreamdownProps } from "streamdown";
 
-import { buildMarkdownOutline } from "@/lib/markdown-outline";
-import { isAllowedMarkdownImageUrl } from "@/lib/markdown-image-policy";
+import { buildMarkdownOutline } from "@/lib/content/markdown-outline";
+import { isAllowedMarkdownImageUrl } from "@/lib/content/markdown-image-policy";
 import { cn } from "@/lib/utils";
 
 type MarkdownPreviewProps = {

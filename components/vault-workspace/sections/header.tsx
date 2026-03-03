@@ -23,7 +23,7 @@ import {
   Trash2,
   CircleHelp,
 } from "lucide-react";
-import { ShortcutsDialog } from "../shortcuts-help-dialog";
+import { ShortcutsDialog } from "@/components/shortcuts-help-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -34,8 +34,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { AI_ACTIONS } from "./constants";
-import type { AiActionType, BreadcrumbSegment } from "./types";
+import { AI_ACTIONS } from "../constants";
+import type { AiActionType, BreadcrumbSegment } from "../types";
 
 type SharingState = {
   isPublic: boolean;
@@ -357,6 +357,8 @@ export function WorkspaceHeader({
                   <DropdownMenuSeparator />
 
                   <div
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       "flex items-center justify-between px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer",
                       shareButtonDisabled && "opacity-50 pointer-events-none"
@@ -365,6 +367,14 @@ export function WorkspaceHeader({
                       e.preventDefault();
                       if (!shareButtonDisabled && sharingState) {
                         onTogglePublic?.();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!shareButtonDisabled && sharingState) {
+                          onTogglePublic?.();
+                        }
                       }
                     }}
                   >

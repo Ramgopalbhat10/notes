@@ -1,22 +1,38 @@
 # Progress
 
-Current issue: `docs/issues/issue-15.md`
+Current issue: `docs/issues/issue-17.md`
 
-Current section: Issue 15 — Refactor Workflow to Label-Based Control System
+Current section: Issue 17 — App-Wide Folder Restructuring
 
 Previous tasks (latest completed batch only):
-- [x] Implemented label-based workflow control system with 6 labels
-- [x] Compressed documentation to minimal references (AGENTS.md: 56 lines, WORKFLOW_LABELS.md: 33 lines)
-- [x] Added explicit label detection as first step in Session Bootstrap
-- [x] Created issue-15.md and updated issues/README.md index
-- [x] Ran quality gate checks (lint, build) - both passed
-- [x] Committed changes with conventional commit format
-- [x] Created PR #84 with complete workflow verification
+- [x] Restructured `components/app-shell/` into `hooks/` and `sections/` subfolders.
+- [x] Restructured `components/vault-workspace/` into `hooks/` and `sections/` subfolders.
+- [x] Restructured `lib/` into domain-based subfolders (`fs/`, `cache/`, `content/`, `platform/`).
+- [x] Updated all imports across the codebase (~40 files).
+- [x] Fixed infinite re-render bug caused by Zustand store destructuring without selectors.
+- [x] Fixed root-cause infinite re-render: unstable inline callbacks in VaultWorkspace → useCallback.
+- [x] Fixed stale manifest cache issues with Next.js 16 stale-while-revalidate semantics.
+- [x] Fixed Sonar security issues and code review findings (see below).
+- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully.
 
 Next tasks:
 - None - all tasks completed.
 
+Bug fix details (stale cache):
+- Root cause: `revalidateTag(tag, "max")` in Next.js 16 uses stale-while-revalidate, serving stale cached data on first request after invalidation.
+- Mutations no longer reload manifest (optimistic state preserved, manifestEtag cleared for next natural load).
+- Manual refresh returns full manifest in response, bypassing stale "use cache" layer.
+- Fixed `fetchManifest` to respect force parameter (skip If-None-Match header when force=true).
+
+Sonar/review fixes:
+- localeCompare for reliable alphabetical sorting in state-mutators.ts and state-from-manifest.ts.
+- Keyboard listener (Enter/Space) + role="button" on interactive div in header.tsx.
+- Promise misuse: converted async handleCopyPublicLink to sync void-returning function.
+- ReDoS-safe patterns: bounded quantifiers and string methods in markdown-outline.ts, markdown-image-policy.ts, store-selection.ts.
+- Move API field mismatch: client now sends fromKey/toKey matching server contract.
+- Additional ReDoS fix: replaced ATX_HEADING_RE regex with deterministic string parser to eliminate Sonar S5852 hotspot.
+
 Notes:
-- New labels: `[ask]` for conversational only, `[code-only]`, `[docs-only]`, `[quality]`, `[commit]`, `[push]`
-- Gap-filling logic implemented for `[commit]` and `[push]` labels
-- Progressive disclosure reduces token usage for simple queries
+- Follows consistent pattern established in `components/file-tree/hooks/`.
+- Domain grouping for lib/: fs, cache, content, platform.
+- Issue 16 (massive refactor phases 1-4) complete and merged.

@@ -31,9 +31,51 @@ type ParsedFence = {
   markerLength: number;
 };
 
-const FENCE_OPEN_RE = /^\s*(`{3,}|~{3,})/;
-const ATX_HEADING_RE = /^\s{0,3}(#{1,6})\s+(.+?)\s*$/;
-const SETEXT_UNDERLINE_RE = /^\s{0,3}(=+|-+)\s*$/;
+const FENCE_OPEN_RE = /^\s{0,3}(`{3,}|~{3,})/;
+const SETEXT_UNDERLINE_RE = /^\s{0,3}(={1,}|-{1,})\s{0,}$/;
+
+type ParsedAtxHeading = {
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  text: string;
+};
+
+function parseAtxHeading(line: string): ParsedAtxHeading | null {
+  let index = 0;
+  let indent = 0;
+  while (index < line.length && indent < 3 && (line[index] === " " || line[index] === "\t")) {
+    index += 1;
+    indent += 1;
+  }
+
+  let level = 0;
+
+  while (line[index] === "#" && level < 6) {
+    index += 1;
+    level += 1;
+  }
+
+  if (level === 0) {
+    return null;
+  }
+
+  const separator = line[index];
+  if (separator !== " " && separator !== "\t") {
+    return null;
+  }
+
+  while (index < line.length && (line[index] === " " || line[index] === "\t")) {
+    index += 1;
+  }
+
+  if (index >= line.length) {
+    return null;
+  }
+
+  return {
+    level: level as 1 | 2 | 3 | 4 | 5 | 6,
+    text: line.slice(index),
+  };
+}
 
 export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
   const lines = content.split(/\r?\n/);
@@ -66,14 +108,13 @@ export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
       continue;
     }
 
-    const atxMatch = line.match(ATX_HEADING_RE);
-    if (atxMatch?.[1] && atxMatch[2]) {
-      const level = atxMatch[1].length as 1 | 2 | 3 | 4 | 5 | 6;
-      const text = normalizeHeadingText(atxMatch[2]);
+    const atxHeading = parseAtxHeading(line);
+    if (atxHeading) {
+      const text = normalizeHeadingText(atxHeading.text);
       if (text) {
         headingCandidates.push({
           text,
-          level,
+          level: atxHeading.level,
           line: index + 1,
         });
       }
@@ -153,7 +194,7 @@ export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
 }
 
 function normalizeHeadingText(text: string): string {
-  const withoutTrailingHashes = text.replace(/\s+#+\s*$/, "");
+  const withoutTrailingHashes = text.replace(/\s#{1,6}\s{0,}$/, "");
   return withoutTrailingHashes.trim();
 }
 

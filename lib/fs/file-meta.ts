@@ -1,6 +1,6 @@
 import { revalidateTag } from "next/cache";
 
-import { getRedisClient } from "@/lib/redis-client";
+import { getRedisClient } from "@/lib/cache/redis-client";
 
 export const FILE_META_REDIS_PREFIX = "file-meta:";
 export const FILE_META_CACHE_TAG_PREFIX = "file-meta-tag:";

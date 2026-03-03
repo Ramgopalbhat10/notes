@@ -4,16 +4,16 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { PublicFileView } from "@/components/public/public-file-view";
-import { getCachedFile, getFileCacheTag } from "@/lib/file-cache";
-import { getFileMeta, getFileMetaCacheTag } from "@/lib/file-meta";
-import { normalizeFileKey } from "@/lib/fs-validation";
-import { MANIFEST_CACHE_TAG } from "@/lib/manifest-store";
+import { getCachedFile, getFileCacheTag } from "@/lib/fs/file-cache";
+import { getFileMeta, getFileMetaCacheTag } from "@/lib/fs/file-meta";
+import { normalizeFileKey } from "@/lib/fs/fs-validation";
+import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import {
   absoluteUrl,
   decodePathSegments,
   publicCanonicalPath,
   siteMetadata,
-} from "@/lib/site-metadata";
+} from "@/lib/platform/site-metadata";
 
 type PublicFile = {
   key: string;
@@ -45,7 +45,7 @@ async function loadPublicFile(relativePath: string | null): Promise<PublicFile |
   cacheTag(MANIFEST_CACHE_TAG);
 
   // First try to resolve as a slug
-  const { resolveSlugToKey } = await import("@/lib/slug-resolver");
+  const { resolveSlugToKey } = await import("@/lib/content/slug-resolver");
   let key: string | null = await resolveSlugToKey(relativePath);
 
   // If slug resolution failed, try as raw key

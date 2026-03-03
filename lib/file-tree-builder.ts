@@ -7,7 +7,7 @@ import {
   getBucket,
   getS3Client,
   stripVaultPrefix,
-} from "@/lib/s3";
+} from "@/lib/fs/s3";
 import {
   FILE_TREE_MANIFEST_FILENAME,
   FILE_TREE_MANIFEST_VERSION,
@@ -19,7 +19,7 @@ import {
   isFolderNode,
 } from "@/lib/file-tree-manifest";
 import { normalizeEtag } from "@/lib/etag";
-import { basename, getParentPath } from "@/lib/paths";
+import { basename, getParentPath } from "@/lib/platform/paths";
 
 interface BuildContext {
   nodes: Map<FileTreeNodeId, FileTreeNode>;

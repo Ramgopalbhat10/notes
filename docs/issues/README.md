@@ -21,3 +21,5 @@ Issue template: `docs/issues/template.md`
 | 13 | Clarify Skill Wording for Domain Relevance | resolved | None | `.agents/skills/*/SKILL.md` |
 | 14 | Markdown Heading Font Falls Back to system-ui in Public /p Route | resolved | Story 22 | `app/globals.css` |
 | 15 | Refactor Workflow to Label-Based Control System | resolved | None | `AGENTS.md`, `docs/WORKFLOW.md`, `docs/WORKFLOW_LABELS.md` |
+| 16 | Massive Refactor Roadmap Execution (Stability-First) | resolved | None | `lib/http/client.ts`, `stores/*`, `components/*`, `lib/tree/*` |
+| 17 | App-Wide Folder Restructuring | resolved | None | `components/app-shell/*`, `components/vault-workspace/*`, `lib/*` |

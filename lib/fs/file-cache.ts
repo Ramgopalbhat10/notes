@@ -2,9 +2,9 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 
 import { normalizeEtag } from "@/lib/etag";
-import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/s3";
-import { s3BodyToString } from "@/lib/s3-body";
-import { getRedisClient } from "@/lib/redis-client";
+import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/fs/s3";
+import { s3BodyToString } from "@/lib/fs/s3-body";
+import { getRedisClient } from "@/lib/cache/redis-client";
 
 export const FILE_CACHE_TAG_PREFIX = "file:";
 const REDIS_FILE_CACHE_PREFIX = "file-cache:v1:";

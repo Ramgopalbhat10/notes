@@ -3,13 +3,14 @@
 import { create } from "zustand";
 import type { BlockNoteEditor } from "@blocknote/core";
 import { saveDocumentAction } from "@/app/actions/documents";
+import { extractResponseError, getErrorMessage } from "@/lib/http/client";
 import { useTreeStore } from "@/stores/tree";
 import { useSettingsStore } from "@/stores/settings";
 import {
   loadPersistentDocument,
   savePersistentDocument,
   subscribePersistentDocumentEvictions,
-} from "@/lib/persistent-document-cache";
+} from "@/lib/platform/persistent-document-cache";
 
 type EditorMode = "preview" | "edit";
 type EditorStatus = "idle" | "loading" | "saving" | "error" | "conflict";
@@ -116,19 +117,6 @@ function rememberDocument(key: string, value: CachedDocument): void {
   documentCache.set(key, value);
   void savePersistentDocument(key, value);
 }
-
-async function parseErrorResponse(response: Response): Promise<string> {
-  try {
-    const data = await response.json();
-    if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {
-      return data.error;
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return response.statusText || "Request failed";
-}
-
 export const useEditorStore = create<EditorState>((set, get) => ({
   ...initialState,
 
@@ -274,9 +262,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         return;
       }
       if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const message = typeof body?.error === "string" ? body.error : "Failed to load file";
-        throw new Error(message);
+        throw new Error(await extractResponseError(response, "Failed to load file"));
       }
       const data = (await response.json()) as {
         key: string;
@@ -335,7 +321,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if ((error as Error)?.name === "AbortError") {
         return;
       }
-      const message = error instanceof Error ? error.message : "Failed to load file";
+      const message = getErrorMessage(error, "Failed to load file");
       if (cached) {
         set((current) => ({
           ...current,
@@ -515,7 +501,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         }
         return false;
       }
-      const message = error instanceof Error ? error.message : "Failed to save file";
+      const message = getErrorMessage(error, "Failed to save file");
       set({ status: "error", error: message, errorSource: "save" });
       return false;
     } finally {

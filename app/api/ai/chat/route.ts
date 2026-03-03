@@ -10,9 +10,9 @@ import {
 } from "ai";
 
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/s3";
-import { s3BodyToString } from "@/lib/s3-body";
-import { normalizeFileKey } from "@/lib/fs-validation";
+import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
+import { s3BodyToString } from "@/lib/fs/s3-body";
+import { normalizeFileKey } from "@/lib/fs/fs-validation";
 
 export const maxDuration = 30;
 
