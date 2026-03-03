@@ -25,7 +25,9 @@ export function LeftSidebarFooter({
   const sessionState = authClient.useSession();
   const user = sessionState.data?.user;
   const [signingOut, setSigningOut] = useState(false);
-  const { settingsOpen, setSettingsOpen, openSettings } = useWorkspaceLayoutStore();
+  const settingsOpen = useWorkspaceLayoutStore((state) => state.settingsOpen);
+  const setSettingsOpen = useWorkspaceLayoutStore((state) => state.setSettingsOpen);
+  const openSettings = useWorkspaceLayoutStore((state) => state.openSettings);
 
   const displayName = user?.name || user?.email || "";
   const avatarImage = user?.image ?? undefined;

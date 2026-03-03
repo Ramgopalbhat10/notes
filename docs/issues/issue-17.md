@@ -55,6 +55,7 @@
 | 2026-03-03 | refactor | Restructured `components/app-shell/` into `hooks/` (5 hooks) and `sections/` (6 components), updated imports in `app-shell.tsx`. |
 | 2026-03-03 | refactor | Restructured `components/vault-workspace/` into `hooks/` (7 hooks) and `sections/` (6 components), updated imports in `index.tsx` and `app/files/[[...path]]/page.tsx`. |
 | 2026-03-03 | refactor | Restructured `lib/` into domain subfolders: `fs/` (6 files), `cache/` (2 files), `content/` (4 files), `platform/` (5 files). Updated ~40 files with new import paths. |
+| 2026-03-03 | fix | Fixed infinite re-render bug in `LeftSidebarFooter` caused by Zustand store destructuring without selectors. |
 
 ## Test Plan
 - Run `pnpm lint`.
