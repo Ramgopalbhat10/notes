@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { streamText } from "ai";
 
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
+import { clampText } from "@/lib/ai/text-utils";
 import { requireApiUser } from "@/lib/auth";
 
 type ActionType = "improve" | "summarize" | "expand";
@@ -94,13 +95,6 @@ function consumeRateLimit(identifier: string): boolean {
   }
   entry.count += 1;
   return true;
-}
-
-function clampText(text: string, maxChars: number): { text: string; truncated: boolean } {
-  if (text.length <= maxChars) {
-    return { text, truncated: false };
-  }
-  return { text: text.slice(0, maxChars), truncated: true };
 }
 
 function buildSystemPrompt(action: ActionType): string {

@@ -1,22 +1,18 @@
 # Progress
 
-Current issue: `docs/issues/issue-17.md`
+Current issue: `docs/issues/issue-18.md`
 
-Current section: Issue 17 — App-Wide Folder Restructuring
+Current section: Issue 18 — AI Route & Component Code Health Cleanup
 
 Previous tasks (latest completed batch only):
-- [x] Restructured `components/app-shell/` into `hooks/` and `sections/` subfolders.
-- [x] Restructured `components/vault-workspace/` into `hooks/` and `sections/` subfolders.
-- [x] Restructured `lib/` into domain-based subfolders (`fs/`, `cache/`, `content/`, `platform/`).
-- [x] Updated all imports across the codebase (~40 files).
-- [x] Fixed infinite re-render bug caused by Zustand store destructuring without selectors.
-- [x] Fixed root-cause infinite re-render: unstable inline callbacks in VaultWorkspace → useCallback.
-- [x] Fixed stale manifest cache issues with Next.js 16 stale-while-revalidate semantics.
-- [x] Fixed Sonar security issues and code review findings (see below).
-- [x] Ran quality gate checks (`pnpm lint`, `pnpm build`) successfully.
+- [x] Removed stale comment in sidebar-chat.tsx.
+- [x] Extracted shared `clampText` to `lib/ai/text-utils.ts`; updated both AI routes.
+- [x] Decomposed `move/route.ts` POST handler into `moveFolderInS3` + `moveFileInS3` helpers.
+- [x] Extracted `ChatErrorBanner`, `ModelSelectorPopover`, `ChatComposer` from `SidebarChat`.
+- [x] pnpm lint + pnpm build pass.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Commit and PR.
 
 Bug fix details (stale cache):
 - Root cause: `revalidateTag(tag, "max")` in Next.js 16 uses stale-while-revalidate, serving stale cached data on first request after invalidation.

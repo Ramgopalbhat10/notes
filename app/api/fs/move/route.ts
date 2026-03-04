@@ -133,6 +133,112 @@ function getMessage(error: unknown): string | undefined {
   return undefined;
 }
 
+async function moveFolderInS3(
+  fromRaw: string,
+  toRaw: string,
+  overwrite: boolean,
+): Promise<void> {
+  const fromPrefix = normalizeFolderPrefix(fromRaw);
+  const toPrefix = normalizeFolderPrefix(toRaw);
+  const bucket = getBucket();
+  const client = getS3Client();
+  const fromFull = applyVaultPrefix(fromPrefix);
+  const toFull = applyVaultPrefix(toPrefix);
+
+  const sourceKeys = await listKeys(bucket, fromFull);
+  if (sourceKeys.length === 0) {
+    throw Object.assign(new Error("Source folder not found"), { status: 404 }) as StatusError;
+  }
+
+  if (!overwrite) {
+    await ensureDestClear(bucket, toFull);
+  }
+
+  const copyResults: string[] = [];
+  for (const sourceKey of sourceKeys) {
+    const relative = sourceKey.slice(fromFull.length);
+    const targetKey = `${toFull}${relative}`;
+    await client.send(
+      new CopyObjectCommand({
+        Bucket: bucket,
+        CopySource: encodeCopySource(bucket, sourceKey),
+        Key: targetKey,
+        MetadataDirective: "COPY",
+      }),
+    );
+    copyResults.push(targetKey);
+  }
+
+  await deleteKeys(bucket, sourceKeys);
+
+  await revalidateFileTags([...toRelativeKeys(sourceKeys), ...toRelativeKeys(copyResults)]);
+  for (let index = 0; index < sourceKeys.length; index += 1) {
+    const sourceKey = stripVaultPrefix(sourceKeys[index] ?? "");
+    const targetKey = stripVaultPrefix(copyResults[index] ?? "");
+    if (sourceKey && targetKey && !sourceKey.endsWith("/") && !targetKey.endsWith("/")) {
+      void renameFileMeta(sourceKey, targetKey);
+    }
+  }
+
+  // Incrementally update manifest instead of invalidating
+  const { moveFolder } = await import("@/lib/manifest-updater");
+  await moveFolder({ oldPrefix: fromPrefix, newPrefix: toPrefix });
+}
+
+async function moveFileInS3(
+  fromRaw: string,
+  toRaw: string,
+  overwrite: boolean,
+  ifMatchEtag: string | undefined,
+): Promise<string | undefined> {
+  const fromKey = normalizeFileKey(fromRaw);
+  const toKey = normalizeFileKey(toRaw);
+  const bucket = getBucket();
+  const client = getS3Client();
+  const fromFull = applyVaultPrefix(fromKey);
+  const toFull = applyVaultPrefix(toKey);
+
+  if (!overwrite) {
+    try {
+      await client.send(new HeadObjectCommand({ Bucket: bucket, Key: toFull }));
+      throw Object.assign(new Error("Destination already exists"), { status: 409 }) as StatusError;
+    } catch (error) {
+      const status = getStatus(error);
+      if (status && status !== 404) {
+        throw error;
+      }
+    }
+  }
+
+  if (ifMatchEtag) {
+    const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: fromFull }));
+    const currentEtag = head.ETag;
+    if (!currentEtag || currentEtag.replace(/"/g, "") !== ifMatchEtag.replace(/"/g, "")) {
+      throw Object.assign(new Error("ETag mismatch"), { status: 409 }) as StatusError;
+    }
+  }
+
+  const copyResult = await client.send(
+    new CopyObjectCommand({
+      Bucket: bucket,
+      CopySource: encodeCopySource(bucket, fromFull),
+      Key: toFull,
+      MetadataDirective: "COPY",
+    }),
+  );
+
+  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: fromFull }));
+
+  await revalidateFileTags([fromKey, toKey]);
+  void renameFileMeta(fromKey, toKey);
+
+  // Incrementally update manifest instead of invalidating
+  const { moveFile } = await import("@/lib/manifest-updater");
+  await moveFile({ oldKey: fromKey, newKey: toKey });
+
+  return copyResult.CopyObjectResult?.ETag ?? undefined;
+}
+
 export async function POST(request: NextRequest) {
   const authRes = await requireApiUser(request);
   if (!authRes.ok) {
@@ -154,126 +260,13 @@ export async function POST(request: NextRequest) {
       throw Object.assign(new Error("Folder moves must target a folder prefix"), { status: 400 });
     }
 
-    const bucket = getBucket();
-    const client = getS3Client();
-
     if (isFolder) {
-      const fromPrefix = normalizeFolderPrefix(fromRaw);
-      const toPrefix = normalizeFolderPrefix(toRaw);
-      const fromFull = applyVaultPrefix(fromPrefix);
-      const toFull = applyVaultPrefix(toPrefix);
-
-      const sourceKeys = await listKeys(bucket, fromFull);
-      if (sourceKeys.length === 0) {
-        const error: StatusError = Object.assign(new Error("Source folder not found"), { status: 404 });
-        throw error;
-      }
-
-      if (!overwrite) {
-        await ensureDestClear(bucket, toFull);
-      }
-
-      const copyResults = [] as string[];
-      for (const sourceKey of sourceKeys) {
-        const relative = sourceKey.slice(fromFull.length);
-        const targetKey = `${toFull}${relative}`;
-        await client.send(
-          new CopyObjectCommand({
-            Bucket: bucket,
-            CopySource: encodeCopySource(bucket, sourceKey),
-            Key: targetKey,
-            MetadataDirective: "COPY",
-          }),
-        );
-        copyResults.push(targetKey);
-      }
-
-      await deleteKeys(bucket, sourceKeys);
-
-      const sourceRelatives = toRelativeKeys(sourceKeys);
-      const targetRelatives = toRelativeKeys(copyResults);
-      await revalidateFileTags([...sourceRelatives, ...targetRelatives]);
-      for (let index = 0; index < sourceKeys.length; index += 1) {
-        const sourceKey = stripVaultPrefix(sourceKeys[index] ?? "");
-        const targetKey = stripVaultPrefix(copyResults[index] ?? "");
-        if (
-          sourceKey &&
-          targetKey &&
-          !sourceKey.endsWith("/") &&
-          !targetKey.endsWith("/")
-        ) {
-          void renameFileMeta(sourceKey, targetKey);
-        }
-      }
-
-      // Incrementally update manifest instead of invalidating
-      const { moveFolder } = await import("@/lib/manifest-updater");
-      await moveFolder({ oldPrefix: fromPrefix, newPrefix: toPrefix });
-
+      await moveFolderInS3(fromRaw, toRaw, overwrite);
       return NextResponse.json({ etag: undefined });
     }
 
-    const fromKey = normalizeFileKey(fromRaw);
-    const toKey = normalizeFileKey(toRaw);
-    const fromFull = applyVaultPrefix(fromKey);
-    const toFull = applyVaultPrefix(toKey);
-
-    if (!overwrite) {
-      try {
-        await client.send(
-          new HeadObjectCommand({
-            Bucket: bucket,
-            Key: toFull,
-          }),
-        );
-        const error: StatusError = Object.assign(new Error("Destination already exists"), { status: 409 });
-        throw error;
-      } catch (error) {
-        const status = getStatus(error);
-        if (status && status !== 404) {
-          throw error;
-        }
-      }
-    }
-
-    if (ifMatchEtag) {
-      const head = await client.send(
-        new HeadObjectCommand({
-          Bucket: bucket,
-          Key: fromFull,
-        }),
-      );
-      const currentEtag = head.ETag;
-      if (!currentEtag || currentEtag.replace(/"/g, "") !== ifMatchEtag.replace(/"/g, "")) {
-        const mismatch: StatusError = Object.assign(new Error("ETag mismatch"), { status: 409 });
-        throw mismatch;
-      }
-    }
-
-    const copyResult = await client.send(
-      new CopyObjectCommand({
-        Bucket: bucket,
-        CopySource: encodeCopySource(bucket, fromFull),
-        Key: toFull,
-        MetadataDirective: "COPY",
-      }),
-    );
-
-    await client.send(
-      new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: fromFull,
-      }),
-    );
-
-    await revalidateFileTags([fromKey, toKey]);
-    void renameFileMeta(fromKey, toKey);
-
-    // Incrementally update manifest instead of invalidating
-    const { moveFile } = await import("@/lib/manifest-updater");
-    await moveFile({ oldKey: fromKey, newKey: toKey });
-
-    return NextResponse.json({ etag: copyResult.CopyObjectResult?.ETag ?? undefined });
+    const etag = await moveFileInS3(fromRaw, toRaw, overwrite, ifMatchEtag);
+    return NextResponse.json({ etag });
   } catch (error) {
     return handleError(error);
   }

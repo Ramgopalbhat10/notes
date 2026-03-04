@@ -504,7 +504,6 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
 
   const [copyingId, setCopyingId] = useState<string | null>(null);
 
-  // Clear chat function exposed to parent
   const clearChat = useCallback(() => {
     void stop().catch((stopError) => {
       console.error("Failed to stop chat stream", stopError);
@@ -727,16 +726,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
 
   return (
     <div ref={sidebarChatRootRef} className="flex h-full flex-col text-[13px]">
-      {error ? (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 mx-3 mt-2 text-xs text-destructive">
-          <div className="flex items-center justify-between gap-3">
-            <span>{error.message}</span>
-            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => clearError()}>
-              Dismiss
-            </Button>
-          </div>
-        </div>
-      ) : null}
+      <ChatErrorBanner error={error} onDismiss={clearError} />
 
       {/* Conversation area */}
       <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -808,292 +798,517 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
         </Conversation>
       </div>
 
-      {/* ChatGPT-style input area */}
-      <div ref={composerContainerRef} className="shrink-0 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        <div className="rounded-xl border border-border/60 bg-muted/40">
-          {/* Top section: Context file chip */}
-          {contextFile ? (
-            <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
-              <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 border border-border/40 text-xs text-muted-foreground">
-                <File className="h-3 w-3" />
-                <span className="max-w-[150px] truncate">{contextFileName}</span>
+      <ChatComposer
+        composerContainerRef={composerContainerRef}
+        contextFile={contextFile}
+        contextFileName={contextFileName}
+        onRemoveContext={handleRemoveContext}
+        inputRef={composerInputRef}
+        draft={draft}
+        onDraftChange={setDraft}
+        onKeyDown={handleKeyDown}
+        isMobile={isMobile}
+        onFocus={ensureComposerVisible}
+        disabled={composerDisabled}
+        isStreaming={isStreaming}
+        onStop={handleStop}
+        onSubmit={handleSubmit}
+        modelSelectOpen={modelSelectOpen}
+        onModelSelectOpenChange={setModelSelectOpen}
+        selectedModelName={selectedModelName}
+        modelSelectPortalContainer={modelSelectPortalContainer}
+        modelSearchInputRef={modelSearchInputRef}
+        modelSearchQuery={modelSearchQuery}
+        onModelSearchQueryChange={setModelSearchQuery}
+        providerOptions={providerOptions}
+        featureOptions={featureOptions}
+        showModelFilters={showModelFilters}
+        onToggleModelFilters={() => setShowModelFilters((v) => !v)}
+        hasActiveFilters={hasActiveFilters}
+        providerFilter={providerFilter}
+        onProviderFilter={setProviderFilter}
+        featureFilter={featureFilter}
+        onFeatureFilter={setFeatureFilter}
+        filteredModelGroups={filteredModelGroups}
+        modelsLoading={modelsLoading}
+        modelGroups={modelGroups}
+        selectedModel={selectedModel}
+        onSelectModel={setSelectedModel}
+        providerFiltersScrollRef={providerFiltersScrollRef}
+        onProviderFiltersWheel={handleProviderFiltersWheel}
+      />
+    </div>
+  );
+}
+
+type ChatErrorBannerProps = {
+  error: Error | null | undefined;
+  onDismiss: () => void;
+};
+
+function ChatErrorBanner({ error, onDismiss }: ChatErrorBannerProps) {
+  if (!error) {
+    return null;
+  }
+  return (
+    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 mx-3 mt-2 text-xs text-destructive">
+      <div className="flex items-center justify-between gap-3">
+        <span>{error.message}</span>
+        <Button variant="ghost" size="sm" className="h-6 px-2" onClick={onDismiss}>
+          Dismiss
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type ModelSelectorPopoverProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedModelName: string;
+  isMobile: boolean;
+  container: HTMLElement | null;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
+  searchQuery: string;
+  onSearchQueryChange: (q: string) => void;
+  providerOptions: string[];
+  featureOptions: ModelFeatureIcon[];
+  showFilters: boolean;
+  onToggleFilters: () => void;
+  hasActiveFilters: boolean;
+  providerFilter: string;
+  onProviderFilter: (p: string) => void;
+  featureFilter: string;
+  onFeatureFilter: (f: string) => void;
+  filteredModelGroups: ModelGroup[];
+  modelsLoading: boolean;
+  modelGroups: ModelGroup[];
+  selectedModel: string;
+  onSelectModel: (id: string) => void;
+  providerFiltersScrollRef: React.RefObject<HTMLDivElement | null>;
+  onProviderFiltersWheel: (event: React.WheelEvent<HTMLDivElement>) => void;
+};
+
+function ModelSelectorPopover({
+  open,
+  onOpenChange,
+  selectedModelName,
+  isMobile,
+  container,
+  searchInputRef,
+  searchQuery,
+  onSearchQueryChange,
+  providerOptions,
+  featureOptions,
+  showFilters,
+  onToggleFilters,
+  hasActiveFilters,
+  providerFilter,
+  onProviderFilter,
+  featureFilter,
+  onFeatureFilter,
+  filteredModelGroups,
+  modelsLoading,
+  modelGroups,
+  selectedModel,
+  onSelectModel,
+  providerFiltersScrollRef,
+  onProviderFiltersWheel,
+}: ModelSelectorPopoverProps) {
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-7 gap-1 border-border/40 bg-background/80 px-2 text-xs font-normal text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+        >
+          <span className="max-w-[140px] truncate">{selectedModelName}</span>
+          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align={isMobile ? "center" : "start"}
+        side="top"
+        sideOffset={8}
+        avoidCollisions
+        collisionPadding={8}
+        className="w-[min(24rem,calc(100vw-2rem))] max-h-[min(70dvh,460px)] overflow-hidden p-0"
+        container={container ?? undefined}
+      >
+        <div className="border-b bg-popover px-2 py-1.5">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search models..."
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+                className="h-8 border-border/60 bg-background pl-7 pr-7 text-xs"
+              />
+              {searchQuery ? (
                 <button
                   type="button"
-                  onClick={handleRemoveContext}
-                  className="ml-0.5 rounded-sm hover:bg-accent/60 p-0.5 transition-colors"
-                  aria-label="Remove context file"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  onClick={() => onSearchQueryChange("")}
+                  aria-label="Clear model search"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
-              </div>
+              ) : null}
+            </div>
+            {providerOptions.length > 1 || featureOptions.length > 0 ? (
+              <button
+                type="button"
+                onClick={onToggleFilters}
+                className={cn(
+                  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors",
+                  hasActiveFilters
+                    ? "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15"
+                    : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+                aria-label="Toggle model filters"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+          {(providerOptions.length > 1 || featureOptions.length > 0) && showFilters ? (
+            <div className="mt-1.5 space-y-1.5">
+              {providerOptions.length > 1 ? (
+                <div
+                  ref={providerFiltersScrollRef}
+                  onWheel={onProviderFiltersWheel}
+                  className={cn(
+                    "w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
+                    isMobile
+                      ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
+                      : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
+                  )}
+                >
+                  <div className="flex w-max min-w-full gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onProviderFilter("all")}
+                      className={cn(
+                        "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                        providerFilter === "all"
+                          ? "border-primary/50 bg-primary/10 text-foreground"
+                          : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                      )}
+                    >
+                      All providers
+                    </button>
+                    {providerOptions.map((provider) => (
+                      <button
+                        key={provider}
+                        type="button"
+                        onClick={() => onProviderFilter(provider)}
+                        className={cn(
+                          "max-w-[140px] shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                          providerFilter === provider
+                            ? "border-primary/50 bg-primary/10 text-foreground"
+                            : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <span className="block truncate">{toProviderLabel(provider)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {featureOptions.length > 0 ? (
+                <div
+                  onWheel={onProviderFiltersWheel}
+                  className={cn(
+                    "w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
+                    isMobile
+                      ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
+                      : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
+                  )}
+                >
+                  <div className="flex w-max min-w-full gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onFeatureFilter("all")}
+                      className={cn(
+                        "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                        featureFilter === "all"
+                          ? "border-primary/50 bg-primary/10 text-foreground"
+                          : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                      )}
+                    >
+                      Any feature
+                    </button>
+                    {featureOptions.map((feature) => (
+                      <button
+                        key={feature.tag}
+                        type="button"
+                        onClick={() => onFeatureFilter(feature.tag)}
+                        className={cn(
+                          "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+                          featureFilter === feature.tag
+                            ? "border-primary/50 bg-primary/10 text-foreground"
+                            : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <feature.Icon className="h-3 w-3" />
+                        <span>{feature.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
+        </div>
+        <div className="max-h-[min(62dvh,420px)] overflow-y-auto px-1 pb-1">
+          {modelsLoading ? (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading models...</div>
+          ) : null}
+          {!modelsLoading && filteredModelGroups.length === 0 ? (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              No models match your filters.
+            </div>
+          ) : null}
+          {!modelsLoading && modelGroups.length === 0 ? (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">No models available</div>
+          ) : null}
+          {filteredModelGroups.map((group, groupIndex) => (
+            <div key={group.provider}>
+              {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
+              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                {toProviderLabel(group.provider)}
+              </div>
+              {group.models.map((model) => {
+                const isSelected = model.id === selectedModel;
+                const features = getModelFeatureIcons(model);
+                return (
+                  <button
+                    key={model.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectModel(model.id);
+                      onOpenChange(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
+                      isSelected
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground hover:bg-accent/80",
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{model.name}</span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      {features.length > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-1.5 py-0.5 text-muted-foreground">
+                          {features.map((feature) => (
+                            <span key={`${model.id}-${feature.tag}`} className="inline-flex" title={feature.label}>
+                              <feature.Icon className="h-3 w-3" aria-hidden="true" />
+                              <span className="sr-only">{feature.label}</span>
+                            </span>
+                          ))}
+                        </span>
+                      ) : null}
+                      {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
-          {/* Middle section: Textarea */}
-          <div className="px-3 py-1.5">
-            <Textarea
-              ref={composerInputRef}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => {
-                if (isMobile) {
-                  ensureComposerVisible();
-                }
-              }}
-              placeholder="Ask anything..."
-              disabled={composerDisabled}
-              className="min-h-[36px] max-h-[120px] resize-none border-0 bg-transparent p-0 text-sm shadow-none ring-0 outline-none placeholder:text-muted-foreground/60 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              rows={1}
+type ChatComposerProps = {
+  composerContainerRef: React.RefObject<HTMLDivElement | null>;
+  contextFile: string | null;
+  contextFileName: string | null;
+  onRemoveContext: () => void;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  draft: string;
+  onDraftChange: (value: string) => void;
+  onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  isMobile: boolean;
+  onFocus: () => void;
+  disabled: boolean;
+  isStreaming: boolean;
+  onStop: () => void;
+  onSubmit: () => void;
+  modelSelectOpen: boolean;
+  onModelSelectOpenChange: (open: boolean) => void;
+  selectedModelName: string;
+  modelSelectPortalContainer: HTMLElement | null;
+  modelSearchInputRef: React.RefObject<HTMLInputElement | null>;
+  modelSearchQuery: string;
+  onModelSearchQueryChange: (q: string) => void;
+  providerOptions: string[];
+  featureOptions: ModelFeatureIcon[];
+  showModelFilters: boolean;
+  onToggleModelFilters: () => void;
+  hasActiveFilters: boolean;
+  providerFilter: string;
+  onProviderFilter: (p: string) => void;
+  featureFilter: string;
+  onFeatureFilter: (f: string) => void;
+  filteredModelGroups: ModelGroup[];
+  modelsLoading: boolean;
+  modelGroups: ModelGroup[];
+  selectedModel: string;
+  onSelectModel: (id: string) => void;
+  providerFiltersScrollRef: React.RefObject<HTMLDivElement | null>;
+  onProviderFiltersWheel: (event: React.WheelEvent<HTMLDivElement>) => void;
+};
+
+function ChatComposer({
+  composerContainerRef,
+  contextFile,
+  contextFileName,
+  onRemoveContext,
+  inputRef,
+  draft,
+  onDraftChange,
+  onKeyDown,
+  isMobile,
+  onFocus,
+  disabled,
+  isStreaming,
+  onStop,
+  onSubmit,
+  modelSelectOpen,
+  onModelSelectOpenChange,
+  selectedModelName,
+  modelSelectPortalContainer,
+  modelSearchInputRef,
+  modelSearchQuery,
+  onModelSearchQueryChange,
+  providerOptions,
+  featureOptions,
+  showModelFilters,
+  onToggleModelFilters,
+  hasActiveFilters,
+  providerFilter,
+  onProviderFilter,
+  featureFilter,
+  onFeatureFilter,
+  filteredModelGroups,
+  modelsLoading,
+  modelGroups,
+  selectedModel,
+  onSelectModel,
+  providerFiltersScrollRef,
+  onProviderFiltersWheel,
+}: ChatComposerProps) {
+  return (
+    <div ref={composerContainerRef} className="shrink-0 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="rounded-xl border border-border/60 bg-muted/40">
+        {/* Top section: Context file chip */}
+        {contextFile ? (
+          <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/60 border border-border/40 text-xs text-muted-foreground">
+              <File className="h-3 w-3" />
+              <span className="max-w-[150px] truncate">{contextFileName}</span>
+              <button
+                type="button"
+                onClick={onRemoveContext}
+                className="ml-0.5 rounded-sm hover:bg-accent/60 p-0.5 transition-colors"
+                aria-label="Remove context file"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Middle section: Textarea */}
+        <div className="px-3 py-1.5">
+          <Textarea
+            ref={inputRef}
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={() => {
+              if (isMobile) {
+                onFocus();
+              }
+            }}
+            placeholder="Ask anything..."
+            disabled={disabled}
+            className="min-h-[36px] max-h-[120px] resize-none border-0 bg-transparent p-0 text-sm shadow-none ring-0 outline-none placeholder:text-muted-foreground/60 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            rows={1}
+          />
+        </div>
+
+        {/* Bottom section: Attachments, model selector, send button */}
+        <div className="flex items-center justify-between px-3 pb-2.5">
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  disabled
+                  aria-label="Attach file"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Attach file (coming soon)</TooltipContent>
+            </Tooltip>
+
+            <ModelSelectorPopover
+              open={modelSelectOpen}
+              onOpenChange={onModelSelectOpenChange}
+              selectedModelName={selectedModelName}
+              isMobile={isMobile}
+              container={modelSelectPortalContainer}
+              searchInputRef={modelSearchInputRef}
+              searchQuery={modelSearchQuery}
+              onSearchQueryChange={onModelSearchQueryChange}
+              providerOptions={providerOptions}
+              featureOptions={featureOptions}
+              showFilters={showModelFilters}
+              onToggleFilters={onToggleModelFilters}
+              hasActiveFilters={hasActiveFilters}
+              providerFilter={providerFilter}
+              onProviderFilter={onProviderFilter}
+              featureFilter={featureFilter}
+              onFeatureFilter={onFeatureFilter}
+              filteredModelGroups={filteredModelGroups}
+              modelsLoading={modelsLoading}
+              modelGroups={modelGroups}
+              selectedModel={selectedModel}
+              onSelectModel={onSelectModel}
+              providerFiltersScrollRef={providerFiltersScrollRef}
+              onProviderFiltersWheel={onProviderFiltersWheel}
             />
           </div>
 
-          {/* Bottom section: Attachments, model selector, send button */}
-          <div className="flex items-center justify-between px-3 pb-2.5">
-            <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                    disabled
-                    aria-label="Attach file"
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">Attach file (coming soon)</TooltipContent>
-              </Tooltip>
-
-              <Popover open={modelSelectOpen} onOpenChange={setModelSelectOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-7 gap-1 border-border/40 bg-background/80 px-2 text-xs font-normal text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  >
-                    <span className="max-w-[140px] truncate">{selectedModelName}</span>
-                    <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align={isMobile ? "center" : "start"}
-                  side="top"
-                  sideOffset={8}
-                  avoidCollisions
-                  collisionPadding={8}
-                  className="w-[min(24rem,calc(100vw-2rem))] max-h-[min(70dvh,460px)] overflow-hidden p-0"
-                  container={modelSelectPortalContainer ?? undefined}
-                >
-                  <div className="border-b bg-popover px-2 py-1.5">
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
-                      <div className="relative min-w-0 flex-1">
-                        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          ref={modelSearchInputRef}
-                          type="text"
-                          placeholder="Search models..."
-                          value={modelSearchQuery}
-                          onChange={(event) => setModelSearchQuery(event.target.value)}
-                          className="h-8 border-border/60 bg-background pl-7 pr-7 text-xs"
-                        />
-                        {modelSearchQuery ? (
-                          <button
-                            type="button"
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            onClick={() => setModelSearchQuery("")}
-                            aria-label="Clear model search"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        ) : null}
-                      </div>
-                      {providerOptions.length > 1 || featureOptions.length > 0 ? (
-                        <button
-                          type="button"
-                          onClick={() => setShowModelFilters((current) => !current)}
-                          className={cn(
-                            "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors",
-                            hasActiveFilters
-                              ? "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15"
-                              : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                          )}
-                          aria-label="Toggle model filters"
-                        >
-                          <SlidersHorizontal className="h-3.5 w-3.5" />
-                        </button>
-                      ) : null}
-                    </div>
-                    {(providerOptions.length > 1 || featureOptions.length > 0) && showModelFilters ? (
-                      <div className="mt-1.5 space-y-1.5">
-                        {providerOptions.length > 1 ? (
-                          <div
-                            ref={providerFiltersScrollRef}
-                            onWheel={handleProviderFiltersWheel}
-                            className={cn(
-                              "w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
-                              isMobile
-                                ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
-                                : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
-                            )}
-                          >
-                            <div className="flex w-max min-w-full gap-1">
-                              <button
-                                type="button"
-                                onClick={() => setProviderFilter("all")}
-                                className={cn(
-                                  "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                                  providerFilter === "all"
-                                    ? "border-primary/50 bg-primary/10 text-foreground"
-                                    : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                                )}
-                              >
-                                All providers
-                              </button>
-                              {providerOptions.map((provider) => (
-                                <button
-                                  key={provider}
-                                  type="button"
-                                  onClick={() => setProviderFilter(provider)}
-                                  className={cn(
-                                    "max-w-[140px] shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                                    providerFilter === provider
-                                      ? "border-primary/50 bg-primary/10 text-foreground"
-                                      : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                                  )}
-                                >
-                                  <span className="block truncate">{toProviderLabel(provider)}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-                        {featureOptions.length > 0 ? (
-                          <div
-                            onWheel={handleProviderFiltersWheel}
-                            className={cn(
-                              "w-full overflow-x-auto overflow-y-hidden pb-1 pr-1",
-                              isMobile
-                                ? "[scrollbar-width:none] [-ms-overflow-style:none] [touch-action:pan-x] [&::-webkit-scrollbar]:hidden"
-                                : "[scrollbar-width:thin] [touch-action:auto] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80 [&::-webkit-scrollbar-track]:bg-transparent",
-                            )}
-                          >
-                            <div className="flex w-max min-w-full gap-1">
-                              <button
-                                type="button"
-                                onClick={() => setFeatureFilter("all")}
-                                className={cn(
-                                  "shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                                  featureFilter === "all"
-                                    ? "border-primary/50 bg-primary/10 text-foreground"
-                                    : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                                )}
-                              >
-                                Any feature
-                              </button>
-                              {featureOptions.map((feature) => (
-                                <button
-                                  key={feature.tag}
-                                  type="button"
-                                  onClick={() => setFeatureFilter(feature.tag)}
-                                  className={cn(
-                                    "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-                                    featureFilter === feature.tag
-                                      ? "border-primary/50 bg-primary/10 text-foreground"
-                                      : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
-                                  )}
-                                >
-                                  <feature.Icon className="h-3 w-3" />
-                                  <span>{feature.label}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="max-h-[min(62dvh,420px)] overflow-y-auto px-1 pb-1">
-                    {modelsLoading ? (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading models...</div>
-                    ) : null}
-                    {!modelsLoading && filteredModelGroups.length === 0 ? (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        No models match your filters.
-                      </div>
-                    ) : null}
-                    {!modelsLoading && modelGroups.length === 0 ? (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">No models available</div>
-                    ) : null}
-                    {filteredModelGroups.map((group, groupIndex) => (
-                      <div key={group.provider}>
-                        {groupIndex > 0 && <div className="my-1 h-px bg-border" />}
-                        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                          {toProviderLabel(group.provider)}
-                        </div>
-                        {group.models.map((model) => {
-                          const isSelected = model.id === selectedModel;
-                          const features = getModelFeatureIcons(model);
-                          return (
-                            <button
-                              key={model.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedModel(model.id);
-                                setModelSelectOpen(false);
-                              }}
-                              className={cn(
-                                "flex w-full items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors",
-                                isSelected
-                                  ? "bg-accent text-accent-foreground"
-                                  : "text-foreground hover:bg-accent/80",
-                              )}
-                            >
-                              <span className="min-w-0 flex-1 truncate">{model.name}</span>
-                              <span className="flex shrink-0 items-center gap-1">
-                                {features.length > 0 ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-1.5 py-0.5 text-muted-foreground">
-                                    {features.map((feature) => (
-                                      <span key={`${model.id}-${feature.tag}`} className="inline-flex" title={feature.label}>
-                                        <feature.Icon className="h-3 w-3" aria-hidden="true" />
-                                        <span className="sr-only">{feature.label}</span>
-                                      </span>
-                                    ))}
-                                  </span>
-                                ) : null}
-                                {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <Button
-              type="button"
-              size="icon"
-              variant={draft.trim() ? "default" : "ghost"}
-              className={cn(
-                "h-8 w-8 rounded-lg transition-colors",
-                draft.trim() ? "" : "text-muted-foreground"
-              )}
-              onClick={isStreaming ? handleStop : () => void handleSubmit()}
-              disabled={isStreaming ? false : composerDisabled || !draft.trim()}
-            >
-              {isStreaming ? (
-                <Square className="h-4 w-4" />
-              ) : (
-                <SendHorizontal className="h-4 w-4" />
-              )}
-              <span className="sr-only">{isStreaming ? "Stop" : "Send"}</span>
-            </Button>
-          </div>
+          <Button
+            type="button"
+            size="icon"
+            variant={draft.trim() ? "default" : "ghost"}
+            className={cn(
+              "h-8 w-8 rounded-lg transition-colors",
+              draft.trim() ? "" : "text-muted-foreground"
+            )}
+            onClick={isStreaming ? () => void onStop() : () => void onSubmit()}
+            disabled={isStreaming ? false : disabled || !draft.trim()}
+          >
+            {isStreaming ? (
+              <Square className="h-4 w-4" />
+            ) : (
+              <SendHorizontal className="h-4 w-4" />
+            )}
+            <span className="sr-only">{isStreaming ? "Stop" : "Send"}</span>
+          </Button>
         </div>
       </div>
     </div>
