@@ -31,10 +31,23 @@ const globalTransport = new TextStreamChatTransport<UIMessage>({
 });
 
 function createChatSessionId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
+  if (typeof crypto !== "undefined") {
+    if (typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    if (typeof crypto.getRandomValues === "function") {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      return `${Date.now()}-${array[0].toString(36)}`;
+    }
   }
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  
+  // Fallback for environments without crypto (should be rare in modern browsers/Node)
+  const timestamp = Date.now();
+  const randomStr = "xxxxxxxx".replace(/[x]/g, () => {
+    return ((Math.random() * 16) | 0).toString(16);
+  });
+  return `${timestamp}-${randomStr}`;
 }
 
 function createChatSession(): Chat<UIMessage> {

@@ -15,6 +15,7 @@ Previous tasks (latest completed batch only):
 - [x] Rewrote sidebar-chat.tsx as ~170-line thin orchestrator.
 - [x] Created index.tsx barrel export.
 - [x] pnpm lint + pnpm build pass.
+- [x] Fixed SonarCloud weak cryptography issue: Replaced Math.random() with crypto.getRandomValues() for session ID generation.
 
 Next tasks:
 - [ ] Commit and PR.

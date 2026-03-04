@@ -71,6 +71,7 @@ components/ai-chat/
 | Date | Unit | Summary |
 |---|---|---|
 | 2026-03-04 | refactor | Decomposed 1564-line sidebar-chat.tsx into feature-module. Extracted types.ts, utils.ts, hooks/use-chat-session.ts, hooks/use-models.ts, model-selector/ (index.tsx, model-list.tsx, model-filters.tsx, types.ts, utils.ts), chat-message.tsx, chat-error-banner.tsx, chat-empty-state.tsx, chat-composer.tsx (10 props, down from 38), index.tsx barrel. Simplified auto-scroll from 3-effect pinned-to-top to scroll-to-bottom. ModelSelector is now self-contained (reads useChatStore directly). sidebar-chat.tsx is now ~170 lines. Lint + build pass. |
+| 2026-03-04 | security | Fixed SonarCloud weak cryptography issue: Replaced `Math.random()` with `crypto.getRandomValues()` in `createChatSessionId`. |
 
 ## Test Plan
 - `pnpm lint` passes.
