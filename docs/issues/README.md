@@ -23,3 +23,4 @@ Issue template: `docs/issues/template.md`
 | 15 | Refactor Workflow to Label-Based Control System | resolved | None | `AGENTS.md`, `docs/WORKFLOW.md`, `docs/WORKFLOW_LABELS.md` |
 | 16 | Massive Refactor Roadmap Execution (Stability-First) | resolved | None | `lib/http/client.ts`, `stores/*`, `components/*`, `lib/tree/*` |
 | 17 | App-Wide Folder Restructuring | resolved | None | `components/app-shell/*`, `components/vault-workspace/*`, `lib/*` |
+| 18 | AI Route & Component Code Health Cleanup | in-progress | None | `lib/ai/text-utils.ts`, `app/api/ai/*`, `app/api/fs/move/route.ts`, `components/ai-chat/sidebar-chat.tsx` |

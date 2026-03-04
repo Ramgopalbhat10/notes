@@ -10,6 +10,7 @@ import {
 } from "ai";
 
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
+import { clampText } from "@/lib/ai/text-utils";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { s3BodyToString } from "@/lib/fs/s3-body";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
@@ -166,7 +167,7 @@ async function resolveFileContext(file: ChatRequestBody["file"]): Promise<FileCo
 
   const sanitized = sanitizeContext(excerpt);
   const redacted = redactSecrets(sanitized);
-  const { text, truncated } = clampText(redacted, MAX_CONTEXT_CHARS);
+  const { text, truncated } = clampText(redacted, MAX_CONTEXT_CHARS, { trailingEllipsis: true });
 
   return {
     key,
@@ -307,13 +308,6 @@ function redactSecrets(text: string): string {
     (output, pattern) => output.replace(pattern, "[REDACTED]"),
     redactedUrlCreds,
   );
-}
-
-function clampText(text: string, maxChars: number): { text: string; truncated: boolean } {
-  if (text.length <= maxChars) {
-    return { text, truncated: false };
-  }
-  return { text: `${text.slice(0, maxChars)}\n…`, truncated: true };
 }
 
 function normalizeError(error: unknown): string {
