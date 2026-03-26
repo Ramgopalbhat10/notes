@@ -5,6 +5,13 @@ export function normalizeEtag(value: string | null | undefined): string | null {
   return value.replace(/^W\//i, "").replace(/"/g, "");
 }
 
+export function formatIfNoneMatch(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+  return `"${value}"`;
+}
+
 export function parseIfNoneMatch(header: string | null): string[] {
   if (!header) {
     return [];

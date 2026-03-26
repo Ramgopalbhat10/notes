@@ -118,18 +118,3 @@ export function filterOpenFolders(
   });
   return result;
 }
-
-
-export function sanitizeEtag(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-  return value.replace(/^W\//i, "").replace(/"/g, "");
-}
-
-export function formatIfNoneMatch(value: string | null): string | null {
-  if (!value) {
-    return null;
-  }
-  return `"${value}"`;
-}

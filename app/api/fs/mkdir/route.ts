@@ -1,48 +1,13 @@
 import { HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
-import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
-
-type StatusError = Error & {
-  status?: number;
-  $metadata?: {
-    httpStatusCode?: number;
-  };
-};
-
-function getStatus(error: unknown): number | undefined {
-  if (error && typeof error === "object") {
-    const status = (error as StatusError).status;
-    if (typeof status === "number") {
-      return status;
-    }
-    const metaStatus = (error as StatusError).$metadata?.httpStatusCode;
-    if (typeof metaStatus === "number") {
-      return metaStatus;
-    }
-  }
-  return undefined;
-}
-
-function getMessage(error: unknown): string | undefined {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-  return undefined;
-}
+import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 function handleError(error: unknown) {
-  const status = getStatus(error);
-  const message = getMessage(error) ?? "Failed to create folder";
+  const status = getErrorStatus(error);
+  const message = getErrorMessage(error) ?? "Failed to create folder";
   if (status === 409) {
     return NextResponse.json({ error: "Folder already exists" }, { status: 409 });
   }
@@ -77,7 +42,7 @@ export async function POST(request: NextRequest) {
       const conflict: StatusError = Object.assign(new Error("Folder already exists"), { status: 409 });
       throw conflict;
     } catch (error) {
-      const status = getStatus(error);
+      const status = getErrorStatus(error);
       if (status && status !== 404) {
         throw error;
       }

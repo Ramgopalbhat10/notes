@@ -11,13 +11,7 @@ import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import { deleteFileMeta } from "@/lib/fs/file-meta";
-
-type StatusError = Error & {
-  status?: number;
-  $metadata?: {
-    httpStatusCode?: number;
-  };
-};
+import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 async function listKeys(bucket: string, prefix: string) {
   const client = getS3Client();
@@ -70,36 +64,9 @@ async function deleteKeys(bucket: string, keys: string[]) {
   }
 }
 
-function getStatus(error: unknown): number | undefined {
-  if (error && typeof error === "object") {
-    const direct = (error as StatusError).status;
-    if (typeof direct === "number") {
-      return direct;
-    }
-    const metaStatus = (error as StatusError).$metadata?.httpStatusCode;
-    if (typeof metaStatus === "number") {
-      return metaStatus;
-    }
-  }
-  return undefined;
-}
-
-function getMessage(error: unknown): string | undefined {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-  return undefined;
-}
-
 function handleError(error: unknown) {
-  const status = getStatus(error);
-  const message = getMessage(error) ?? "Failed to delete folder";
+  const status = getErrorStatus(error);
+  const message = getErrorMessage(error) ?? "Failed to delete folder";
   if (status === 400) {
     return NextResponse.json({ error: message }, { status: 400 });
   }

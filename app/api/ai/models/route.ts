@@ -4,6 +4,8 @@ import {
   parseModelId,
   type GatewayLanguageModelOption,
 } from "@/lib/ai/models";
+import { jsonResponse } from "@/lib/http/response";
+import { safeString } from "@/lib/utils";
 
 const GATEWAY_MODELS_URL = "https://ai-gateway.vercel.sh/v1/models";
 const MODELS_REVALIDATE_SECONDS = 300;
@@ -42,7 +44,7 @@ export async function GET() {
     const models = ensureDefaultModel(languageModels, configuredDefault);
     const defaultModel = selectDefaultModel(configuredDefault, models);
 
-    return json(
+    return jsonResponse(
       {
         defaultModel,
         source: "gateway",
@@ -55,7 +57,7 @@ export async function GET() {
     const models = ensureDefaultModel(FALLBACK_LANGUAGE_MODELS, configuredDefault);
     const defaultModel = selectDefaultModel(configuredDefault, models);
 
-    return json(
+    return jsonResponse(
       {
         defaultModel,
         source: "fallback",
@@ -177,10 +179,6 @@ function prettifyModelName(modelId: string): string {
     .join(" ");
 }
 
-function safeString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
 function safeNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
@@ -200,11 +198,3 @@ function cacheHeaders(): HeadersInit {
   };
 }
 
-function json(data: ModelsResponse, init?: ResponseInit) {
-  const headers = new Headers(init?.headers);
-  headers.set("content-type", "application/json; charset=utf-8");
-  return new Response(JSON.stringify(data), {
-    ...init,
-    headers,
-  });
-}
