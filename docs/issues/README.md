@@ -25,3 +25,4 @@ Issue template: `docs/issues/template.md`
 | 17 | App-Wide Folder Restructuring | resolved | None | `components/app-shell/*`, `components/vault-workspace/*`, `lib/*` |
 | 18 | AI Route & Component Code Health Cleanup | resolved | None | `lib/ai/text-utils.ts`, `app/api/ai/*`, `app/api/fs/move/route.ts`, `components/ai-chat/sidebar-chat.tsx` |
 | 19 | SidebarChat Decomposition & Simplification | in-progress | None | `components/ai-chat/*` |
+| 20 | Next.js 16.2 Upgrade Verification & Runtime Alignment | in-progress | None | `package.json`, `pnpm-lock.yaml`, `next.config.ts`, `proxy.ts`, `.github/workflows/workflow-gates.yml` |

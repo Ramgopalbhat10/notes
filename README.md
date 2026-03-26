@@ -3,7 +3,7 @@
 A Next.js playground that explores a cached file-tree backed by S3 (Tigris) with rich editing UX. The app hydrates a prebuilt manifest (`file-tree.json`) from your bucket, renders it instantly on the client, and lazily loads markdown files as you select them.
 
 ## Prerequisites
-- Node.js 20+
+- Node.js 20.9+
 - pnpm 10+
 - Access to an S3-compatible bucket (Tigris) with credentials exposed in `.env`
 
