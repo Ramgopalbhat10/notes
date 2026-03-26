@@ -6,20 +6,12 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/fs/s3";
 import { normalizeFileKey, normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
-import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import { renameFileMeta } from "@/lib/fs/file-meta";
-
-type StatusError = Error & {
-  status?: number;
-  $metadata?: {
-    httpStatusCode?: number;
-  };
-};
+import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 const FOLDER_COPY_CONCURRENCY = 8;
 const DELETE_CHUNK_CONCURRENCY = 4;
@@ -123,8 +115,8 @@ async function deleteKeys(bucket: string, keys: string[]) {
 }
 
 function handleError(error: unknown) {
-  const status = getStatus(error);
-  const message = getMessage(error) ?? "Failed to move object";
+  const status = getErrorStatus(error);
+  const message = getErrorMessage(error) ?? "Failed to move object";
   if (status === 404) {
     return NextResponse.json({ error: "Source not found" }, { status: 404 });
   }
@@ -136,33 +128,6 @@ function handleError(error: unknown) {
   }
   console.error("Failed to move object", error);
   return NextResponse.json({ error: "Failed to move object" }, { status: 500 });
-}
-
-function getStatus(error: unknown): number | undefined {
-  if (error && typeof error === "object") {
-    const direct = (error as StatusError).status;
-    if (typeof direct === "number") {
-      return direct;
-    }
-    const metaStatus = (error as StatusError).$metadata?.httpStatusCode;
-    if (typeof metaStatus === "number") {
-      return metaStatus;
-    }
-  }
-  return undefined;
-}
-
-function getMessage(error: unknown): string | undefined {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-  return undefined;
 }
 
 async function moveFolderInS3(
@@ -238,7 +203,7 @@ async function moveFileInS3(
       await client.send(new HeadObjectCommand({ Bucket: bucket, Key: toFull }));
       throw Object.assign(new Error("Destination already exists"), { status: 409 }) as StatusError;
     } catch (error) {
-      const status = getStatus(error);
+      const status = getErrorStatus(error);
       if (status && status !== 404) {
         throw error;
       }

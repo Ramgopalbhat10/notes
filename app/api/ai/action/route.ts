@@ -4,6 +4,8 @@ import { streamText } from "ai";
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 import { clampText } from "@/lib/ai/text-utils";
 import { requireApiUser } from "@/lib/auth";
+import { jsonResponse } from "@/lib/http/response";
+import { safeString } from "@/lib/utils";
 
 type ActionType = "improve" | "summarize" | "expand";
 
@@ -17,17 +19,17 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = await requireApiUser(request);
     if (!authResult.ok) {
-      return json({ error: authResult.error }, { status: authResult.status });
+      return jsonResponse({ error: authResult.error }, { status: authResult.status });
     }
 
     const ip = getClientIdentifier(request);
     if (!consumeRateLimit(ip)) {
-      return json({ error: "Too many requests. Please wait and try again." }, { status: 429 });
+      return jsonResponse({ error: "Too many requests. Please wait and try again." }, { status: 429 });
     }
 
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return json({ error: "Invalid request body" }, { status: 400 });
+      return jsonResponse({ error: "Invalid request body" }, { status: 400 });
     }
 
     const action = isValidAction((body as Record<string, unknown>).action)
@@ -37,12 +39,12 @@ export async function POST(request: NextRequest) {
     const selection = safeString((body as Record<string, unknown>).selection);
 
     if (!action) {
-      return json({ error: "Unsupported action" }, { status: 400 });
+      return jsonResponse({ error: "Unsupported action" }, { status: 400 });
     }
 
     const sourceText = selection || content;
     if (!sourceText.trim()) {
-      return json({ error: "Nothing to process" }, { status: 400 });
+      return jsonResponse({ error: "Nothing to process" }, { status: 400 });
     }
 
     const { text: truncatedText, truncated } = clampText(sourceText, MAX_INPUT_CHARS);
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("/api/ai/action failed", error);
-    return json({ error: "Failed to process AI action" }, { status: 500 });
+    return jsonResponse({ error: "Failed to process AI action" }, { status: 500 });
   }
 }
 
@@ -142,19 +144,6 @@ function buildUserPrompt({
     .join("\n\n");
 }
 
-function safeString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
 function isValidAction(value: unknown): value is ActionType {
   return value === "improve" || value === "summarize" || value === "expand";
-}
-
-function json(data: Record<string, unknown>, init?: ResponseInit) {
-  const headers = new Headers(init?.headers);
-  headers.set("content-type", "application/json; charset=utf-8");
-  return new Response(JSON.stringify(data), {
-    ...init,
-    headers,
-  });
 }

@@ -1,21 +1,13 @@
 import { DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
-import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import { deleteFileMeta } from "@/lib/fs/file-meta";
-import { normalizeEtag, parseIfNoneMatch } from "@/lib/etag";
+import { parseIfNoneMatch } from "@/lib/etag";
 import { writeMarkdownFile } from "@/lib/fs/file-writer";
-
-type StatusError = Error & {
-  status?: number;
-  $metadata?: {
-    httpStatusCode?: number;
-  };
-};
+import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 const CACHE_CONTROL_HEADER = "private, no-cache, must-revalidate";
 
@@ -42,36 +34,9 @@ async function ensureMatchingEtag({
   }
 }
 
-function getStatus(error: unknown): number | undefined {
-  if (error && typeof error === "object") {
-    const fromStatus = (error as StatusError).status;
-    if (typeof fromStatus === "number") {
-      return fromStatus;
-    }
-    const metaStatus = (error as StatusError).$metadata?.httpStatusCode;
-    if (typeof metaStatus === "number") {
-      return metaStatus;
-    }
-  }
-  return undefined;
-}
-
-function getMessage(error: unknown): string | undefined {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-  return undefined;
-}
-
 function handleS3Error(error: unknown) {
-  const status = getStatus(error);
-  const message = getMessage(error) ?? "Unexpected S3 error";
+  const status = getErrorStatus(error);
+  const message = getErrorMessage(error) ?? "Unexpected S3 error";
   if (status === 404) {
     return NextResponse.json({ error: "File not found" }, { status: 404 });
   }

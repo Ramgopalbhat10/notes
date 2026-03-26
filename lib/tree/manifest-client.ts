@@ -1,6 +1,6 @@
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
+import { formatIfNoneMatch, normalizeEtag } from "@/lib/etag";
 import { extractResponseError, getErrorMessage } from "@/lib/http/client";
-import { formatIfNoneMatch, sanitizeEtag } from "./utils";
 import type { RefreshSource, RefreshState } from "./types";
 
 type StoreSetter<TState> = (updater: Partial<TState> | ((state: TState) => Partial<TState>)) => void;
@@ -42,7 +42,7 @@ export async function fetchManifest(
   }
 
   const manifest = (await response.json()) as FileTreeManifest;
-  const nextEtag = sanitizeEtag(response.headers.get("ETag"));
+  const nextEtag = normalizeEtag(response.headers.get("ETag"));
   return { manifest, etag: nextEtag };
 }
 

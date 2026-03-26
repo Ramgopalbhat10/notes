@@ -6,6 +6,7 @@ import { getServerSession, isAllowedUser } from "@/lib/auth";
 import { writeMarkdownFile } from "@/lib/fs/file-writer";
 import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import { getFileCacheTag, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
+import { getErrorMessage, getErrorStatus } from "@/lib/http/errors";
 
 export type SaveDocumentInput = {
   key: string;
@@ -16,33 +17,6 @@ export type SaveDocumentInput = {
 export type SaveDocumentResult =
   | { ok: true; etag?: string; lastModified: string }
   | { ok: false; reason: "conflict" | "unauthorized" | "invalid" | "unknown"; message: string };
-
-function getStatus(error: unknown): number | undefined {
-  if (error && typeof error === "object") {
-    const maybeStatus = (error as { status?: number }).status;
-    if (typeof maybeStatus === "number") {
-      return maybeStatus;
-    }
-    const metadataStatus = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
-    if (typeof metadataStatus === "number") {
-      return metadataStatus;
-    }
-  }
-  return undefined;
-}
-
-function getMessage(error: unknown): string | undefined {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  if (error && typeof error === "object" && "message" in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") {
-      return message;
-    }
-  }
-  return undefined;
-}
 
 export async function saveDocumentAction(input: SaveDocumentInput): Promise<SaveDocumentResult> {
   const session = await getServerSession();
@@ -77,8 +51,8 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Save
 
     return { ok: true, etag, lastModified };
   } catch (error) {
-    const status = getStatus(error);
-    const message = getMessage(error) ?? "Failed to save document";
+    const status = getErrorStatus(error);
+    const message = getErrorMessage(error) ?? "Failed to save document";
     if (status === 409 || status === 412) {
       return { ok: false, reason: "conflict", message };
     }
