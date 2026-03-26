@@ -21,6 +21,35 @@ type StatusError = Error & {
   };
 };
 
+const FOLDER_COPY_CONCURRENCY = 8;
+const DELETE_CHUNK_CONCURRENCY = 4;
+
+async function mapWithConcurrencyLimit<T, TResult>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<TResult>,
+): Promise<TResult[]> {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const limit = Math.max(1, Math.min(concurrency, items.length));
+  const results = new Array<TResult>(items.length);
+  let nextIndex = 0;
+
+  await Promise.all(
+    Array.from({ length: limit }, async () => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+      }
+    }),
+  );
+
+  return results;
+}
+
 function encodeCopySource(bucket: string, key: string) {
   return encodeURIComponent(`${bucket}/${key}`).replace(/%2F/g, "/");
 }
@@ -68,7 +97,7 @@ async function deleteKeys(bucket: string, keys: string[]) {
   for (let i = 0; i < keys.length; i += 1000) {
     chunks.push(keys.slice(i, i + 1000));
   }
-  for (const chunk of chunks) {
+  await mapWithConcurrencyLimit(chunks, DELETE_CHUNK_CONCURRENCY, async (chunk) => {
     if (chunk.length === 1) {
       await client.send(
         new DeleteObjectCommand({
@@ -76,7 +105,10 @@ async function deleteKeys(bucket: string, keys: string[]) {
           Key: chunk[0],
         }),
       );
-    } else if (chunk.length > 1) {
+      return;
+    }
+
+    if (chunk.length > 1) {
       await client.send(
         new DeleteObjectsCommand({
           Bucket: bucket,
@@ -87,7 +119,7 @@ async function deleteKeys(bucket: string, keys: string[]) {
         }),
       );
     }
-  }
+  });
 }
 
 function handleError(error: unknown) {
@@ -154,20 +186,23 @@ async function moveFolderInS3(
     await ensureDestClear(bucket, toFull);
   }
 
-  const copyResults: string[] = [];
-  for (const sourceKey of sourceKeys) {
-    const relative = sourceKey.slice(fromFull.length);
-    const targetKey = `${toFull}${relative}`;
-    await client.send(
-      new CopyObjectCommand({
-        Bucket: bucket,
-        CopySource: encodeCopySource(bucket, sourceKey),
-        Key: targetKey,
-        MetadataDirective: "COPY",
-      }),
-    );
-    copyResults.push(targetKey);
-  }
+  const copyResults = await mapWithConcurrencyLimit(
+    sourceKeys,
+    FOLDER_COPY_CONCURRENCY,
+    async (sourceKey) => {
+      const relative = sourceKey.slice(fromFull.length);
+      const targetKey = `${toFull}${relative}`;
+      await client.send(
+        new CopyObjectCommand({
+          Bucket: bucket,
+          CopySource: encodeCopySource(bucket, sourceKey),
+          Key: targetKey,
+          MetadataDirective: "COPY",
+        }),
+      );
+      return targetKey;
+    },
+  );
 
   await deleteKeys(bucket, sourceKeys);
 

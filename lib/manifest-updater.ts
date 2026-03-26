@@ -24,9 +24,11 @@ import { basename, getParentPath } from "@/lib/platform/paths";
 
 class Manifest {
   private manifest: FileTreeManifest;
+  private nodeById: Map<FileTreeNodeId, FileTreeNode>;
 
   constructor(manifest: FileTreeManifest) {
     this.manifest = manifest;
+    this.nodeById = new Map(manifest.nodes.map((node) => [node.id, node]));
   }
 
   public getRaw(): FileTreeManifest {
@@ -43,6 +45,10 @@ class Manifest {
     return createHash("md5").update(checksumPayload).digest("hex");
   }
 
+  private rebuildNodeLookup(): void {
+    this.nodeById = new Map(this.manifest.nodes.map((node) => [node.id, node]));
+  }
+
   public ensureParentFolders(childPath: string): void {
     const parts: string[] = [];
     const segments = childPath.split("/").filter(Boolean);
@@ -50,8 +56,8 @@ class Manifest {
     for (let i = 0; i < segments.length - 1; i++) {
       parts.push(segments[i]);
       const folderPath = ensureFolderPath(parts.join("/"));
-      
-      const existingNode = this.manifest.nodes.find((n) => n.id === folderPath);
+
+      const existingNode = this.findNode(folderPath);
       if (existingNode) {
         continue;
       }
@@ -65,14 +71,14 @@ class Manifest {
         parentId,
         childrenIds: [],
       };
-      this.manifest.nodes.push(folderNode);
+      this.addNode(folderNode);
 
       if (parentId === null) {
         if (!this.manifest.rootIds.includes(folderPath)) {
           this.manifest.rootIds.push(folderPath);
         }
       } else {
-        const parent = this.manifest.nodes.find((n) => n.id === parentId);
+        const parent = this.findNode(parentId);
         if (parent && isFolderNode(parent)) {
           if (!parent.childrenIds.includes(folderPath)) {
             parent.childrenIds.push(folderPath);
@@ -83,7 +89,7 @@ class Manifest {
   }
 
   public addChildToParent(childId: FileTreeNodeId): void {
-    const childNode = this.manifest.nodes.find((n) => n.id === childId);
+    const childNode = this.findNode(childId);
     if (!childNode) return;
 
     const parentId = childNode.parentId;
@@ -92,7 +98,7 @@ class Manifest {
         this.manifest.rootIds.push(childId);
       }
     } else {
-      const parent = this.manifest.nodes.find((n) => n.id === parentId);
+      const parent = this.findNode(parentId);
       if (parent && isFolderNode(parent)) {
         if (!parent.childrenIds.includes(childId)) {
           parent.childrenIds.push(childId);
@@ -105,7 +111,7 @@ class Manifest {
     if (parentId === null) {
       this.manifest.rootIds = this.manifest.rootIds.filter((id) => id !== childId);
     } else {
-      const parent = this.manifest.nodes.find((n) => n.id === parentId);
+      const parent = this.findNode(parentId);
       if (parent && isFolderNode(parent)) {
         parent.childrenIds = parent.childrenIds.filter((id) => id !== childId);
       }
@@ -142,7 +148,7 @@ class Manifest {
   }
 
   public findNode(id: string): FileTreeNode | undefined {
-    return this.manifest.nodes.find((n) => n.id === id);
+    return this.nodeById.get(id);
   }
 
   public findIndex(id: string): number {
@@ -153,20 +159,30 @@ class Manifest {
     return this.manifest.nodes[index];
   }
 
-  public updateNode(index: number, node: FileTreeNode): void {
+  public updateNode(index: number, node: FileTreeNode, previousId?: FileTreeNodeId): void {
+    const existingNodeId = previousId ?? this.manifest.nodes[index]?.id;
     this.manifest.nodes[index] = node;
+    if (existingNodeId && existingNodeId !== node.id) {
+      this.nodeById.delete(existingNodeId);
+    }
+    this.nodeById.set(node.id, node);
   }
 
   public addNode(node: FileTreeNode): void {
     this.manifest.nodes.push(node);
+    this.nodeById.set(node.id, node);
   }
 
   public removeNode(index: number): void {
-    this.manifest.nodes.splice(index, 1);
+    const [removedNode] = this.manifest.nodes.splice(index, 1);
+    if (removedNode) {
+      this.nodeById.delete(removedNode.id);
+    }
   }
 
   public filterNodes(predicate: (node: FileTreeNode) => boolean): void {
     this.manifest.nodes = this.manifest.nodes.filter(predicate);
+    this.rebuildNodeLookup();
   }
 
   public getNodes(): FileTreeNode[] {
@@ -336,8 +352,8 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     return;
   }
 
-  const fileNode = manifest.getNode(fileIndex) as FileTreeFileNode;
-  manifest.removeChildFromParent(oldKey, fileNode.parentId);
+  const currentFileNode = manifest.getNode(fileIndex) as FileTreeFileNode;
+  manifest.removeChildFromParent(oldKey, currentFileNode.parentId);
 
   const client = getS3Client();
   const bucket = getBucket();
@@ -352,15 +368,18 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     const newParentId = getParentPath(newKey);
     manifest.ensureParentFolders(newKey);
 
-    fileNode.id = newKey;
-    fileNode.name = basename(newKey);
-    fileNode.path = newKey;
-    fileNode.parentId = newParentId;
-    fileNode.etag = normalizeEtag(head.ETag ?? undefined) ?? undefined;
-    fileNode.lastModified = head.LastModified?.toISOString();
-    fileNode.size = typeof head.ContentLength === "number" ? head.ContentLength : undefined;
+    const updatedFileNode: FileTreeFileNode = {
+      ...currentFileNode,
+      id: newKey,
+      name: basename(newKey),
+      path: newKey,
+      parentId: newParentId,
+      etag: normalizeEtag(head.ETag ?? undefined) ?? undefined,
+      lastModified: head.LastModified?.toISOString(),
+      size: typeof head.ContentLength === "number" ? head.ContentLength : undefined,
+    };
 
-    manifest.updateNode(fileIndex, fileNode);
+    manifest.updateNode(fileIndex, updatedFileNode, oldKey);
     manifest.addChildToParent(newKey);
 
     manifest.sort();
@@ -370,12 +389,15 @@ export async function moveFile(params: MoveFileParams): Promise<void> {
     const newParentId = getParentPath(newKey);
     manifest.ensureParentFolders(newKey);
 
-    fileNode.id = newKey;
-    fileNode.name = basename(newKey);
-    fileNode.path = newKey;
-    fileNode.parentId = newParentId;
+    const updatedFileNode: FileTreeFileNode = {
+      ...currentFileNode,
+      id: newKey,
+      name: basename(newKey),
+      path: newKey,
+      parentId: newParentId,
+    };
 
-    manifest.updateNode(fileIndex, fileNode);
+    manifest.updateNode(fileIndex, updatedFileNode, oldKey);
     manifest.addChildToParent(newKey);
 
     manifest.sort();
@@ -398,12 +420,14 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
   const oldFolderId = ensureFolderPath(params.oldPrefix);
   const newFolderId = ensureFolderPath(params.newPrefix);
 
-  const toUpdate: FileTreeNode[] = [];
-  for (const node of manifest.getNodes()) {
+  const toUpdate: Array<{ index: number; id: FileTreeNodeId }> = [];
+  for (const [index, node] of manifest.getNodes().entries()) {
     if (node.id === oldFolderId || node.id.startsWith(oldFolderId)) {
-      toUpdate.push(node);
+      toUpdate.push({ index, id: node.id });
     }
   }
+
+  toUpdate.sort((a, b) => a.id.length - b.id.length);
 
   if (toUpdate.length === 0) {
     return;
@@ -414,22 +438,33 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
 
   manifest.removeChildFromParent(oldFolderId, oldFolderParentId);
 
-  for (const node of toUpdate) {
-    const newId = node.id.replace(oldFolderId, newFolderId);
+  for (const { index, id } of toUpdate) {
+    const node = manifest.getNode(index);
+    const newId = id.replace(oldFolderId, newFolderId);
     const newParentId = getParentPath(newId);
 
     manifest.ensureParentFolders(newId);
 
-    node.id = newId;
-    node.name = basename(newId);
-    node.path = newId;
-    node.parentId = newParentId;
+    const updatedNode = isFolderNode(node)
+      ? {
+          ...node,
+          id: newId,
+          name: basename(newId),
+          path: newId,
+          parentId: newParentId,
+          childrenIds: node.childrenIds.map((childId) =>
+            childId.startsWith(oldFolderId) ? childId.replace(oldFolderId, newFolderId) : childId,
+          ),
+        }
+      : {
+          ...node,
+          id: newId,
+          name: basename(newId),
+          path: newId,
+          parentId: newParentId,
+        };
 
-    if (isFolderNode(node)) {
-      node.childrenIds = node.childrenIds.map((childId) =>
-        childId.startsWith(oldFolderId) ? childId.replace(oldFolderId, newFolderId) : childId,
-      );
-    }
+    manifest.updateNode(index, updatedNode, id);
   }
 
   manifest.addChildToParent(newFolderId);
