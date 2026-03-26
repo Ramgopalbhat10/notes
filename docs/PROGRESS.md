@@ -1,28 +1,19 @@
 # Progress
 
-Current issue: `docs/issues/issue-19.md`
+Current issue: `docs/issues/issue-20.md`
 
-Current section: Issue 19 — SidebarChat Decomposition & Simplification
+Current section: Issue 20 — Next.js 16.2 Upgrade Verification & Runtime Alignment
 
 Previous tasks (latest completed batch only):
-- [x] Extracted types.ts and utils.ts (FilePayload, SidebarChatHandle, computeExcerpt, computeDigest, messageToPlainText).
-- [x] Created hooks/use-chat-session.ts (transport singleton, session rotation, useChat, auto-scroll).
-- [x] Created hooks/use-models.ts (loading, localStorage caching, validation).
-- [x] Created model-selector/ module (self-contained: index.tsx, model-list.tsx, model-filters.tsx, types.ts, utils.ts).
-- [x] Extracted chat-message.tsx, chat-error-banner.tsx, chat-empty-state.tsx.
-- [x] Created chat-composer.tsx with 10 props (down from 38), embedding ModelSelector.
-- [x] Simplified auto-scroll from 3-effect pinned-to-top to scroll-to-bottom.
-- [x] Rewrote sidebar-chat.tsx as ~170-line thin orchestrator.
-- [x] Created index.tsx barrel export.
-- [x] pnpm lint + pnpm build pass.
-- [x] Fixed SonarCloud weak cryptography issue: Replaced Math.random() with crypto.getRandomValues() for session ID generation.
+- [x] Completed manual verification of the upgraded application, including the authenticated flows and public `/p` route checks that were previously pending.
+- [x] Closed Issue 20 as resolved and updated the plan acceptance criteria to reflect completed verification.
 
 Next tasks:
-- [ ] Commit and PR.
+- None - all tasks completed.
 
 Notes:
-- Branch: refactor/sidebar-chat-decomposition
-- Follows file-tree/ pattern: index.tsx + sub-components + hooks/ + types.ts
-- ModelSelector becomes self-contained (reads useChatStore directly, owns all internal state)
-- ChatComposer drops from 38 props to ~8
-- Auto-scroll simplified from 3-effect pinned-to-top to scroll-to-bottom
+- Branch: `refactor/nextjs-16-2-upgrade`
+- Worktree path: `/home/jarvis/projects/mrgb/notes/.worktrees/refactor/nextjs-16-2-upgrade`
+- Baseline intent: minimal `16.0.7` → `16.2.x` upgrade plus verification, not a second full Next 16 migration.
+- Highest-risk area is cache invalidation behavior already documented in `docs/issues/issue-17.md`.
+- Current local Node is `v24.11.1`, which satisfies the `20.9+` floor but is newer than the repo's baseline target.

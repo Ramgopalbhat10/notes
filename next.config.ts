@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {
+    // Pin the repo root explicitly so Turbopack does not walk up to unrelated lockfiles.
+    root: process.cwd(),
     // Enable future Turbopack options here (e.g., resolveAlias, filesystem cache)
   },
   cacheComponents: process.env.NEXT_CACHE_COMPONENTS !== "false",
