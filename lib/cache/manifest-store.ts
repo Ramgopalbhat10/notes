@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 
 import { normalizeEtag } from "@/lib/etag";
 import { getRedisClient } from "@/lib/cache/redis-client";
+import { buildSlugToIdMap } from "@/lib/content/slug-map";
 import { FILE_TREE_MANIFEST_FILENAME, validateFileTreeManifest, type FileTreeManifest } from "@/lib/file-tree-manifest";
 import { getBucket, getS3Client } from "@/lib/fs/s3";
 import { s3BodyToString } from "@/lib/fs/s3-body";
@@ -14,6 +15,7 @@ export interface RedisManifestValue {
   etag?: string;
   body: string;
   metadata: FileTreeManifest["metadata"];
+  slugToId?: Record<string, string>;
   updatedAt: string;
 }
 
@@ -21,6 +23,7 @@ export interface ManifestRecord {
   manifest: FileTreeManifest;
   body: string;
   etag?: string;
+  slugToId: Record<string, string>;
   updatedAt: string;
   source: "redis" | "s3";
 }
@@ -42,10 +45,55 @@ function isRedisManifestValue(value: unknown): value is RedisManifestValue {
   if (typeof value.updatedAt !== "string" || Number.isNaN(Date.parse(value.updatedAt))) {
     return false;
   }
+  if (
+    "slugToId" in value
+    && (!isPlainObject(value.slugToId)
+      || Object.values(value.slugToId).some((entry) => typeof entry !== "string"))
+  ) {
+    return false;
+  }
   if ("etag" in value && typeof value.etag !== "string") {
     return false;
   }
   return true;
+}
+
+function getManifestEtag(manifest: FileTreeManifest, fallback?: string): string | undefined {
+  return manifest.metadata.checksum || normalizeEtag(fallback) || undefined;
+}
+
+function buildManifestRecord(params: {
+  body: string;
+  etag?: string;
+  slugToId?: Record<string, string>;
+  source: ManifestRecord["source"];
+  updatedAt: string;
+}): ManifestRecord | null {
+  try {
+    const parsed = JSON.parse(params.body);
+    const validation = validateFileTreeManifest(parsed);
+    if (!validation.success) {
+      console.error("Manifest invalid", validation.errors);
+      return null;
+    }
+
+    const manifest = validation.manifest;
+    const slugToId = params.slugToId && Object.keys(params.slugToId).length > 0
+      ? params.slugToId
+      : buildSlugToIdMap(manifest);
+
+    return {
+      manifest,
+      body: JSON.stringify(manifest),
+      etag: getManifestEtag(manifest, params.etag),
+      slugToId,
+      updatedAt: params.updatedAt,
+      source: params.source,
+    };
+  } catch (error) {
+    console.error("Manifest parse error", error);
+    return null;
+  }
 }
 
 export async function readManifestFromRedis(): Promise<RedisManifestValue | null> {
@@ -65,6 +113,7 @@ export async function readManifestFromRedis(): Promise<RedisManifestValue | null
     return {
       body: parsed.body,
       metadata: parsed.metadata,
+      slugToId: parsed.slugToId,
       updatedAt: parsed.updatedAt,
       etag: normalizeEtag(parsed.etag) ?? undefined,
     };
@@ -94,19 +143,12 @@ async function fetchManifestFromS3(): Promise<ManifestRecord | null> {
       }),
     );
     const body = await s3BodyToString(response.Body);
-    const parsed = JSON.parse(body);
-    const validation = validateFileTreeManifest(parsed);
-    if (!validation.success) {
-      throw new Error(`Invalid manifest schema from S3: ${validation.errors.join(", ")}`);
-    }
-    const manifest = validation.manifest;
-    return {
-      manifest,
-      body: JSON.stringify(manifest),
+    return buildManifestRecord({
+      body,
       etag: normalizeEtag(response.ETag ?? undefined) ?? undefined,
-      updatedAt: new Date().toISOString(),
       source: "s3",
-    };
+      updatedAt: new Date().toISOString(),
+    });
   } catch (error) {
     console.error("Failed to read manifest from S3", error);
     return null;
@@ -118,6 +160,7 @@ export async function writeManifestToRedis(value: RedisManifestValue): Promise<v
   await redis.set(MANIFEST_REDIS_KEY, {
     body: value.body,
     metadata: value.metadata,
+    slugToId: value.slugToId,
     updatedAt: value.updatedAt,
     etag: value.etag,
   });
@@ -131,22 +174,15 @@ export async function loadLatestManifest(): Promise<ManifestRecord | null> {
 
   const fromRedis = await readManifestFromRedis();
   if (fromRedis) {
-    try {
-      const parsed = JSON.parse(fromRedis.body);
-      const validation = validateFileTreeManifest(parsed);
-      if (!validation.success) {
-        console.error("Redis manifest invalid, falling back to S3", validation.errors);
-      } else {
-        return {
-          manifest: validation.manifest,
-          body: JSON.stringify(validation.manifest),
-          etag: normalizeEtag(fromRedis.etag) ?? undefined,
-          updatedAt: fromRedis.updatedAt,
-          source: "redis",
-        };
-      }
-    } catch (error) {
-      console.error("Redis manifest parse error, falling back to S3", error);
+    const redisRecord = buildManifestRecord({
+      body: fromRedis.body,
+      etag: fromRedis.etag,
+      slugToId: fromRedis.slugToId,
+      source: "redis",
+      updatedAt: fromRedis.updatedAt,
+    });
+    if (redisRecord) {
+      return redisRecord;
     }
   }
 
@@ -160,6 +196,7 @@ export async function loadLatestManifest(): Promise<ManifestRecord | null> {
       body: fromS3.body,
       metadata: fromS3.manifest.metadata,
       etag: fromS3.etag,
+      slugToId: fromS3.slugToId,
       updatedAt: fromS3.updatedAt,
     });
   } catch (error) {

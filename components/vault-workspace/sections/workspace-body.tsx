@@ -87,7 +87,7 @@ export function WorkspaceBody({
   }
 
   if (mode === "edit") {
-    return <MarkdownEditor value={content} onChange={setContent} />;
+    return <MarkdownEditor documentKey={selectedPath} value={content} onChange={setContent} />;
   }
 
   return (

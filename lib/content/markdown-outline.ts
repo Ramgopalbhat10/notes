@@ -31,6 +31,9 @@ type ParsedFence = {
   markerLength: number;
 };
 
+const OUTLINE_CACHE_LIMIT = 12;
+const outlineCache = new Map<string, MarkdownOutlineResult>();
+
 const FENCE_OPEN_RE = /^\s{0,3}(`{3,}|~{3,})/;
 const SETEXT_UNDERLINE_RE = /^\s{0,3}(={1,}|-{1,})\s{0,}$/;
 
@@ -78,6 +81,13 @@ function parseAtxHeading(line: string): ParsedAtxHeading | null {
 }
 
 export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
+  const cached = outlineCache.get(content);
+  if (cached) {
+    outlineCache.delete(content);
+    outlineCache.set(content, cached);
+    return cached;
+  }
+
   const lines = content.split(/\r?\n/);
   const headingCandidates: HeadingCandidate[] = [];
   let fence: ParsedFence | null = null;
@@ -190,7 +200,16 @@ export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
     itemStack.push(outlineItem);
   }
 
-  return { tree, flat, lineToId };
+  const result = { tree, flat, lineToId };
+  outlineCache.set(content, result);
+  if (outlineCache.size > OUTLINE_CACHE_LIMIT) {
+    const oldestKey = outlineCache.keys().next().value;
+    if (oldestKey) {
+      outlineCache.delete(oldestKey);
+    }
+  }
+
+  return result;
 }
 
 function normalizeHeadingText(text: string): string {

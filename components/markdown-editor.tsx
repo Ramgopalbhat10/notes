@@ -3,6 +3,7 @@
 import { BlockNoteEditor } from "./blocknote-editor";
 
 type MarkdownEditorProps = {
+  documentKey?: string | null;
   value: string;
   onChange: (value: string) => void;
   readOnly?: boolean;

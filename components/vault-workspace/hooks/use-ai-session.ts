@@ -17,6 +17,7 @@ export type UseAiSessionOptions = {
   fileKey: string | null;
   content: string;
   selection: { from: number; to: number } | null;
+  selectedText: string;
   status: "idle" | "loading" | "saving" | "error" | "conflict";
   hasDocumentContent: boolean;
   toast: (opts: { description: string; variant?: "default" | "destructive" }) => void;
@@ -42,6 +43,7 @@ export function useAiSession({
   fileKey,
   content,
   selection,
+  selectedText,
   status,
   hasDocumentContent,
   toast,
@@ -101,7 +103,10 @@ export function useAiSession({
       abortRef.current = controller;
 
       const selectionRange = selection ? { ...selection } : null;
-      const selectionText = selectionRange ? content.slice(selectionRange.from, selectionRange.to) : "";
+      const normalizedSelectedText = selectedText.trim();
+      const selectionText = selectionRange
+        ? content.slice(selectionRange.from, selectionRange.to)
+        : normalizedSelectedText;
       const useSelection = Boolean(selectionText.trim().length);
 
       const payload: {
@@ -180,7 +185,7 @@ export function useAiSession({
         }
       }
     },
-    [content, hasDocumentContent, selection, status, toast],
+    [content, hasDocumentContent, selectedText, selection, status, toast],
   );
 
   const retry = useCallback(() => {

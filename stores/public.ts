@@ -26,6 +26,7 @@ const DEFAULT_RECORD: ShareRecord = {
   lastFetchedAt: null,
 };
 
+const SHARE_STATE_CACHE_TTL_MS = 30_000;
 const pendingLoads = new Map<string, number>();
 let loadSeq = 0;
 
@@ -46,7 +47,7 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
         // A fetch is already in-flight; reuse it instead of spamming the API.
         return;
       }
-      if (record && record.lastFetchedAt && Date.now() - record.lastFetchedAt < 5_000) {
+      if (record && record.lastFetchedAt && Date.now() - record.lastFetchedAt < SHARE_STATE_CACHE_TTL_MS) {
         // Skip rapid refetches unless forced.
         return;
       }
@@ -61,7 +62,7 @@ export const usePublicStore = create<ShareStoreState>((set, get) => ({
         ...state.records,
         [normalizedKey]: {
           ...(state.records[normalizedKey] ?? DEFAULT_RECORD),
-          loading: true,
+          loading: !state.records[normalizedKey],
           error: null,
         },
       },

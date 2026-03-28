@@ -1,7 +1,7 @@
 import type { FileTreeManifest } from "@/lib/file-tree-manifest";
 import { isFolderNode } from "@/lib/file-tree-manifest";
 import type { FileNode, FolderNode, Node, NodeId } from "@/lib/tree/types";
-import { buildSlugState } from "@/lib/tree/utils";
+import { buildNormalizedSearchText, buildSlugState } from "@/lib/tree/utils";
 
 export type BuiltManifestState = {
   nodes: Record<NodeId, Node>;
@@ -22,7 +22,8 @@ export function buildStateFromManifest(manifest: FileTreeManifest): BuiltManifes
         name: entry.name,
         path,
         parentId: entry.parentId,
-        children: [...entry.childrenIds].sort((a, b) => a.localeCompare(b)),
+        normalizedSearchText: buildNormalizedSearchText(entry.name, path),
+        children: [...entry.childrenIds],
         childrenLoaded: true,
         lastModified: entry.lastModified,
       } satisfies FolderNode;
@@ -33,6 +34,7 @@ export function buildStateFromManifest(manifest: FileTreeManifest): BuiltManifes
         name: entry.name,
         path: entry.path,
         parentId: entry.parentId,
+        normalizedSearchText: buildNormalizedSearchText(entry.name, entry.path),
         etag: entry.etag,
         lastModified: entry.lastModified,
         size: entry.size,
@@ -44,7 +46,7 @@ export function buildStateFromManifest(manifest: FileTreeManifest): BuiltManifes
 
   return {
     nodes,
-    rootIds: [...manifest.rootIds].sort((a, b) => a.localeCompare(b)),
+    rootIds: [...manifest.rootIds],
     slugToId,
     idToSlug,
   };

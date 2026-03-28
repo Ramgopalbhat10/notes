@@ -60,6 +60,7 @@ export function VaultWorkspace({
   const reset = useEditorStore((state) => state.reset);
   const save = useEditorStore((state) => state.save);
   const selection = useEditorStore((state) => state.selection);
+  const selectedText = useEditorStore((state) => state.selectedText);
   const applyAiResult = useEditorStore((state) => state.applyAiResult);
   const { toast } = useToast();
   const centered = useWorkspaceLayoutStore((state) => state.centered);
@@ -131,6 +132,7 @@ export function VaultWorkspace({
     fileKey,
     content,
     selection,
+    selectedText,
     status,
     hasDocumentContent,
     toast,

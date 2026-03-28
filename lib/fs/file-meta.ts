@@ -74,6 +74,25 @@ export async function deleteFileMeta(key: string): Promise<boolean> {
   }
 }
 
+export async function deleteFileMetas(keys: string[]): Promise<boolean> {
+  const normalized = Array.from(new Set(keys.map((key) => key.trim()).filter((key) => key.length > 0)));
+  if (normalized.length === 0) {
+    return true;
+  }
+
+  try {
+    const redis = getRedisClient();
+    await redis.del(...normalized.map((key) => buildRedisKey(key)));
+    for (const key of normalized) {
+      revalidateTag(getFileMetaCacheTag(key), "seconds");
+    }
+    return true;
+  } catch (error) {
+    console.error("Failed to delete file metadata in bulk", error);
+    return false;
+  }
+}
+
 export async function renameFileMeta(oldKey: string, newKey: string): Promise<boolean> {
   try {
     const redis = getRedisClient();

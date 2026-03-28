@@ -8,7 +8,7 @@ import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ROOT_PARENT_KEY, type NodeId, useTreeStore } from "@/stores/tree";
+import { ROOT_PARENT_KEY, type Node, type NodeId, useTreeStore } from "@/stores/tree";
 import { ActionDialog } from "./action-dialog";
 import { TreeNode } from "./tree-nodes";
 import { type MatchMeta, type ModalState } from "./types";
@@ -16,6 +16,53 @@ import { useDebouncedValue as useDebouncedValueHook } from "./hooks/use-debounce
 import { useTreeKeyboardNavigation as useTreeKeyboardNavigationHook } from "./hooks/use-tree-keyboard-navigation";
 import { useModalSubmit } from "./hooks/use-modal-submit";
 import { useToast } from "@/hooks/use-toast";
+
+function buildIndexedMatchMap(
+  nodes: Record<NodeId, Node>,
+  normalizedQuery: string,
+): Map<NodeId, MatchMeta> {
+  const matchedIds = new Set<NodeId>();
+
+  for (const node of Object.values(nodes)) {
+    if (node.normalizedSearchText.includes(normalizedQuery)) {
+      matchedIds.add(node.id);
+    }
+  }
+
+  const includedIds = new Set<NodeId>();
+  const parentsWithMatchingDescendants = new Set<NodeId>();
+
+  for (const matchedId of matchedIds) {
+    let currentId: NodeId | null = matchedId;
+    let first = true;
+
+    while (currentId) {
+      includedIds.add(currentId);
+      const currentNode: Node | undefined = nodes[currentId];
+      if (!currentNode) {
+        break;
+      }
+
+      if (!first) {
+        parentsWithMatchingDescendants.add(currentId);
+      }
+
+      currentId = currentNode.parentId;
+      first = false;
+    }
+  }
+
+  const map = new Map<NodeId, MatchMeta>();
+  for (const id of includedIds) {
+    map.set(id, {
+      include: true,
+      matchesSelf: matchedIds.has(id),
+      hasMatchingChild: parentsWithMatchingDescendants.has(id),
+    });
+  }
+
+  return map;
+}
 
 export function FileTree() {
   const router = useRouter();
@@ -177,24 +224,8 @@ export function FileTree() {
     if (!filterActive) {
       return null;
     }
-    const map = new Map<NodeId, MatchMeta>();
-    const visit = (id: NodeId): boolean => {
-      const node = nodes[id];
-      if (!node) {
-        return false;
-      }
-      const matchesSelf = node.name.toLowerCase().includes(normalizedQuery);
-      let hasMatchingChild = false;
-      if (node.type === "folder") {
-        hasMatchingChild = node.children.some((childId) => visit(childId));
-      }
-      const include = matchesSelf || hasMatchingChild;
-      map.set(id, { include, matchesSelf, hasMatchingChild });
-      return include;
-    };
-    rootIds.forEach((id) => visit(id));
-    return map;
-  }, [filterActive, nodes, normalizedQuery, rootIds]);
+    return buildIndexedMatchMap(nodes, normalizedQuery);
+  }, [filterActive, nodes, normalizedQuery]);
 
   const filteredRootIds = useMemo(() => {
     if (!filterActive || !matchMap) {

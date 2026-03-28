@@ -3,7 +3,6 @@ import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { revalidateTag } from "next/cache";
 
 import {
-  FILE_TREE_MANIFEST_VERSION,
   type FileTreeFileNode,
   type FileTreeFolderNode,
   type FileTreeManifest,
@@ -17,10 +16,57 @@ import {
   writeManifestToRedis,
   type RedisManifestValue,
 } from "@/lib/cache/manifest-store";
+import { buildSlugToIdMap } from "@/lib/content/slug-map";
 import { serializeFileTreeManifest, uploadFileTreeManifest } from "@/lib/file-tree-builder";
 import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/fs/s3";
 import { basename, getParentPath } from "@/lib/platform/paths";
+
+const MANIFEST_FLUSH_DEBOUNCE_MS = 750;
+
+let pendingManifestFlush: FileTreeManifest | null = null;
+let pendingManifestFlushTimeout: ReturnType<typeof setTimeout> | null = null;
+let manifestFlushInFlight: Promise<void> | null = null;
+
+function scheduleManifestFlush(manifest: FileTreeManifest): void {
+  pendingManifestFlush = manifest;
+
+  if (pendingManifestFlushTimeout) {
+    clearTimeout(pendingManifestFlushTimeout);
+  }
+
+  pendingManifestFlushTimeout = setTimeout(() => {
+    pendingManifestFlushTimeout = null;
+    void flushPendingManifest();
+  }, MANIFEST_FLUSH_DEBOUNCE_MS);
+}
+
+async function flushPendingManifest(): Promise<void> {
+  if (manifestFlushInFlight) {
+    return manifestFlushInFlight;
+  }
+
+  const nextManifest = pendingManifestFlush;
+  pendingManifestFlush = null;
+  if (!nextManifest) {
+    return;
+  }
+
+  manifestFlushInFlight = (async () => {
+    try {
+      await uploadFileTreeManifest(nextManifest);
+    } catch (error) {
+      console.error("Failed to flush manifest snapshot to S3", error);
+    } finally {
+      manifestFlushInFlight = null;
+      if (pendingManifestFlush) {
+        scheduleManifestFlush(pendingManifestFlush);
+      }
+    }
+  })();
+
+  return manifestFlushInFlight;
+}
 
 class Manifest {
   private manifest: FileTreeManifest;
@@ -133,18 +179,21 @@ class Manifest {
     this.manifest.metadata.nodeCount = this.manifest.nodes.length;
     this.manifest.metadata.checksum = this.computeChecksum();
 
-    const { etag } = await uploadFileTreeManifest(this.manifest);
     const payload = serializeFileTreeManifest(this.manifest);
     const updatedAt = new Date().toISOString();
+    const hotManifestEtag = this.manifest.metadata.checksum;
+    const manifestSnapshot = JSON.parse(payload) as FileTreeManifest;
 
     const redisValue: RedisManifestValue = {
       body: payload,
       metadata: this.manifest.metadata,
-      etag,
+      etag: hotManifestEtag,
+      slugToId: buildSlugToIdMap(this.manifest),
       updatedAt,
     };
     await writeManifestToRedis(redisValue);
     revalidateTag(MANIFEST_CACHE_TAG, "max");
+    scheduleManifestFlush(manifestSnapshot);
   }
 
   public findNode(id: string): FileTreeNode | undefined {
