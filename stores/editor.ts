@@ -23,9 +23,10 @@ function getDefaultMode(): EditorMode {
   }
 }
 
-// We use 'any' for now as BlockNote selection is complex and we don't strictly need to sync it to store
-// in the same way as CodeMirror.
-type SelectionRange = any;
+type SelectionRange = {
+  from: number;
+  to: number;
+};
 
 type CachedDocument = {
   content: string;
@@ -47,10 +48,12 @@ type EditorState = {
   dirty: boolean;
   conflictMessage: string | null;
   selection: SelectionRange | null;
+  selectedText: string;
   loadFile: (key: string | null) => Promise<void>;
   setMode: (mode: EditorMode) => void;
   setContent: (value: string) => void;
   setSelection: (selection: SelectionRange | null) => void;
+  setSelectedText: (value: string) => void;
   registerEditorView: (view: BlockNoteEditor | null) => void;
   applyAiResult: (text: string, options?: { range?: SelectionRange | null; strategy?: "replace" | "insert" }) => void;
   save: (origin?: "manual" | "auto") => Promise<boolean>;
@@ -59,7 +62,7 @@ type EditorState = {
 
 const initialState: Omit<
   EditorState,
-  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "registerEditorView" | "applyAiResult"
+  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "registerEditorView" | "applyAiResult"
 > = {
   fileKey: null,
   content: "",
@@ -74,6 +77,7 @@ const initialState: Omit<
   dirty: false,
   conflictMessage: null,
   selection: null,
+  selectedText: "",
 };
 
 let currentAbort: AbortController | null = null;
@@ -82,6 +86,19 @@ let currentSaveAbort: AbortController | null = null;
 let activeEditorView: BlockNoteEditor | null = null;
 const documentCache = new Map<string, CachedDocument>();
 const firstOpenValidatedKeys = new Set<string>();
+
+async function serializeActiveEditorDocument(fallback: string): Promise<string> {
+  if (!activeEditorView) {
+    return fallback;
+  }
+
+  try {
+    return await activeEditorView.blocksToMarkdownLossy(activeEditorView.document);
+  } catch (error) {
+    console.error("Failed to serialize active editor document", error);
+    return fallback;
+  }
+}
 
 if (typeof window !== "undefined") {
   subscribePersistentDocumentEvictions((event) => {
@@ -167,6 +184,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         dirty: false,
         mode: getDefaultMode(),
         selection: null,
+        selectedText: "",
       });
     } else {
       set({
@@ -182,6 +200,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         dirty: false,
         mode: getDefaultMode(),
         selection: null,
+        selectedText: "",
       });
     }
 
@@ -236,6 +255,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           conflictMessage: null,
           mode: getDefaultMode(),
           selection: null,
+          selectedText: "",
         }));
 
         if (responseEtag || responseLastModifiedIso) {
@@ -296,6 +316,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         mode: getDefaultMode(),
         errorSource: null,
         selection: null,
+        selectedText: "",
       });
 
       firstOpenValidatedKeys.add(key);
@@ -359,16 +380,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ selection });
   },
 
+  setSelectedText(selectedText) {
+    set({ selectedText });
+  },
+
   registerEditorView(view) {
     activeEditorView = view;
     if (!view) {
-      set({ selection: null });
+      set({ selection: null, selectedText: "" });
       return;
     }
-    // BlockNote handles selection internally, we might not need to sync it to store constantly
-    // or we can subscribe to selection changes if needed.
-    // For now, we'll just clear it or set a dummy if needed.
-    set({ selection: null });
+    set({ selection: null, selectedText: "" });
   },
 
   async applyAiResult(text, options) {
@@ -414,7 +436,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     void _origin;
     const state = get();
     const key = state.fileKey;
-    if (!key || !state.dirty) {
+    if (!key) {
+      return false;
+    }
+
+    const latestContent = state.mode === "edit"
+      ? await serializeActiveEditorDocument(state.content)
+      : state.content;
+    const isDirty = latestContent !== state.originalContent;
+
+    if (!isDirty) {
+      if (latestContent !== state.content) {
+        set({ content: latestContent, dirty: false });
+      }
       return false;
     }
 
@@ -430,7 +464,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     try {
       const result = await saveDocumentAction({
         key,
-        content: state.content,
+        content: latestContent,
         ifMatchEtag: state.etag,
       });
 
@@ -457,7 +491,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
       set((current) => ({
         ...current,
-        originalContent: current.content,
+        content: latestContent,
+        originalContent: latestContent,
         dirty: false,
         etag: newEtag,
         lastSavedAt: savedAt,

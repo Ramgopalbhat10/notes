@@ -28,3 +28,4 @@ Issue template: `docs/issues/template.md`
 | 20 | Next.js 16.2 Upgrade Verification & Runtime Alignment | in-progress | None | `package.json`, `pnpm-lock.yaml`, `next.config.ts`, `proxy.ts`, `.github/workflows/workflow-gates.yml` |
 | 21 | Optimize folder move and manifest update hot paths | resolved | None | `app/api/fs/move/route.ts`, `lib/manifest-updater.ts` |
 | 22 | Consolidate duplicated route helper utilities | resolved | None | `app/api/ai/*`, `app/api/fs/*`, `app/actions/documents.ts`, `lib/http/*`, `lib/etag.ts`, `lib/tree/*` |
+| 23 | Implement Phase 1 personal-vault performance plan | resolved | None | `components/blocknote-editor.tsx`, `stores/editor.ts`, `app/actions/documents.ts`, `lib/manifest-updater.ts`, `components/file-tree/index.tsx`, `lib/content/slug-resolver.ts`, `app/files/[[...path]]/page.tsx`, `components/ai-chat/hooks/use-chat-session.ts` |

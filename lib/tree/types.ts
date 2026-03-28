@@ -6,6 +6,7 @@ export type FileNode = {
   name: string;
   path: string;
   parentId: NodeId | null;
+  normalizedSearchText: string;
   etag?: string;
   lastModified?: string;
   size?: number;
@@ -17,6 +18,7 @@ export type FolderNode = {
   name: string;
   path: string;
   parentId: NodeId | null;
+  normalizedSearchText: string;
   children: NodeId[];
   childrenLoaded: boolean;
   lastModified?: string;

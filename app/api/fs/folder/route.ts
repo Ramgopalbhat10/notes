@@ -10,7 +10,7 @@ import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
-import { deleteFileMeta } from "@/lib/fs/file-meta";
+import { deleteFileMetas } from "@/lib/fs/file-meta";
 import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 async function listKeys(bucket: string, prefix: string) {
@@ -111,9 +111,7 @@ export async function DELETE(request: NextRequest) {
     const relativeKeys = toRelativeKeys(keys);
     if (relativeKeys.length > 0) {
       await revalidateFileTags(relativeKeys);
-      for (const key of relativeKeys) {
-        void deleteFileMeta(key);
-      }
+      void deleteFileMetas(relativeKeys);
     }
 
     // Incrementally update manifest instead of invalidating

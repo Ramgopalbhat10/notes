@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth/client";
 import { encodePath } from "@/lib/utils";
 import { useWorkspaceLayoutStore } from "@/stores/layout";
+import { useSettingsStore } from "@/stores/settings";
 import { useTreeStore, type SelectByPathResult } from "@/stores/tree";
 
 function LeftSidebar() {
@@ -46,6 +47,7 @@ function RouteSynchronizer() {
   const initialized = useTreeStore((state) => state.initialized);
   const nodes = useTreeStore((state) => state.nodes);
   const idToSlug = useTreeStore((state) => state.idToSlug);
+  const rememberLastOpenedFile = useSettingsStore((state) => state.settings.privacy.rememberLastOpenedFile);
   const manifestVersion = useTreeStore(
     (state) => state.manifestMetadata?.checksum
       ?? state.manifestMetadata?.generatedAt
@@ -61,20 +63,15 @@ function RouteSynchronizer() {
     if (!initialized || routePath || restoredRef.current) {
       return;
     }
+    if (!rememberLastOpenedFile) {
+      restoredRef.current = true;
+      return;
+    }
 
     restoredRef.current = true;
 
     void (async () => {
       try {
-        // Check if user has "remember last file" setting enabled
-        const settingsRes = await fetch("/api/settings");
-        if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          if (!settings.privacy?.rememberLastOpenedFile) {
-            return;
-          }
-        }
-
         const { loadLastViewedFile } = await import("@/lib/platform/persistent-preferences");
         const lastViewed = await loadLastViewedFile();
 
@@ -86,7 +83,7 @@ function RouteSynchronizer() {
         // Silently fail if we can't load preferences
       }
     })();
-  }, [initialized, routePath, nodes, idToSlug, router]);
+  }, [idToSlug, initialized, nodes, rememberLastOpenedFile, routePath, router]);
 
   useEffect(() => {
     if (!initialized) {
