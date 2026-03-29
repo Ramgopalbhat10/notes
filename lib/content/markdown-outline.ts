@@ -204,7 +204,7 @@ export function buildMarkdownOutline(content: string): MarkdownOutlineResult {
   outlineCache.set(content, result);
   if (outlineCache.size > OUTLINE_CACHE_LIMIT) {
     const oldestKey = outlineCache.keys().next().value;
-    if (oldestKey) {
+    if (oldestKey !== undefined) {
       outlineCache.delete(oldestKey);
     }
   }

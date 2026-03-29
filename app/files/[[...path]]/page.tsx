@@ -47,6 +47,10 @@ function RouteSynchronizer() {
   const initialized = useTreeStore((state) => state.initialized);
   const nodes = useTreeStore((state) => state.nodes);
   const idToSlug = useTreeStore((state) => state.idToSlug);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+  const settingsLoading = useSettingsStore((state) => state.loading);
+  const settingsError = useSettingsStore((state) => state.error);
+  const settingsFetchedFromServer = useSettingsStore((state) => state.fetchedFromServer);
   const rememberLastOpenedFile = useSettingsStore((state) => state.settings.privacy.rememberLastOpenedFile);
   const manifestVersion = useTreeStore(
     (state) => state.manifestMetadata?.checksum
@@ -57,10 +61,29 @@ function RouteSynchronizer() {
 
   const lastAppliedRef = useRef<{ path: string | null; version: string } | null>(null);
   const restoredRef = useRef(false);
+  const requestedSettingsRef = useRef(false);
+
+  useEffect(() => {
+    if (requestedSettingsRef.current || settingsLoading || settingsFetchedFromServer || settingsError) {
+      return;
+    }
+    requestedSettingsRef.current = true;
+    void fetchSettings();
+  }, [fetchSettings, settingsError, settingsFetchedFromServer, settingsLoading]);
 
   // Restore last viewed file on initial load with no path
   useEffect(() => {
-    if (!initialized || routePath || restoredRef.current) {
+    if (
+      !initialized
+      || routePath
+      || restoredRef.current
+      || settingsLoading
+      || (!settingsFetchedFromServer && !settingsError)
+    ) {
+      return;
+    }
+    if (!settingsFetchedFromServer) {
+      restoredRef.current = true;
       return;
     }
     if (!rememberLastOpenedFile) {
@@ -83,7 +106,17 @@ function RouteSynchronizer() {
         // Silently fail if we can't load preferences
       }
     })();
-  }, [idToSlug, initialized, nodes, rememberLastOpenedFile, routePath, router]);
+  }, [
+    idToSlug,
+    initialized,
+    nodes,
+    rememberLastOpenedFile,
+    routePath,
+    router,
+    settingsError,
+    settingsFetchedFromServer,
+    settingsLoading,
+  ]);
 
   useEffect(() => {
     if (!initialized) {

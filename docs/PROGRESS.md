@@ -5,9 +5,7 @@ Current issue: `docs/issues/issue-23.md`
 Current section: Issue 23 — Implement Phase 1 personal-vault performance plan
 
 Previous tasks (latest completed batch only):
-- [x] Optimized the editor hot path, file-open hydration, startup settings bootstrap, outline/chat derived-content caching, and sharing-state reuse.
-- [x] Removed synchronous full-manifest persistence from note saves while keeping hot manifest correctness and slug indexes current.
-- [x] Finished tree hydrate/search and batch folder metadata invalidation work, then ran `pnpm lint` and `pnpm build`.
+- [x] Fixed PR #92 follow-up review comments by waiting for server-synced settings before last-file restore and by correcting empty-string eviction in the summary and outline caches.
 
 Next tasks:
 - None - all tasks completed.

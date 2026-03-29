@@ -74,6 +74,7 @@
 |---|---|---|
 | 2026-03-28 | perf | Opened Issue 23 from `docs/plans/2026-03-27-phase-1-performance-plan-personal-vault.md`, switched to `refactor/phase-1-personal-vault-performance`, and began implementing the scoped Phase 1 hot-path optimizations. |
 | 2026-03-28 | perf | Finished the Phase 1 performance plan: tree search and slug indexes now reuse manifest-derived data, editor typing/save no longer depend on per-keystroke full-document serialization, settings/bootstrap and outline/chat hot paths are locally cached, manifest persistence is debounced off the save path, folder metadata deletes are batched, and `pnpm lint` plus `pnpm build` pass. |
+| 2026-03-29 | fix | Addressed PR #92 review follow-ups by waiting for server-synced settings before restoring the last opened file and by fixing empty-string eviction in the document summary and markdown outline LRU caches. |
 
 ## Test Plan
 - Run `pnpm lint`.

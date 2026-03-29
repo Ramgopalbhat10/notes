@@ -39,7 +39,7 @@ export function getDocumentSummary(value: string): DocumentSummary {
   documentSummaryCache.set(value, summary);
   if (documentSummaryCache.size > DOCUMENT_SUMMARY_CACHE_LIMIT) {
     const oldestKey = documentSummaryCache.keys().next().value;
-    if (oldestKey) {
+    if (oldestKey !== undefined) {
       documentSummaryCache.delete(oldestKey);
     }
   }
