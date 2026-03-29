@@ -19,6 +19,7 @@ We observed a risk of the browser serving locally cached file content for up to 
   - Manifest-gated skip: if the tree manifest `etag` for a file equals the IndexedDB `etag`, skip the network.
   - First-open revalidation: on the first open per file per session (when an `etag` exists), force a one-time conditional GET to confirm freshness.
 - Manifest reads prefer Redis (seeded from S3). A stale-304 safeguard checks the latest manifest before replying 304 when `If-None-Match` matches the cached entry.
+- Incremental manifest mutations update Redis hot state immediately and debounce S3 snapshot persistence so note saves are not blocked on full-manifest uploads.
 
 ## Details
 - File data caching
@@ -33,6 +34,7 @@ We observed a risk of the browser serving locally cached file content for up to 
 - Manifest caching
   - Source of truth: Redis key `file-tree:manifest`, seeded from S3 (`file-tree.json`).
   - Server dedupe: `unstable_cache` keyed by `file-tree-manifest`, tagged with `MANIFEST_CACHE_TAG`, `revalidate: false`.
+  - Incremental mutations write the updated manifest body, checksum ETag, and cached slug index to Redis immediately, then debounce S3 snapshot persistence in the background.
   - Invalidation: `revalidateTag(MANIFEST_CACHE_TAG)` in mutation routes and during `lib/tree-refresh.ts`.
   - 304 safeguard: when `If-None-Match` matches the cached record, the route double-checks `loadLatestManifest()` and serves 200 with the latest body if the ETag changed.
   - API headers: `Cache-Control: public, max-age=30, s-maxage=300, stale-while-revalidate=60`, plus `ETag` and `X-Manifest-Source: redis|s3`.
@@ -44,6 +46,7 @@ We observed a risk of the browser serving locally cached file content for up to 
   - Client uses conditional requests, plus manifest-gated skip and first-open revalidation to balance freshness vs. calls.
 - Manifest
   - Short HTTP TTLs plus tag invalidation are sufficient for navigation; the 304 safeguard prevents stale responses during rare propagation races.
+  - For incremental writes, Redis becomes the hot manifest source immediately while S3 catches up via debounced snapshot flushes.
 
 ## Alternatives Considered
 - Using `cache: "no-store"` for editor file reads: guarantees network round-trip but removes `304` wins. "no-cache" keeps conditional GET benefits.
@@ -54,6 +57,7 @@ We observed a risk of the browser serving locally cached file content for up to 
 ## Consequences
 - Most editor opens skip the network when IndexedDB matches the manifest; first open per file per session performs one lightweight validation (often 304).
 - Predictable freshness after writes with minimal S3 cost: Redis write-through + tag invalidation keeps reads regional and fast.
+- File save latency no longer waits on a full-manifest upload; the durable manifest snapshot may lag briefly behind the hot Redis record until the debounce window flushes.
 
 ## How to Change Later
 - If bandwidth is a concern, increase reliance on manifest-gated skip and add a small staleness window; or add push updates to avoid polling entirely.

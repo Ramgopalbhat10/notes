@@ -47,7 +47,18 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Save
     });
 
     updateTag(getFileCacheTag(key));
-    revalidateTag(MANIFEST_CACHE_TAG, "max");
+    try {
+      const { addOrUpdateFile } = await import("@/lib/manifest-updater");
+      await addOrUpdateFile({
+        key,
+        etag,
+        lastModified,
+        size: Buffer.byteLength(content, "utf-8"),
+      });
+    } catch (error) {
+      console.error("Failed to hot-update manifest after save", error);
+      revalidateTag(MANIFEST_CACHE_TAG, "max");
+    }
 
     return { ok: true, etag, lastModified };
   } catch (error) {

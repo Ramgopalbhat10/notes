@@ -1,123 +1,135 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
+import type { BlockNoteEditor as BlockNoteEditorView } from "@blocknote/core";
 import "@blocknote/mantine/style.css";
 import { useEditorStore } from "@/stores/editor";
 
 type BlockNoteEditorProps = {
-	value: string;
-	onChange: (value: string) => void;
-	readOnly?: boolean;
-	className?: string;
+  documentKey?: string | null;
+  value: string;
+  onChange: (value: string) => void;
+  readOnly?: boolean;
+  className?: string;
 };
 
-export function BlockNoteEditor({ value, onChange, readOnly, className }: BlockNoteEditorProps) {
-	const registerEditorView = useEditorStore((state) => state.registerEditorView);
-	const setSelection = useEditorStore((state) => state.setSelection);
+export function BlockNoteEditor({
+  documentKey,
+  value,
+  onChange,
+  readOnly,
+  className,
+}: BlockNoteEditorProps) {
+  const registerEditorView = useEditorStore((state) => state.registerEditorView);
+  const setSelection = useEditorStore((state) => state.setSelection);
+  const setSelectedText = useEditorStore((state) => state.setSelectedText);
+  const syncTimeoutRef = useRef<number | null>(null);
 
-	const editor = useCreateBlockNote({
-		initialContent: undefined,
-	});
+  const editor = useCreateBlockNote({
+    initialContent: undefined,
+  });
 
-	// Load initial markdown content
-	useEffect(() => {
-		if (editor && value) {
-			const loadContent = async () => {
-				const blocks = await editor.tryParseMarkdownToBlocks(value);
-				editor.replaceBlocks(editor.document, blocks);
-			};
-			loadContent();
-		}
-	}, [editor]);
+  const flushEditorMarkdown = useCallback(async () => {
+    if (!editor) {
+      return;
+    }
+    const markdown = await editor.blocksToMarkdownLossy(editor.document);
+    onChange(markdown);
+  }, [editor, onChange]);
 
-	// Register editor with store and track selection
-	useEffect(() => {
-		if (editor) {
-			registerEditorView(editor as any);
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        window.clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
-			// Track selection changes
-			const handleSelectionChange = async () => {
-				const selection = editor.getSelection();
-				if (!selection) {
-					setSelection(null);
-					return;
-				}
+  // Re-hydrate when the active file changes, not on each debounced content sync.
+  useEffect(() => {
+    if (!editor || !documentKey) {
+      return;
+    }
 
-				// Get the selected blocks
-				const blocks = selection.blocks;
-				if (blocks.length === 0) {
-					setSelection(null);
-					return;
-				}
+    let cancelled = false;
+    const loadContent = async () => {
+      const blocks = await editor.tryParseMarkdownToBlocks(value);
+      if (!cancelled) {
+        editor.replaceBlocks(editor.document, blocks);
+      }
+    };
 
-				// Calculate character positions for the selection
-				// We walk through all document blocks to find selection boundaries
-				let from = 0;
-				let to = 0;
-				let currentPos = 0;
-				let foundStart = false;
-				let foundEnd = false;
+    void loadContent();
 
-				for (const block of editor.document) {
-					const blockMarkdown = await editor.blocksToMarkdownLossy([block]);
-					const blockLength = blockMarkdown.length;
+    return () => {
+      cancelled = true;
+    };
+  }, [documentKey, editor]);
 
-					if (block.id === blocks[0].id) {
-						from = currentPos;
-						foundStart = true;
-					}
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
 
-					if (foundStart && !foundEnd) {
-						to = currentPos + blockLength;
-					}
+    registerEditorView(editor as BlockNoteEditorView);
 
-					if (block.id === blocks[blocks.length - 1].id) {
-						foundEnd = true;
-						break;
-					}
+    const handleSelectionChange = async () => {
+      const selection = editor.getSelection();
+      const blocks = selection?.blocks ?? [];
+      if (blocks.length === 0) {
+        setSelection(null);
+        setSelectedText("");
+        return;
+      }
 
-					currentPos += blockLength;
-				}
+      setSelection(null);
+      const selectedMarkdown = await editor.blocksToMarkdownLossy(blocks);
+      setSelectedText(selectedMarkdown);
+    };
 
-				if (foundStart) {
-					setSelection({ from, to });
-				} else {
-					setSelection(null);
-				}
-			};
+    editor.onSelectionChange(handleSelectionChange);
+    void handleSelectionChange();
 
-			// Listen to selection changes
-			editor.onSelectionChange(handleSelectionChange);
+    return () => {
+      if (syncTimeoutRef.current) {
+        window.clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+        void flushEditorMarkdown();
+      }
+      registerEditorView(null);
+      setSelection(null);
+      setSelectedText("");
+    };
+  }, [editor, flushEditorMarkdown, registerEditorView, setSelectedText, setSelection]);
 
-			// Set initial selection
-			handleSelectionChange();
-		}
-		return () => {
-			registerEditorView(null);
-			setSelection(null);
-		};
-	}, [editor, registerEditorView, setSelection]);
+  const handleChange = useCallback(() => {
+    if (!editor) {
+      return;
+    }
+    if (syncTimeoutRef.current) {
+      window.clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = window.setTimeout(() => {
+      syncTimeoutRef.current = null;
+      void flushEditorMarkdown();
+    }, 250);
+  }, [editor, flushEditorMarkdown]);
 
-	// Handle changes
-	const handleChange = async () => {
-		if (!editor) return;
-		const markdown = await editor.blocksToMarkdownLossy(editor.document);
-		onChange(markdown);
-	};
+  if (!editor) {
+    return null;
+  }
 
-	if (!editor) {
-		return null;
-	}
-
-	return (
-		<div className="flex-1 min-h-[calc(100vh-12rem)] w-full">
-			<BlockNoteView
-				editor={editor}
-				onChange={handleChange}
-				className={className}
-			/>
-		</div>
-	);
+  return (
+    <div className="flex min-h-[calc(100vh-12rem)] w-full flex-1">
+      <BlockNoteView
+        editor={editor}
+        editable={!readOnly}
+        onChange={handleChange}
+        className={className}
+      />
+    </div>
+  );
 }

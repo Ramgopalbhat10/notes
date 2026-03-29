@@ -9,6 +9,7 @@ import {
   writeManifestToRedis,
   type RedisManifestValue,
 } from "@/lib/cache/manifest-store";
+import { buildSlugToIdMap } from "@/lib/content/slug-map";
 import { revalidateTag } from "next/cache";
 
 export interface RefreshResult {
@@ -27,7 +28,8 @@ export async function refreshFileTree(): Promise<RefreshResult> {
   const redisValue: RedisManifestValue = {
     body: payload,
     metadata: manifest.metadata,
-    etag,
+    etag: manifest.metadata.checksum || etag,
+    slugToId: buildSlugToIdMap(manifest),
     updatedAt,
   };
 
@@ -37,7 +39,7 @@ export async function refreshFileTree(): Promise<RefreshResult> {
   return {
     manifest,
     payload,
-    etag,
+    etag: manifest.metadata.checksum || etag,
     updatedAt,
   };
 }

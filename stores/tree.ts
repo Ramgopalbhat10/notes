@@ -23,6 +23,7 @@ import type {
 } from "@/lib/tree/types";
 import {
   basename,
+  buildNormalizedSearchText,
   buildSlugState,
   ensureFilePath,
   ensureFolderPath,
@@ -429,6 +430,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         name: safeName,
         path: newPath,
         parentId,
+        normalizedSearchText: buildNormalizedSearchText(safeName, newPath),
         children: [],
         childrenLoaded: true,
       };
@@ -457,6 +459,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
         name: basename(newPath),
         path: newPath,
         parentId,
+        normalizedSearchText: buildNormalizedSearchText(basename(newPath), newPath),
       };
 
       const snapshot = captureTreeSnapshot(createSnapshot(get()));

@@ -8,7 +8,7 @@ import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { useEditorStore } from "@/stores/editor";
 import { useChatStore } from "@/stores/chat";
 import type { ConversationHandle } from "@/components/ai-elements/conversation";
-import { computeDigest, computeExcerpt } from "../utils";
+import { getDocumentSummary } from "../utils";
 import type { FilePayload } from "../types";
 
 // Module-level singletons — persist across component remounts
@@ -92,8 +92,8 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
     getSharedChatSession,
   );
 
-  const excerpt = useMemo(() => computeExcerpt(content), [content]);
-  const digest = useMemo(() => computeDigest(content), [content]);
+  const documentSummary = useMemo(() => getDocumentSummary(content), [content]);
+  const { excerpt, digest } = documentSummary;
 
   const filePayload = useMemo<FilePayload | null>(() => {
     if (!contextFile) {
@@ -165,42 +165,38 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
     lastUserCountRef.current = userMessages.length;
   }, [visibleMessages, conversationRef]);
 
-  // Continue scrolling to bottom during streaming
+  // Track whether the user is still pinned to the bottom without interval polling.
   useEffect(() => {
-    if (!isStreaming || !shouldAutoScrollRef.current) {
+    const container = document.querySelector('[role="log"]');
+    if (!(container instanceof HTMLElement)) {
       return;
     }
 
-    const container = document.querySelector('[role="log"]') as HTMLElement;
-    if (!container) return;
-
-    let lastScrollTop = container.scrollTop;
-
     const handleScroll = () => {
-      // If user scrolled up manually, disable auto-scroll
-      if (container.scrollTop < lastScrollTop - 20) {
-        shouldAutoScrollRef.current = false;
-      }
-      lastScrollTop = container.scrollTop;
+      const distance = container.scrollHeight - container.scrollTop - container.clientHeight;
+      shouldAutoScrollRef.current = distance <= 24;
     };
 
+    handleScroll();
     container.addEventListener("scroll", handleScroll, { passive: true });
-
-    const intervalId = setInterval(() => {
-      if (!shouldAutoScrollRef.current) {
-        return;
-      }
-      const distance = container.scrollHeight - container.scrollTop - container.clientHeight;
-      if (distance > 20) {
-        container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
-      }
-    }, 300);
-
     return () => {
       container.removeEventListener("scroll", handleScroll);
-      clearInterval(intervalId);
     };
-  }, [isStreaming, streamingMessageId]);
+  }, []);
+
+  useEffect(() => {
+    if (!shouldAutoScrollRef.current) {
+      return;
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      conversationRef.current?.scrollToBottom({ behavior: isStreaming ? "auto" : "smooth" });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [conversationRef, isStreaming, streamingMessageId, visibleMessages.length]);
 
   // Disable auto-scroll when streaming ends
   useEffect(() => {

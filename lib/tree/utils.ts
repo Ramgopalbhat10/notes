@@ -11,6 +11,10 @@ export function ensureFilePath(parentPath: string, name: string): string {
   return `${parentPath}${normalized}`;
 }
 
+export function buildNormalizedSearchText(name: string, path: string): string {
+  return `${name}\n${path}`.toLowerCase();
+}
+
 export function removeNodesWithPrefix(nodes: Record<NodeId, TreeNode>, prefix: string): void {
   Object.keys(nodes).forEach((key) => {
     if (key.startsWith(prefix)) {

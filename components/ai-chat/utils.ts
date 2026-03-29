@@ -2,27 +2,49 @@ import type { UIMessage } from "ai";
 
 import { MAX_EXCERPT_CHARS } from "./types";
 
-export function computeExcerpt(value: string): string {
-  if (!value) {
-    return "";
-  }
-  const normalized = value.replace(/\r\n/g, "\n");
-  if (normalized.length <= MAX_EXCERPT_CHARS) {
-    return normalized;
-  }
-  return normalized.slice(0, MAX_EXCERPT_CHARS);
-}
+type DocumentSummary = {
+  excerpt: string;
+  digest: string | null;
+};
 
-export function computeDigest(value: string): string | null {
-  if (!value) {
-    return null;
+const DOCUMENT_SUMMARY_CACHE_LIMIT = 12;
+const documentSummaryCache = new Map<string, DocumentSummary>();
+
+export function getDocumentSummary(value: string): DocumentSummary {
+  const cached = documentSummaryCache.get(value);
+  if (cached) {
+    documentSummaryCache.delete(value);
+    documentSummaryCache.set(value, cached);
+    return cached;
   }
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index);
-    hash |= 0;
+
+  let digest: string | null = null;
+  let excerpt = "";
+
+  if (value) {
+    const normalized = value.replace(/\r\n/g, "\n");
+    excerpt = normalized.length <= MAX_EXCERPT_CHARS
+      ? normalized
+      : normalized.slice(0, MAX_EXCERPT_CHARS);
+
+    let hash = 0;
+    for (let index = 0; index < value.length; index += 1) {
+      hash = (hash << 5) - hash + value.charCodeAt(index);
+      hash |= 0;
+    }
+    digest = `${value.length}:${(hash >>> 0).toString(16)}`;
   }
-  return `${value.length}:${(hash >>> 0).toString(16)}`;
+
+  const summary = { excerpt, digest };
+  documentSummaryCache.set(value, summary);
+  if (documentSummaryCache.size > DOCUMENT_SUMMARY_CACHE_LIMIT) {
+    const oldestKey = documentSummaryCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      documentSummaryCache.delete(oldestKey);
+    }
+  }
+
+  return summary;
 }
 
 export function messageToPlainText(message: UIMessage): string {

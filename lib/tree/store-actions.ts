@@ -1,5 +1,5 @@
 import type { Node, NodeId } from "@/lib/tree/types";
-import { basename, ensureFilePath, ensureFolderPath, getParentPath } from "@/lib/tree/utils";
+import { basename, buildNormalizedSearchText, ensureFilePath, ensureFolderPath, getParentPath } from "@/lib/tree/utils";
 
 export function resolveNodeTargetPath(node: Node, parentPath: string, name: string): string {
   return node.type === "folder"
@@ -23,12 +23,14 @@ export function getPreviousHistorySelection(
 }
 
 export function prepareQueuedMoveNode(node: Node, targetPath: string): Node {
+  const name = basename(targetPath);
   return {
     ...node,
     id: targetPath,
     path: targetPath,
-    name: basename(targetPath),
+    name,
     parentId: getParentPath(targetPath),
+    normalizedSearchText: buildNormalizedSearchText(name, targetPath),
   };
 }
 
