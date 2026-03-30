@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
+import { AiAssistantSidebar } from "@/components/ai-actions/sidebar-assistant";
 import { SidebarChat, type SidebarChatHandle } from "@/components/ai-chat/sidebar-chat";
 import { FileTree } from "@/components/file-tree";
 import { OutlineSidebar } from "@/components/vault-workspace/sections/outline-sidebar";
@@ -209,7 +210,12 @@ export default function FilesPage() {
     [handleNewChatRef],
   );
   const outlineSidebar = useMemo(() => <OutlineSidebar />, []);
-  const rightSidebar = rightSidebarPanel === "outline" ? outlineSidebar : chatSidebar;
+  const assistantSidebar = useMemo(() => <AiAssistantSidebar />, []);
+  const rightSidebar = rightSidebarPanel === "outline"
+    ? outlineSidebar
+    : rightSidebarPanel === "assistant"
+      ? assistantSidebar
+      : chatSidebar;
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -230,11 +236,12 @@ export default function FilesPage() {
         header={header}
         onNewChat={handleNewChat}
       >
-        {({ openChatSidebar, openOutlineSidebar }) => (
+        {({ openChatSidebar, openOutlineSidebar, openAssistantSidebar }) => (
           <VaultWorkspace
             onHeaderChange={setHeader}
             onOpenChatSidebar={openChatSidebar}
             onOpenOutlineSidebar={openOutlineSidebar}
+            onOpenAssistantSidebar={openAssistantSidebar}
           />
         )}
       </AppShell>

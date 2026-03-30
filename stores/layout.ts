@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type RightSidebarPanel = "chat" | "outline";
+export type RightSidebarPanel = "chat" | "outline" | "assistant";
 
 type WorkspaceLayoutState = {
   centered: boolean;

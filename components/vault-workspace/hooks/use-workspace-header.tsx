@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 
 import { WorkspaceHeader } from "../sections/header";
-import type { AiActionType, BreadcrumbSegment } from "../types";
+import type { AiActionContextMode, AiActionType, BreadcrumbSegment } from "../types";
 
 type SharingState = {
   isPublic: boolean;
@@ -19,7 +19,7 @@ type UseWorkspaceHeaderOptions = {
   saving: boolean;
   aiBusy: boolean;
   aiDisabled: boolean;
-  onTriggerAction: (action: AiActionType) => void;
+  onTriggerAction: (action: AiActionType, contextMode: AiActionContextMode) => void;
   hasFile: boolean;
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;

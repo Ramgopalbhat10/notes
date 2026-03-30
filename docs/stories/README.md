@@ -28,3 +28,4 @@ Story template: `docs/stories/template.md`
 | 20 | Workflow Enforcement via Git Hooks and CI Gates | `docs/stories/story-20.md` |
 | 21 | Public View Title, Rendering Stability, Outline Navigation, UX Polish, and Highlight Parity | `docs/stories/story-21.md` |
 | 22 | Public View Look and Feel Polish (Fonts, Date, Reading Time, Outline Default) | `docs/stories/story-22.md` |
+| 23 | AI Actions Sidebar Workspace and Selection-First UX | `docs/stories/story-23.md` |

@@ -9,28 +9,30 @@ import { useTreeStore } from "@/stores/tree";
 import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useSettingsStore } from "@/stores/settings";
 import { useToast } from "@/hooks/use-toast";
+import { useAiActionController } from "@/components/ai-actions/hooks/use-ai-action-controller";
+import type { AiActionSelectionSource } from "@/components/ai-actions/types";
 
-import { useAiSession } from "./hooks/use-ai-session";
 import { useFileSharing } from "./hooks/use-file-sharing";
 import { useResolvedPath } from "./hooks/use-resolved-path";
 import { useSiblingNavigation } from "./hooks/use-sibling-navigation";
 import { useWorkspaceFileSync } from "./hooks/use-workspace-file-sync";
 import { useWorkspaceHeader } from "./hooks/use-workspace-header";
 import { useWorkspaceSettingsSync } from "./hooks/use-workspace-settings-sync";
-import { AiResultPanel } from "./sections/ai-result-panel";
 import { WorkspaceBody } from "./sections/workspace-body";
-import type { BreadcrumbSegment } from "./types";
+import type { AiActionContextMode, BreadcrumbSegment } from "./types";
 
 export function VaultWorkspace({
   className,
   onHeaderChange,
   onOpenChatSidebar,
   onOpenOutlineSidebar,
+  onOpenAssistantSidebar,
 }: {
   className?: string;
   onHeaderChange?: (node: ReactNode | null) => void;
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;
+  onOpenAssistantSidebar?: () => void;
 }) {
   const selectedPath = useTreeStore((state) => {
     const id = state.selectedId;
@@ -59,9 +61,6 @@ export function VaultWorkspace({
   const loadFile = useEditorStore((state) => state.loadFile);
   const reset = useEditorStore((state) => state.reset);
   const save = useEditorStore((state) => state.save);
-  const selection = useEditorStore((state) => state.selection);
-  const selectedText = useEditorStore((state) => state.selectedText);
-  const applyAiResult = useEditorStore((state) => state.applyAiResult);
   const { toast } = useToast();
   const centered = useWorkspaceLayoutStore((state) => state.centered);
   const setCentered = useWorkspaceLayoutStore((state) => state.setCentered);
@@ -115,30 +114,7 @@ export function VaultWorkspace({
     }
     void save("manual");
   }, [dirty, save, status]);
-
-  const {
-    state: aiState,
-    panelOpen,
-    isStreaming: aiStreaming,
-    start,
-    cancel,
-    closePanel,
-    retry,
-    applyReplace,
-    applyInsert,
-    copyResult,
-    canApply,
-  } = useAiSession({
-    fileKey,
-    content,
-    selection,
-    selectedText,
-    status,
-    hasDocumentContent,
-    toast,
-    applyAiResult,
-    setMode,
-  });
+  const { isStreaming: aiStreaming, triggerAction } = useAiActionController();
 
   const shareKey = selectedPath;
 
@@ -210,9 +186,23 @@ export function VaultWorkspace({
     setMode(mode === "preview" ? "edit" : "preview");
   }, [mode, setMode]);
 
-  const handleTriggerAction = useCallback((action: Parameters<typeof start>[0]) => {
-    void start(action);
-  }, [start]);
+  const handleTriggerAction = useCallback((
+    action: Parameters<typeof triggerAction>[0],
+    contextMode: AiActionContextMode,
+    source?: AiActionSelectionSource,
+  ) => {
+    onOpenAssistantSidebar?.();
+    void triggerAction(action, contextMode, source ? {
+      source: {
+        fileKey,
+        documentText: content,
+        selectionText: source.selectionText,
+        selectionBlockIds: source.sourceView === "edit" ? useEditorStore.getState().selectedBlockIds : [],
+        sourceView: source.sourceView,
+        previewAnchor: source.previewAnchor,
+      },
+    } : undefined);
+  }, [content, fileKey, onOpenAssistantSidebar, triggerAction]);
 
   const headerContent = useWorkspaceHeader({
     segments,
@@ -258,10 +248,10 @@ export function VaultWorkspace({
       mode={mode}
       content={content}
       setContent={setContent}
+      onSelectionAction={(action, source) => handleTriggerAction(action, "selection", source)}
+      selectionAiBusy={aiStreaming}
     />
   );
-
-  const aiPanelVisible = hasFile && panelOpen && aiState.status !== "idle";
 
   const contentMaxWidth = centered ? "64rem" : "100%";
 
@@ -271,18 +261,6 @@ export function VaultWorkspace({
         className="space-y-4 w-full transition-[max-width] duration-300 ease-in-out mx-auto"
         style={{ maxWidth: contentMaxWidth }}
       >
-        {aiPanelVisible ? (
-          <AiResultPanel
-            state={aiState}
-            onClose={closePanel}
-            onCancel={cancel}
-            onRetry={retry}
-            onCopy={copyResult}
-            onInsert={applyInsert}
-            onReplace={applyReplace}
-            canApply={canApply}
-          />
-        ) : null}
         {body}
       </div>
     </div>

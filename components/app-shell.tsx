@@ -43,6 +43,7 @@ type AppShellChildren = React.ReactNode | ((helpers: {
   openRightPanel: (panel: RightSidebarPanel) => void;
   openChatSidebar: () => void;
   openOutlineSidebar: () => void;
+  openAssistantSidebar: () => void;
 }) => React.ReactNode);
 
 type AppShellProps = {
@@ -98,6 +99,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     openRightPanel,
     openChatSidebar,
     openOutlineSidebar,
+    openAssistantSidebar,
     handleOutlineNavigateOnMobile,
   } = useRightMobileSheet({
     hasRight,
@@ -126,7 +128,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
   }, [setRightSidebarOpen, setRightSidebarExpanded]);
 
   const renderedChildren = typeof children === "function"
-    ? children({ toggleRight, openRightPanel, openChatSidebar, openOutlineSidebar })
+    ? children({ toggleRight, openRightPanel, openChatSidebar, openOutlineSidebar, openAssistantSidebar })
     : children;
   const { mainScrollRef, isMainScrollable, scrollMainToTop } = useMainScroll({ dependency: renderedChildren });
   const editorStatus = useEditorStore((state) => state.status);

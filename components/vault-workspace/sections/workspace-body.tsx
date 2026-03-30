@@ -1,11 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import type { AiActionSelectionSource } from "@/components/ai-actions/types";
+import { PreviewSelectionSurface } from "@/components/ai-actions/preview-selection-surface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectedFilePlaceholder } from "@/components/selected-file-placeholder";
 import { MarkdownEditor } from "@/components/markdown-editor";
-import { MarkdownPreview } from "@/components/markdown-preview";
 import type { RouteTargetState } from "@/lib/tree/types";
+import type { AiActionType } from "../types";
 
 type WorkspaceBodyProps = {
   selectedPath: string | null;
@@ -19,6 +21,8 @@ type WorkspaceBodyProps = {
   mode: "preview" | "edit";
   content: string;
   setContent: (value: string) => void;
+  onSelectionAction?: (action: AiActionType, source?: AiActionSelectionSource) => void;
+  selectionAiBusy?: boolean;
 };
 
 export function WorkspaceBody({
@@ -33,6 +37,8 @@ export function WorkspaceBody({
   mode,
   content,
   setContent,
+  onSelectionAction,
+  selectionAiBusy,
 }: WorkspaceBodyProps) {
   if (!selectedPath) {
     if (routeTarget) {
@@ -87,12 +93,22 @@ export function WorkspaceBody({
   }
 
   if (mode === "edit") {
-    return <MarkdownEditor documentKey={selectedPath} value={content} onChange={setContent} />;
+    return (
+      <MarkdownEditor
+        documentKey={selectedPath}
+        value={content}
+        onChange={setContent}
+        onSelectionAction={onSelectionAction}
+        selectionAiBusy={selectionAiBusy}
+      />
+    );
   }
 
   return (
-    <div className="rounded-lg w-full overflow-hidden px-4 md:px-0">
-      <MarkdownPreview content={content} parseIncompleteMarkdown={false} />
-    </div>
+    <PreviewSelectionSurface
+      content={content}
+      busy={Boolean(selectionAiBusy)}
+      onSelectAction={(action, source) => onSelectionAction?.(action, source)}
+    />
   );
 }

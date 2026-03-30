@@ -7,6 +7,8 @@ export type BreadcrumbSegment = {
 
 export type AiActionType = "improve" | "summarize" | "expand";
 
+export type AiActionContextMode = "selection" | "document";
+
 export type AiSessionStatus = "idle" | "streaming" | "success" | "error" | "cancelled";
 
 export type AiSessionState = {

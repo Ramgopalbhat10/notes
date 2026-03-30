@@ -403,6 +403,39 @@
       opacity: 1;
     }
   }
+
+  .markdown-preview.assistant-markdown {
+    line-height: 1.45 !important;
+  }
+
+  .markdown-preview.assistant-markdown [data-streamdown="paragraph"],
+  .markdown-preview.assistant-markdown p,
+  .markdown-preview.assistant-markdown [data-streamdown="list-item-content"],
+  .markdown-preview.assistant-markdown li,
+  .markdown-preview.assistant-markdown blockquote,
+  .markdown-preview.assistant-markdown td,
+  .markdown-preview.assistant-markdown th {
+    font-size: 0.875rem;
+    line-height: 1.55rem;
+  }
+
+  .markdown-preview.assistant-markdown h1 {
+    font-size: 1rem;
+    line-height: 1.4rem;
+  }
+
+  .markdown-preview.assistant-markdown h2 {
+    font-size: 0.9375rem;
+    line-height: 1.35rem;
+  }
+
+  .markdown-preview.assistant-markdown h3,
+  .markdown-preview.assistant-markdown h4,
+  .markdown-preview.assistant-markdown h5,
+  .markdown-preview.assistant-markdown h6 {
+    font-size: 0.875rem;
+    line-height: 1.3rem;
+  }
 }
 
 .markdown-preview td {
