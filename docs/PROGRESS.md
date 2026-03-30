@@ -1,16 +1,21 @@
 # Progress
 
-Current issue: `docs/issues/issue-23.md`
+Current story: `docs/stories/story-23.md`
 
-Current section: Issue 23 — Implement Phase 1 personal-vault performance plan
+Current section: Story 23.4 — Verification and Regression Checks
 
 Previous tasks (latest completed batch only):
-- [x] Fixed PR #92 follow-up review comments by waiting for server-synced settings before last-file restore and by correcting empty-string eviction in the summary and outline caches.
+- [x] Removed duplicated desktop AI entry points, aligned assistant styling with existing theme patterns, and hid desktop-only compare split UI.
+- [x] Added preview-mode text selection actions and reused assistant sessions for the same file/action/selection instead of rerunning on reopen.
+- [x] Ran `pnpm lint`.
+- [x] Ran `pnpm build`.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Manually verify edit-mode and preview-mode selection actions once an authenticated `/files` session is available.
+- [ ] Manually verify desktop vs tablet/mobile AI entry placement and compare behavior once an authenticated `/files` session is available.
+- [ ] Manually verify assistant reopen-without-rerun behavior for document and selection actions once an authenticated `/files` session is available.
 
 Notes:
-- Branch: `refactor/phase-1-personal-vault-performance`
-- Scope follows `docs/plans/2026-03-27-phase-1-performance-plan-personal-vault.md` and targets personal-vault hot paths without changing route contracts or user-visible behavior.
-- Preserve the debounced manifest-to-S3 flush model: Redis is now the hot manifest source for incremental writes, while explicit tree refresh remains the full durable rebuild path.
+- Branch: `feature/ai-actions-sidebar-workspace`
+- This story builds on the existing AI actions, chat, and outline sidebar work in Stories 4, 5, 17, and 18.
+- Browser-level manual verification is still pending even though lint/build passed; local app access redirects to `/auth/sign-in` without an available workspace session.

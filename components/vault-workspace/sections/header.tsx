@@ -34,8 +34,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { AiActionDropdown } from "./ai-action-dropdown";
 import { AI_ACTIONS } from "../constants";
-import type { AiActionType, BreadcrumbSegment } from "../types";
+import type { AiActionContextMode, AiActionType, BreadcrumbSegment } from "../types";
 
 type SharingState = {
   isPublic: boolean;
@@ -51,7 +52,7 @@ export type WorkspaceHeaderProps = {
   onSave: () => void;
   canSave: boolean;
   saving: boolean;
-  onTriggerAction: (action: AiActionType) => void;
+  onTriggerAction: (action: AiActionType, contextMode: AiActionContextMode) => void;
   aiBusy: boolean;
   aiDisabled: boolean;
   hasFile: boolean;
@@ -275,6 +276,16 @@ export function WorkspaceHeader({
               )}
               <div className="hidden md:block h-4 w-px bg-border mx-1" aria-hidden="true" />
 
+              <div className="hidden lg:block">
+                <AiActionDropdown
+                  disabled={aiDisabled}
+                  busy={aiBusy}
+                  onSelect={(action) => onTriggerAction(action, "document")}
+                />
+              </div>
+
+              <div className="hidden lg:block h-4 w-px bg-border mx-1" aria-hidden="true" />
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -399,8 +410,8 @@ export function WorkspaceHeader({
                   {AI_ACTIONS.map((item) => (
                     <DropdownMenuItem
                       key={item.value}
-                      className="flex items-center gap-2"
-                      onSelect={() => onTriggerAction(item.value)}
+                      className="flex items-center gap-2 lg:hidden"
+                      onSelect={() => onTriggerAction(item.value, "document")}
                       disabled={aiDisabled || aiBusy}
                     >
                       <item.icon className="h-4 w-4" />
@@ -408,7 +419,7 @@ export function WorkspaceHeader({
                     </DropdownMenuItem>
                   ))}
 
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator className="lg:hidden" />
 
                   <DropdownMenuItem
                     className="flex items-center gap-2"

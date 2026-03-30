@@ -19,7 +19,11 @@ export function useRightSidebarPanel({
   rightSidebarPanel,
   onOutlineNavigateOnMobile,
 }: UseRightSidebarPanelOptions): UseRightSidebarPanelResult {
-  const rightSidebarTitle = rightSidebarPanel === "outline" ? "Outline" : "Chat";
+  const rightSidebarTitle = rightSidebarPanel === "outline"
+    ? "Outline"
+    : rightSidebarPanel === "assistant"
+      ? "Assistant"
+      : "Chat";
   const showNewChatAction = rightSidebarPanel === "chat";
 
   const renderedRight = useMemo(() => {
