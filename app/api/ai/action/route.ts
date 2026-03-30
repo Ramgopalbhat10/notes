@@ -44,6 +44,7 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const CHUNK_TARGET_CHARS = 18_000;
 const CHUNK_HARD_MAX_CHARS = 24_000;
+const MAX_CHUNK_COUNT = 6;
 
 const inMemoryRateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
@@ -72,6 +73,14 @@ export async function POST(request: NextRequest) {
     }
 
     const chunkPlan = planChunks(sourceText);
+    if (chunkPlan.chunks.length > MAX_CHUNK_COUNT) {
+      return jsonResponse(
+        {
+          error: "This note is too large to process in one request. Select a smaller section and try again.",
+        },
+        { status: 413 },
+      );
+    }
 
     if (payload.requestKind === "refine") {
       const result = await streamText({

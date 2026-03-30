@@ -35,6 +35,8 @@ Goal: Turn the current one-shot AI action card into a richer, less disruptive ed
 | 2026-03-30 | qa | Re-ran `pnpm lint` and `pnpm build` after the assistant UX cleanup and preview-selection changes. |
 | 2026-03-30 | fix | Fixed preview selection anchoring, stabilized selection session identity for duplicate text, restored desktop compare affordances, and replaced the chunking sentence regex with a linear scan. |
 | 2026-03-30 | qa | Re-ran `pnpm lint` and `pnpm build` after the review-driven AI assistant regression fixes. |
+| 2026-03-30 | fix | Prioritized preview-anchor application ahead of edit-mode block fallbacks and capped chunk plans to keep one API call from faning out into unbounded model work. |
+| 2026-03-30 | qa | Re-ran `pnpm lint` and `pnpm build` after the follow-up review fixes. |
 | 2026-03-30 | qa | Browser-level workspace verification remains pending because local app access currently redirects to `/auth/sign-in` without an authenticated `/files` session. |
 
 ## Issues
@@ -129,6 +131,7 @@ Test Plan
 Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
+- [x] Fix follow-up review comments for preview-anchor precedence during apply and hard-limit chunk plan size per request.
 - [ ] Manually verify selection-first, whole-note, compare, refine, and mobile assistant flows.
 - [ ] Manually verify preview-mode selection actions, desktop-only dedicated AI header entry, and assistant reopen-without-rerun behavior.
 

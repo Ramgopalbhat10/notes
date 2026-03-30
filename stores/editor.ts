@@ -116,6 +116,15 @@ async function serializeActiveEditorDocument(fallback: string): Promise<string> 
   }
 }
 
+async function replaceActiveEditorDocument(markdown: string): Promise<void> {
+  if (!activeEditorView) {
+    return;
+  }
+
+  const blocks = await activeEditorView.tryParseMarkdownToBlocks(markdown);
+  activeEditorView.replaceBlocks(activeEditorView.document, blocks);
+}
+
 if (typeof window !== "undefined") {
   subscribePersistentDocumentEvictions((event) => {
     if (event.type === "single") {
@@ -461,13 +470,40 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const strategy = options?.strategy ?? "insert";
     const sourceText = options?.sourceText?.trim() ?? "";
     const previewAnchor = options?.previewAnchor;
+    const blockIds = options?.blockIds ?? [];
+
+    if (previewAnchor && sourceText && blockIds.length === 0) {
+      const latestDocument = activeEditorView
+        ? await serializeActiveEditorDocument(state.content)
+        : state.content;
+      const resolvedRange = resolvePreviewSelectionRange(latestDocument, sourceText, previewAnchor);
+      if (!resolvedRange) {
+        return false;
+      }
+
+      const nextContent = strategy === "replace"
+        ? replaceRange(latestDocument, resolvedRange.start, resolvedRange.end, text)
+        : replaceRange(
+          latestDocument,
+          resolvedRange.start,
+          resolvedRange.end,
+          `${latestDocument.slice(resolvedRange.start, resolvedRange.end)}\n\n${text}`,
+        );
+
+      if (activeEditorView) {
+        await replaceActiveEditorDocument(nextContent);
+      }
+      get().setContent(nextContent);
+      set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
+      return true;
+    }
 
     if (state.mode === "edit" && activeEditorView) {
       const editor = activeEditorView;
 
       // Parse markdown to blocks
       const blocks = await editor.tryParseMarkdownToBlocks(text);
-      const targetBlocks = findBlocksByIds(editor.document, options?.blockIds ?? []);
+      const targetBlocks = findBlocksByIds(editor.document, blockIds);
 
       if (strategy === "replace") {
         if (targetBlocks.length > 0) {
@@ -505,19 +541,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       get().setContent(text);
       set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
       return true;
-    }
-
-    if (previewAnchor && sourceText) {
-      const resolvedRange = resolvePreviewSelectionRange(doc, sourceText, previewAnchor);
-      if (resolvedRange) {
-        const nextContent = strategy === "replace"
-          ? replaceRange(doc, resolvedRange.start, resolvedRange.end, text)
-          : replaceRange(doc, resolvedRange.start, resolvedRange.end, `${doc.slice(resolvedRange.start, resolvedRange.end)}\n\n${text}`);
-        get().setContent(nextContent);
-        set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
-        return true;
-      }
-      return false;
     }
 
     if (strategy === "replace" && sourceText) {
