@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo } from "react";
 
 import { useToast } from "@/hooks/use-toast";
 import { extractResponseError, getErrorMessage } from "@/lib/http/client";
+import { buildSelectionIdentity } from "@/lib/ai/selection-anchor";
+import type { PreviewSelectionAnchor } from "@/lib/ai/selection-anchor";
 import { useChatStore } from "@/stores/chat";
 import { INITIAL_AI_ASSISTANT_STATE, useAiActionsStore } from "@/stores/ai-actions";
 import { useEditorStore } from "@/stores/editor";
@@ -28,6 +30,7 @@ type StartActionOptions = {
     selectionText: string;
     selectionBlockIds: string[];
     sourceView: AiActionSourceView;
+    previewAnchor?: PreviewSelectionAnchor;
   };
 };
 
@@ -38,15 +41,12 @@ type TriggerActionOptions = {
     selectionText: string;
     selectionBlockIds?: string[];
     sourceView: AiActionSourceView;
+    previewAnchor?: PreviewSelectionAnchor;
   };
 };
 
 function getReferenceText(documentText: string, selectionText: string, contextMode: AiActionContextMode): string {
   return contextMode === "selection" ? selectionText : documentText;
-}
-
-function getSelectionSignature(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
 }
 
 function buildSessionKey({
@@ -67,11 +67,15 @@ function canReuseSession({
   cached,
   documentText,
   selectionText,
+  selectionBlockIds,
+  previewAnchor,
   contextMode,
 }: {
   cached: typeof INITIAL_AI_ASSISTANT_STATE;
   documentText: string;
   selectionText: string;
+  selectionBlockIds?: string[];
+  previewAnchor?: PreviewSelectionAnchor;
   contextMode: AiActionContextMode;
 }): boolean {
   if (!cached.action || cached.status === "streaming") {
@@ -87,7 +91,12 @@ function canReuseSession({
   }
 
   if (contextMode === "selection") {
-    return cached.selectionSignature === getSelectionSignature(selectionText);
+    return cached.selectionSignature === buildSelectionIdentity({
+      contextMode,
+      selectionText,
+      selectionBlockIds,
+      previewAnchor,
+    });
   }
 
   return true;
@@ -138,9 +147,15 @@ export function useAiActionController() {
       const documentText = source?.documentText ?? content;
       const selectionTextSnapshot = (source?.selectionText ?? selectedText).trim();
       const selectionBlockIdsSnapshot = source?.selectionBlockIds ?? selectedBlockIds;
+      const previewAnchorSnapshot = source?.previewAnchor;
       const snapshotFileKey = source?.fileKey ?? fileKey;
       const sourceView = source?.sourceView ?? (contextMode === "selection" ? "edit" : "header");
-      const selectionSignature = getSelectionSignature(selectionTextSnapshot);
+      const selectionSignature = buildSelectionIdentity({
+        contextMode,
+        selectionText: selectionTextSnapshot,
+        selectionBlockIds: selectionBlockIdsSnapshot,
+        previewAnchor: previewAnchorSnapshot,
+      });
       const sessionKey = buildSessionKey({
         fileKey: snapshotFileKey,
         action,
@@ -179,6 +194,8 @@ export function useAiActionController() {
         selectionText: selectionTextSnapshot,
         selectionSignature,
         selectionBlockIds: selectionBlockIdsSnapshot,
+        selectionContextBefore: previewAnchorSnapshot?.contextBefore ?? "",
+        selectionContextAfter: previewAnchorSnapshot?.contextAfter ?? "",
         contextMode,
         sourceView,
         requestKind,
@@ -276,7 +293,14 @@ export function useAiActionController() {
     async (action: AiActionType, contextMode: AiActionContextMode, options?: TriggerActionOptions) => {
       const documentText = options?.source?.documentText ?? content;
       const selectionTextSnapshot = (options?.source?.selectionText ?? selectedText).trim();
-      const selectionSignature = getSelectionSignature(selectionTextSnapshot);
+      const selectionBlockIdsSnapshot = options?.source?.selectionBlockIds ?? selectedBlockIds;
+      const previewAnchorSnapshot = options?.source?.previewAnchor;
+      const selectionSignature = buildSelectionIdentity({
+        contextMode,
+        selectionText: selectionTextSnapshot,
+        selectionBlockIds: selectionBlockIdsSnapshot,
+        previewAnchor: previewAnchorSnapshot,
+      });
       const sessionKey = buildSessionKey({
         fileKey: options?.source?.fileKey ?? fileKey,
         action,
@@ -291,6 +315,8 @@ export function useAiActionController() {
           cached,
           documentText,
           selectionText: selectionTextSnapshot,
+          selectionBlockIds: selectionBlockIdsSnapshot,
+          previewAnchor: previewAnchorSnapshot,
           contextMode,
         })
       ) {
@@ -306,8 +332,9 @@ export function useAiActionController() {
           fileKey: options?.source?.fileKey ?? fileKey,
           documentText,
           selectionText: selectionTextSnapshot,
-          selectionBlockIds: options?.source?.selectionBlockIds ?? selectedBlockIds,
+          selectionBlockIds: selectionBlockIdsSnapshot,
           sourceView: options?.source?.sourceView ?? (contextMode === "selection" ? "edit" : "header"),
+          previewAnchor: previewAnchorSnapshot,
         },
       });
     },
@@ -330,6 +357,12 @@ export function useAiActionController() {
           selectionText: session.selectionText,
           selectionBlockIds: session.selectionBlockIds,
           sourceView: session.sourceView,
+          previewAnchor: session.sourceView === "preview"
+            ? {
+              contextBefore: session.selectionContextBefore,
+              contextAfter: session.selectionContextAfter,
+            }
+            : undefined,
         },
       });
     },
@@ -359,39 +392,71 @@ export function useAiActionController() {
           selectionText: session.selectionText,
           selectionBlockIds: session.selectionBlockIds,
           sourceView: session.sourceView,
+          previewAnchor: session.sourceView === "preview"
+            ? {
+              contextBefore: session.selectionContextBefore,
+              contextAfter: session.selectionContextAfter,
+            }
+            : undefined,
         },
       });
     },
     [session.action, session.contextMode, session.documentText, session.fileKey, session.selectionBlockIds, session.selectionText, startAction, toast],
   );
 
-  const applyReplace = useCallback(() => {
+  const applyReplace = useCallback(async () => {
     if (session.status !== "success" || !session.result.trim()) {
       toast({ description: "No AI output available to apply.", variant: "destructive" });
       return;
     }
     setMode("edit");
-    applyAiResult(session.result, {
+    const applied = await applyAiResult(session.result, {
       strategy: "replace",
       blockIds: session.contextMode === "selection" ? session.selectionBlockIds : undefined,
       sourceText: session.contextMode === "selection" ? session.selectionText : undefined,
+      previewAnchor: session.sourceView === "preview"
+        ? {
+          contextBefore: session.selectionContextBefore,
+          contextAfter: session.selectionContextAfter,
+        }
+        : undefined,
     });
-    toast({ description: session.contextMode === "selection" ? "Replaced the selected content." : "Replaced the document draft." });
-  }, [applyAiResult, session.contextMode, session.result, session.selectionBlockIds, session.status, setMode, toast]);
+    toast({
+      description: applied
+        ? session.contextMode === "selection"
+          ? "Replaced the selected content."
+          : "Replaced the document draft."
+        : "Could not locate the original selection in the current note.",
+      variant: applied ? "default" : "destructive",
+    });
+  }, [applyAiResult, session.contextMode, session.result, session.selectionBlockIds, session.selectionContextAfter, session.selectionContextBefore, session.selectionText, session.sourceView, session.status, setMode, toast]);
 
-  const applyInsert = useCallback(() => {
+  const applyInsert = useCallback(async () => {
     if (session.status !== "success" || !session.result.trim()) {
       toast({ description: "No AI output available to insert.", variant: "destructive" });
       return;
     }
     setMode("edit");
-    applyAiResult(session.result, {
+    const applied = await applyAiResult(session.result, {
       strategy: "insert",
       blockIds: session.contextMode === "selection" ? session.selectionBlockIds : undefined,
       sourceText: session.contextMode === "selection" ? session.selectionText : undefined,
+      previewAnchor: session.sourceView === "preview"
+        ? {
+          contextBefore: session.selectionContextBefore,
+          contextAfter: session.selectionContextAfter,
+        }
+        : undefined,
     });
-    toast({ description: session.contextMode === "selection" ? "Inserted AI draft below the selection." : "Inserted AI draft at the cursor." });
-  }, [applyAiResult, session.contextMode, session.result, session.selectionBlockIds, session.status, setMode, toast]);
+    toast({
+      description: applied
+        ? session.contextMode === "selection"
+          ? "Inserted AI draft below the selection."
+          : "Inserted AI draft at the cursor."
+        : "Could not locate the original selection in the current note.",
+      variant: applied ? "default" : "destructive",
+    });
+  }, [applyAiResult, session.contextMode, session.result, session.selectionBlockIds, session.selectionContextAfter, session.selectionContextBefore, session.selectionText, session.sourceView, session.status, setMode, toast]);
 
   const copyResult = useCallback(async () => {
     if (!session.result.trim()) {

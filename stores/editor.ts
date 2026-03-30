@@ -4,6 +4,8 @@ import { create } from "zustand";
 import type { BlockNoteEditor } from "@blocknote/core";
 import { saveDocumentAction } from "@/app/actions/documents";
 import { extractResponseError, getErrorMessage } from "@/lib/http/client";
+import type { PreviewSelectionAnchor } from "@/lib/ai/selection-anchor";
+import { resolvePreviewSelectionRange } from "@/lib/ai/selection-anchor";
 import { useTreeStore } from "@/stores/tree";
 import { useSettingsStore } from "@/stores/settings";
 import {
@@ -62,7 +64,13 @@ type EditorState = {
   setSelectedText: (value: string) => void;
   setSelectedBlockIds: (value: string[]) => void;
   registerEditorView: (view: BlockNoteEditor | null) => void;
-  applyAiResult: (text: string, options?: { range?: SelectionRange | null; strategy?: "replace" | "insert"; blockIds?: string[]; sourceText?: string }) => void;
+  applyAiResult: (text: string, options?: {
+    range?: SelectionRange | null;
+    strategy?: "replace" | "insert";
+    blockIds?: string[];
+    sourceText?: string;
+    previewAnchor?: PreviewSelectionAnchor;
+  }) => Promise<boolean>;
   save: (origin?: "manual" | "auto") => Promise<boolean>;
   reset: () => void;
 };
@@ -154,6 +162,10 @@ function replaceFirstOccurrence(documentText: string, sourceText: string, replac
   }
 
   return `${documentText.slice(0, index)}${replacementText}${documentText.slice(index + sourceText.length)}`;
+}
+
+function replaceRange(documentText: string, start: number, end: number, replacementText: string): string {
+  return `${documentText.slice(0, start)}${replacementText}${documentText.slice(end)}`;
 }
 
 function flattenBlocks<T extends EditorSelectionBlock<T>>(blocks: T[]): T[] {
@@ -448,6 +460,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const state = get();
     const strategy = options?.strategy ?? "insert";
     const sourceText = options?.sourceText?.trim() ?? "";
+    const previewAnchor = options?.previewAnchor;
 
     if (state.mode === "edit" && activeEditorView) {
       const editor = activeEditorView;
@@ -459,39 +472,52 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if (strategy === "replace") {
         if (targetBlocks.length > 0) {
           editor.replaceBlocks(targetBlocks, blocks);
-          return;
+          return true;
         }
 
         editor.replaceBlocks(editor.document, blocks);
         set({ selectedText: "", selectedBlockIds: [], selection: null });
-        return;
+        return true;
       } else {
         if (targetBlocks.length > 0) {
           editor.insertBlocks(blocks, targetBlocks[targetBlocks.length - 1], "after");
-          return;
+          return true;
         }
 
         const cursor = editor.getTextCursorPosition();
         if (cursor?.block) {
           editor.insertBlocks(blocks, cursor.block, "after");
-          return;
+          return true;
         }
 
         if (editor.document.length > 0) {
           editor.insertBlocks(blocks, editor.document[editor.document.length - 1], "after");
-          return;
+          return true;
         }
 
         editor.replaceBlocks(editor.document, blocks);
+        return true;
       }
-      return;
     }
 
     const doc = state.content;
     if (strategy === "replace" && !sourceText) {
       get().setContent(text);
       set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
-      return;
+      return true;
+    }
+
+    if (previewAnchor && sourceText) {
+      const resolvedRange = resolvePreviewSelectionRange(doc, sourceText, previewAnchor);
+      if (resolvedRange) {
+        const nextContent = strategy === "replace"
+          ? replaceRange(doc, resolvedRange.start, resolvedRange.end, text)
+          : replaceRange(doc, resolvedRange.start, resolvedRange.end, `${doc.slice(resolvedRange.start, resolvedRange.end)}\n\n${text}`);
+        get().setContent(nextContent);
+        set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
+        return true;
+      }
+      return false;
     }
 
     if (strategy === "replace" && sourceText) {
@@ -499,8 +525,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if (replaced !== null) {
         get().setContent(replaced);
         set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
-        return;
+        return true;
       }
+      return false;
     }
 
     if (strategy === "insert" && sourceText) {
@@ -508,14 +535,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       if (inserted !== null) {
         get().setContent(inserted);
         set({ mode: "edit", selectedText: "", selectedBlockIds: [], selection: null });
-        return;
+        return true;
       }
+      return false;
     }
 
     // Fallback for non-edit mode (append to content)
     const next = `${doc}\n\n${text}`;
     get().setContent(next);
     set({ mode: "edit" });
+    return true;
   },
 
   async save(_origin?: "manual" | "auto") {

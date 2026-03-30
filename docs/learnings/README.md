@@ -27,3 +27,4 @@ Filename: `YYYY-MM-DD-short-title.md`
 | 2026-02-14-outline-highlight-scroll-ux | `docs/learnings/2026-02-14-outline-highlight-scroll-ux.md` |
 | 2026-03-28-blocknote-hot-path | `docs/learnings/2026-03-28-blocknote-hot-path.md` |
 | 2026-03-30-ai-selection-cannot-rely-on-live-blocknote-selection | `docs/learnings/2026-03-30-ai-selection-cannot-rely-on-live-blocknote-selection.md` |
+| 2026-03-30-preview-selection-apply-needs-stable-context | `docs/learnings/2026-03-30-preview-selection-apply-needs-stable-context.md` |

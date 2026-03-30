@@ -5,10 +5,10 @@ Current story: `docs/stories/story-23.md`
 Current section: Story 23.4 — Verification and Regression Checks
 
 Previous tasks (latest completed batch only):
-- [x] Removed duplicated desktop AI entry points, aligned assistant styling with existing theme patterns, and hid desktop-only compare split UI.
-- [x] Added preview-mode text selection actions and reused assistant sessions for the same file/action/selection instead of rerunning on reopen.
-- [x] Ran `pnpm lint`.
-- [x] Ran `pnpm build`.
+- [x] Fixed preview selection anchoring so selection-scoped apply flows resolve against stable preview context instead of first-match markdown text replacement.
+- [x] Stabilized AI selection session reuse for duplicate text, restored desktop split-compare behavior, and removed the Sonar-flagged chunking regex hotspot.
+- [x] Re-ran `pnpm lint`.
+- [x] Re-ran `pnpm build`.
 
 Next tasks:
 - [ ] Manually verify edit-mode and preview-mode selection actions once an authenticated `/files` session is available.

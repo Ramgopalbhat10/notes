@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import type { AiActionSelectionSource } from "@/components/ai-actions/types";
 import { PreviewSelectionSurface } from "@/components/ai-actions/preview-selection-surface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectedFilePlaceholder } from "@/components/selected-file-placeholder";
@@ -20,7 +21,7 @@ type WorkspaceBodyProps = {
   mode: "preview" | "edit";
   content: string;
   setContent: (value: string) => void;
-  onSelectionAction?: (action: AiActionType, source?: { selectionText: string; sourceView: "preview" | "edit" }) => void;
+  onSelectionAction?: (action: AiActionType, source?: AiActionSelectionSource) => void;
   selectionAiBusy?: boolean;
 };
 
@@ -107,7 +108,7 @@ export function WorkspaceBody({
     <PreviewSelectionSurface
       content={content}
       busy={Boolean(selectionAiBusy)}
-      onSelectAction={(action, selectionText) => onSelectionAction?.(action, { selectionText, sourceView: "preview" })}
+      onSelectAction={(action, source) => onSelectionAction?.(action, source)}
     />
   );
 }

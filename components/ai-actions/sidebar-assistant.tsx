@@ -66,7 +66,7 @@ export function AiAssistantSidebar() {
       return;
     }
 
-    const media = window.matchMedia("(max-width: 1023px)");
+    const media = window.matchMedia("(min-width: 1024px)");
     const update = () => setAllowSplitCompare(media.matches);
     update();
     media.addEventListener("change", update);

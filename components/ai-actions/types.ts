@@ -1,4 +1,5 @@
 import type { AiActionType } from "@/components/vault-workspace/types";
+import type { PreviewSelectionAnchor } from "@/lib/ai/selection-anchor";
 
 export type AiActionContextMode = "selection" | "document";
 
@@ -7,6 +8,12 @@ export type AiActionRequestKind = "initial" | "refine";
 export type AiAssistantStatus = "idle" | "streaming" | "success" | "error" | "cancelled";
 
 export type AiActionSourceView = "edit" | "preview" | "header";
+
+export type AiActionSelectionSource = {
+  selectionText: string;
+  sourceView: Extract<AiActionSourceView, "edit" | "preview">;
+  previewAnchor?: PreviewSelectionAnchor;
+};
 
 export type AiAssistantSessionState = {
   status: AiAssistantStatus;
@@ -17,6 +24,8 @@ export type AiAssistantSessionState = {
   selectionText: string;
   selectionSignature: string;
   selectionBlockIds: string[];
+  selectionContextBefore: string;
+  selectionContextAfter: string;
   contextMode: AiActionContextMode;
   sourceView: AiActionSourceView;
   requestKind: AiActionRequestKind;

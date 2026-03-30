@@ -512,7 +512,7 @@ function planChunks(text: string): ChunkPlan {
 }
 
 function splitOversizedParagraph(paragraph: string): string[] {
-  const sentences = paragraph.match(/[^.!?]+(?:[.!?]+|\s*$)/g) ?? [paragraph];
+  const sentences = splitIntoSentenceLikeSegments(paragraph);
   const chunks: string[] = [];
   let current = "";
 
@@ -540,6 +540,47 @@ function splitOversizedParagraph(paragraph: string): string[] {
   }
 
   return chunks;
+}
+
+function splitIntoSentenceLikeSegments(text: string): string[] {
+  const segments: string[] = [];
+  let segmentStart = 0;
+  let index = 0;
+
+  while (index < text.length) {
+    const character = text[index];
+    if (character !== "." && character !== "!" && character !== "?") {
+      index += 1;
+      continue;
+    }
+
+    let segmentEnd = index + 1;
+    while (
+      segmentEnd < text.length
+      && (text[segmentEnd] === "." || text[segmentEnd] === "!" || text[segmentEnd] === "?")
+    ) {
+      segmentEnd += 1;
+    }
+
+    while (segmentEnd < text.length && /\s/.test(text[segmentEnd] ?? "")) {
+      segmentEnd += 1;
+    }
+
+    const segment = text.slice(segmentStart, segmentEnd).trim();
+    if (segment) {
+      segments.push(segment);
+    }
+
+    segmentStart = segmentEnd;
+    index = segmentEnd;
+  }
+
+  const trailingSegment = text.slice(segmentStart).trim();
+  if (trailingSegment) {
+    segments.push(trailingSegment);
+  }
+
+  return segments.length > 0 ? segments : [text];
 }
 
 function splitByCharacterWindow(text: string, maxChars: number): string[] {

@@ -33,6 +33,8 @@ Goal: Turn the current one-shot AI action card into a richer, less disruptive ed
 | 2026-03-30 | qa | Verified `pnpm lint` and `pnpm build` pass after the AI actions redesign. |
 | 2026-03-30 | feat | Removed duplicated desktop AI entry points, normalized assistant styling to existing app patterns, added preview-mode selection actions, and reused cached assistant sessions per file/action/selection. |
 | 2026-03-30 | qa | Re-ran `pnpm lint` and `pnpm build` after the assistant UX cleanup and preview-selection changes. |
+| 2026-03-30 | fix | Fixed preview selection anchoring, stabilized selection session identity for duplicate text, restored desktop compare affordances, and replaced the chunking sentence regex with a linear scan. |
+| 2026-03-30 | qa | Re-ran `pnpm lint` and `pnpm build` after the review-driven AI assistant regression fixes. |
 | 2026-03-30 | qa | Browser-level workspace verification remains pending because local app access currently redirects to `/auth/sign-in` without an authenticated `/files` session. |
 
 ## Issues
@@ -82,6 +84,7 @@ Sub-tasks
 - [x] Update header AI actions to open the assistant workspace for document-level runs.
 - [x] Expand AI session state for original/result content, compare mode, refine prompts, and apply choices.
 - [x] Reopen existing assistant sessions for the same file/action/scope instead of rerunning unnecessarily.
+- [x] Anchor preview-mode apply flows to stable preview context and disambiguate cached selection sessions when duplicate text exists.
 
 Test Plan
 - Select text and run Improve Writing; verify the assistant opens with selection context.
@@ -105,6 +108,7 @@ Sub-tasks
 - [x] Expand the AI action request schema for richer context and refinement flows.
 - [x] Add large-document chunking/aggregation behavior for action runs.
 - [x] Replace the in-memory rate limiter with Redis-backed limiting when available.
+- [x] Replace the chunk sentence-splitting regex with a linear scan to satisfy the Sonar hotspot without changing chunking behavior.
 
 Test Plan
 - Run actions on a large note and verify completion without silent truncation.

@@ -11,6 +11,8 @@ export const INITIAL_AI_ASSISTANT_STATE: AiAssistantSessionState = {
   selectionText: "",
   selectionSignature: "",
   selectionBlockIds: [],
+  selectionContextBefore: "",
+  selectionContextAfter: "",
   contextMode: "document",
   sourceView: "header",
   requestKind: "initial",

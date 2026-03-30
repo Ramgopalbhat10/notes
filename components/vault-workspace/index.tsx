@@ -10,6 +10,7 @@ import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useSettingsStore } from "@/stores/settings";
 import { useToast } from "@/hooks/use-toast";
 import { useAiActionController } from "@/components/ai-actions/hooks/use-ai-action-controller";
+import type { AiActionSelectionSource } from "@/components/ai-actions/types";
 
 import { useFileSharing } from "./hooks/use-file-sharing";
 import { useResolvedPath } from "./hooks/use-resolved-path";
@@ -188,7 +189,7 @@ export function VaultWorkspace({
   const handleTriggerAction = useCallback((
     action: Parameters<typeof triggerAction>[0],
     contextMode: AiActionContextMode,
-    source?: { selectionText: string; sourceView: "preview" | "edit" },
+    source?: AiActionSelectionSource,
   ) => {
     onOpenAssistantSidebar?.();
     void triggerAction(action, contextMode, source ? {
@@ -198,6 +199,7 @@ export function VaultWorkspace({
         selectionText: source.selectionText,
         selectionBlockIds: source.sourceView === "edit" ? useEditorStore.getState().selectedBlockIds : [],
         sourceView: source.sourceView,
+        previewAnchor: source.previewAnchor,
       },
     } : undefined);
   }, [content, fileKey, onOpenAssistantSidebar, triggerAction]);
