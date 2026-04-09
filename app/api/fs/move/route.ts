@@ -117,25 +117,13 @@ async function moveFolderInS3(
   const fromFull = applyVaultPrefix(fromPrefix);
   const toFull = applyVaultPrefix(toPrefix);
 
-  const sourceKeysPromise = listKeys(bucket, fromFull);
-  const destCheckPromise = overwrite ? Promise.resolve() : ensureDestClear(bucket, toFull);
-
-  const [sourceKeysResult, destCheckResult] = await Promise.allSettled([
-    sourceKeysPromise,
-    destCheckPromise,
-  ]);
-
-  if (sourceKeysResult.status === "rejected") {
-    throw sourceKeysResult.reason;
-  }
-
-  const sourceKeys = sourceKeysResult.value;
+  const sourceKeys = await listKeys(bucket, fromFull);
   if (sourceKeys.length === 0) {
     throw Object.assign(new Error("Source folder not found"), { status: 404 }) as StatusError;
   }
 
-  if (destCheckResult.status === "rejected") {
-    throw destCheckResult.reason;
+  if (!overwrite) {
+    await ensureDestClear(bucket, toFull);
   }
 
   const copyResults = await mapWithConcurrencyLimit(

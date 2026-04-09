@@ -51,6 +51,7 @@
 |---|---|---|
 | 2026-04-09 | perf | Opened Issue 24 for the AI chunking, S3 hot-path, tree-refresh, and startup-fetch performance pass; created branch `fix/performance-parallel-hot-paths`; and started implementation. |
 | 2026-04-09 | perf | Added shared bounded-concurrency helpers, parallelized safe AI/S3/tree-refresh hot paths, removed the duplicate settings fetch, and verified with `pnpm lint` plus `pnpm build` using temporary placeholder GitHub auth env vars because the local shell lacked `GH_CLIENT_ID`/`GH_CLIENT_SECRET`. |
+| 2026-04-09 | fix | Restored the folder-move destination emptiness check to run after source listing for `overwrite=false` so the performance pass does not widen the pre-copy race window flagged in PR review. |
 
 ## Test Plan
 - Run `pnpm lint`.
