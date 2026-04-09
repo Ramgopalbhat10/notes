@@ -6,6 +6,7 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { mapWithConcurrencyLimit } from "@/lib/async/concurrency";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/fs/s3";
 import { normalizeFileKey, normalizeFolderPrefix } from "@/lib/fs/fs-validation";
@@ -15,32 +16,6 @@ import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/er
 
 const FOLDER_COPY_CONCURRENCY = 8;
 const DELETE_CHUNK_CONCURRENCY = 4;
-
-async function mapWithConcurrencyLimit<T, TResult>(
-  items: readonly T[],
-  concurrency: number,
-  mapper: (item: T, index: number) => Promise<TResult>,
-): Promise<TResult[]> {
-  if (items.length === 0) {
-    return [];
-  }
-
-  const limit = Math.max(1, Math.min(concurrency, items.length));
-  const results = new Array<TResult>(items.length);
-  let nextIndex = 0;
-
-  await Promise.all(
-    Array.from({ length: limit }, async () => {
-      while (nextIndex < items.length) {
-        const currentIndex = nextIndex;
-        nextIndex += 1;
-        results[currentIndex] = await mapper(items[currentIndex], currentIndex);
-      }
-    }),
-  );
-
-  return results;
-}
 
 function encodeCopySource(bucket: string, key: string) {
   return encodeURIComponent(`${bucket}/${key}`).replace(/%2F/g, "/");
@@ -142,13 +117,25 @@ async function moveFolderInS3(
   const fromFull = applyVaultPrefix(fromPrefix);
   const toFull = applyVaultPrefix(toPrefix);
 
-  const sourceKeys = await listKeys(bucket, fromFull);
+  const sourceKeysPromise = listKeys(bucket, fromFull);
+  const destCheckPromise = overwrite ? Promise.resolve() : ensureDestClear(bucket, toFull);
+
+  const [sourceKeysResult, destCheckResult] = await Promise.allSettled([
+    sourceKeysPromise,
+    destCheckPromise,
+  ]);
+
+  if (sourceKeysResult.status === "rejected") {
+    throw sourceKeysResult.reason;
+  }
+
+  const sourceKeys = sourceKeysResult.value;
   if (sourceKeys.length === 0) {
     throw Object.assign(new Error("Source folder not found"), { status: 404 }) as StatusError;
   }
 
-  if (!overwrite) {
-    await ensureDestClear(bucket, toFull);
+  if (destCheckResult.status === "rejected") {
+    throw destCheckResult.reason;
   }
 
   const copyResults = await mapWithConcurrencyLimit(
