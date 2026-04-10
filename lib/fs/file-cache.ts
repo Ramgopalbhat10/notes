@@ -1,6 +1,7 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 
+import { mapWithConcurrencyLimit } from "@/lib/async/concurrency";
 import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/lib/fs/s3";
 import { s3BodyToString } from "@/lib/fs/s3-body";
@@ -157,9 +158,14 @@ export async function revalidateFileTags(keys: string[]): Promise<void> {
     // ignore redis delete failures
   }
 
-  for (const key of normalized) {
-    revalidateTag(getFileCacheTag(key), "max");
-  }
+  await mapWithConcurrencyLimit(
+    normalized,
+    10,
+    (key) => {
+      revalidateTag(getFileCacheTag(key), "max");
+      return Promise.resolve();
+    },
+  );
 }
 
 export function revalidateFolderTag(prefix: string): void {
