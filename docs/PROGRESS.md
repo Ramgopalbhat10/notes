@@ -1,17 +1,21 @@
 # Progress
 
-Current issue: `docs/issues/issue-24.md`
+Current issue: `docs/issues/issue-25.md`
 
-Current section: Issue 24 - Parallelize AI and S3 hot paths, and trim startup overhead
+Current section: Issue 25 - Parallelize cache invalidation and manifest updates
 
 Previous tasks (latest completed batch only):
-- [x] Restored the folder-move destination emptiness check sequencing for `overwrite=false` after PR review.
-- [x] Re-ran `pnpm lint`.
-- [x] Re-ran `pnpm build` with temporary placeholder GitHub auth env vars because the local shell lacks `GH_CLIENT_ID` and `GH_CLIENT_SECRET`.
+- [x] Parallelized revalidateFileTags in lib/fs/file-cache.ts with concurrency of 10.
+- [x] Parallelized deleteFileMetas in lib/fs/file-meta.ts with concurrency of 10.
+- [x] Added concurrency to moveFolder in lib/manifest-updater.ts with threshold of 50 and concurrency of 6.
+- [x] Fixed syntax errors in modified files.
+- [x] Ran `pnpm lint` and `pnpm build` - both passed.
+- [x] Created issue-25.md and updated issues README.
 
 Next tasks:
-- None - all tasks completed.
+- Commit changes with prefix `perf:`
+- Create PR from current branch to main
 
 Notes:
 - Branch: `fix/performance-parallel-hot-paths`
-- Scope is intentionally isolated from the resolved Issue 21 and Issue 23 work.
+- This is a new performance issue separate from resolved Issue 24.

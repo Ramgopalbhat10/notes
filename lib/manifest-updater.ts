@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { revalidateTag } from "next/cache";
 
+import { mapWithConcurrencyLimit } from "@/lib/async/concurrency";
+
 import {
   type FileTreeFileNode,
   type FileTreeFolderNode,
@@ -21,6 +23,8 @@ import { serializeFileTreeManifest, uploadFileTreeManifest } from "@/lib/file-tr
 import { normalizeEtag } from "@/lib/etag";
 import { applyVaultPrefix, ensureFolderPath, getBucket, getS3Client } from "@/lib/fs/s3";
 import { basename, getParentPath } from "@/lib/platform/paths";
+const MANIFEST_UPDATE_CONCURRENCY_THRESHOLD = 50;
+const MANIFEST_UPDATE_CONCURRENCY_LIMIT = 6;
 
 const MANIFEST_FLUSH_DEBOUNCE_MS = 750;
 
@@ -365,6 +369,8 @@ export async function deleteFolder(params: DeleteFolderParams): Promise<void> {
   const queue: FileTreeNodeId[] = [folderId];
   let qi = 0;
 
+  // BFS traversal must remain sequential for correctness
+  // Threshold check: for small folders, sequential processing is already efficient
   while (qi < queue.length) {
     const currentId = queue[qi++];
     toRemove.add(currentId);
@@ -487,7 +493,7 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
 
   manifest.removeChildFromParent(oldFolderId, oldFolderParentId);
 
-  for (const { index, id } of toUpdate) {
+  const updateNode = ({ index, id }: { index: number; id: FileTreeNodeId }): void => {
     const node = manifest.getNode(index);
     const newId = id.replace(oldFolderId, newFolderId);
     const newParentId = getParentPath(newId);
@@ -514,6 +520,21 @@ export async function moveFolder(params: MoveFolderParams): Promise<void> {
         };
 
     manifest.updateNode(index, updatedNode, id);
+  };
+
+  if (toUpdate.length > MANIFEST_UPDATE_CONCURRENCY_THRESHOLD) {
+    await mapWithConcurrencyLimit(
+      toUpdate,
+      MANIFEST_UPDATE_CONCURRENCY_LIMIT,
+      (item) => {
+        updateNode(item);
+        return Promise.resolve();
+      },
+    );
+  } else {
+    for (const item of toUpdate) {
+      updateNode(item);
+    }
   }
 
   manifest.addChildToParent(newFolderId);

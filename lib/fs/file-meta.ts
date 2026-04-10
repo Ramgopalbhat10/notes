@@ -1,5 +1,6 @@
 import { revalidateTag } from "next/cache";
 
+import { mapWithConcurrencyLimit } from "@/lib/async/concurrency";
 import { getRedisClient } from "@/lib/cache/redis-client";
 
 export const FILE_META_REDIS_PREFIX = "file-meta:";
@@ -83,9 +84,14 @@ export async function deleteFileMetas(keys: string[]): Promise<boolean> {
   try {
     const redis = getRedisClient();
     await redis.del(...normalized.map((key) => buildRedisKey(key)));
-    for (const key of normalized) {
-      revalidateTag(getFileMetaCacheTag(key), "seconds");
-    }
+    await mapWithConcurrencyLimit(
+      normalized,
+      10,
+      (key) => {
+        revalidateTag(getFileMetaCacheTag(key), "seconds");
+        return Promise.resolve();
+      },
+    );
     return true;
   } catch (error) {
     console.error("Failed to delete file metadata in bulk", error);
