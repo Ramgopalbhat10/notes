@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { generateText, streamText } from "ai";
 
+import { mapWithConcurrencyLimit } from "@/lib/async/concurrency";
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 import { requireApiUser } from "@/lib/auth";
 import { getRedisClient } from "@/lib/cache/redis-client";
@@ -45,6 +46,7 @@ const RATE_LIMIT_MAX_REQUESTS = 20;
 const CHUNK_TARGET_CHARS = 18_000;
 const CHUNK_HARD_MAX_CHARS = 24_000;
 const MAX_CHUNK_COUNT = 6;
+const AI_ACTION_CHUNK_CONCURRENCY = 2;
 
 const inMemoryRateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
@@ -123,18 +125,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (payload.action === "summarize") {
-      const chunkSummaries: string[] = [];
-      for (const [index, chunk] of chunkPlan.chunks.entries()) {
-        chunkSummaries.push(
-          await summarizeChunk({
+      const chunkSummaries = await mapWithConcurrencyLimit(
+        chunkPlan.chunks,
+        AI_ACTION_CHUNK_CONCURRENCY,
+        async (chunk, index) =>
+          summarizeChunk({
             model: payload.model,
             chunk,
             index,
             total: chunkPlan.chunks.length,
             contextMode: payload.contextMode,
           }),
-        );
-      }
+      );
 
       const result = await streamText({
         model: payload.model,
@@ -434,26 +436,56 @@ function createChunkedRewriteStream({
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
-      try {
-        for (const [index, chunk] of chunks.entries()) {
-          const result = await generateText({
-            model,
-            system: buildSystemPrompt(action),
-            prompt: buildChunkPrompt({
-              action,
-              contextMode,
-              content: chunk,
-              index,
-              total: chunks.length,
-            }),
-            temperature: action === "improve" ? 0.55 : 0.65,
-          });
+      const bufferedChunks = new Map<number, string>();
+      let nextChunkIndex = 0;
+      let nextFlushIndex = 0;
+      let failed = false;
 
-          const prefix = index > 0 ? "\n\n" : "";
-          controller.enqueue(encoder.encode(`${prefix}${result.text.trim()}`));
+      const flushReadyChunks = () => {
+        while (bufferedChunks.has(nextFlushIndex)) {
+          const text = bufferedChunks.get(nextFlushIndex)?.trim() ?? "";
+          bufferedChunks.delete(nextFlushIndex);
+          const prefix = nextFlushIndex > 0 ? "\n\n" : "";
+          controller.enqueue(encoder.encode(`${prefix}${text}`));
+          nextFlushIndex += 1;
         }
+      };
+
+      try {
+        const workerCount = Math.max(1, Math.min(AI_ACTION_CHUNK_CONCURRENCY, chunks.length));
+        await Promise.all(
+          Array.from({ length: workerCount }, async () => {
+            while (nextChunkIndex < chunks.length && !failed) {
+              const index = nextChunkIndex;
+              nextChunkIndex += 1;
+              const chunk = chunks[index];
+              const result = await generateText({
+                model,
+                system: buildSystemPrompt(action),
+                prompt: buildChunkPrompt({
+                  action,
+                  contextMode,
+                  content: chunk ?? "",
+                  index,
+                  total: chunks.length,
+                }),
+                temperature: action === "improve" ? 0.55 : 0.65,
+              });
+
+              if (failed) {
+                return;
+              }
+
+              bufferedChunks.set(index, result.text.trim());
+              flushReadyChunks();
+            }
+          }),
+        );
+
+        flushReadyChunks();
         controller.close();
       } catch (error) {
+        failed = true;
         controller.error(error);
       }
     },

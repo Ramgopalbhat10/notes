@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { mapWithConcurrencyLimit } from "@/lib/async/concurrency";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
@@ -12,6 +13,8 @@ import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import { deleteFileMetas } from "@/lib/fs/file-meta";
 import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
+
+const DELETE_CHUNK_CONCURRENCY = 4;
 
 async function listKeys(bucket: string, prefix: string) {
   const client = getS3Client();
@@ -42,7 +45,7 @@ async function deleteKeys(bucket: string, keys: string[]) {
     chunks.push(keys.slice(i, i + 1000));
   }
 
-  for (const chunk of chunks) {
+  await mapWithConcurrencyLimit(chunks, DELETE_CHUNK_CONCURRENCY, async (chunk) => {
     if (chunk.length === 1) {
       await client.send(
         new DeleteObjectCommand({
@@ -61,7 +64,7 @@ async function deleteKeys(bucket: string, keys: string[]) {
         }),
       );
     }
-  }
+  });
 }
 
 function handleError(error: unknown) {

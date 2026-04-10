@@ -1,6 +1,7 @@
 import { ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createHash } from "node:crypto";
 
+import { processQueueWithConcurrencyLimit } from "@/lib/async/concurrency";
 import {
   applyVaultPrefix,
   ensureFolderPath,
@@ -26,6 +27,8 @@ interface BuildContext {
   childMap: Map<FileTreeNodeId | null, Set<FileTreeNodeId>>;
 }
 
+const TREE_SCAN_CONCURRENCY = 6;
+
 function ensureChild(map: Map<FileTreeNodeId | null, Set<FileTreeNodeId>>, parent: FileTreeNodeId | null) {
   if (!map.has(parent)) {
     map.set(parent, new Set());
@@ -46,121 +49,109 @@ async function buildContext(): Promise<BuildContext> {
   const childMap = new Map<FileTreeNodeId | null, Set<FileTreeNodeId>>();
   const client = getS3Client();
   const bucket = getBucket();
+  const scheduled = new Set<string>([""]);
 
-  const folderQueue: string[] = [""];
-  let queueIndex = 0;
-  const visited = new Set<string>();
-
-  while (queueIndex < folderQueue.length) {
-    const prefix = folderQueue[queueIndex++] ?? "";
-    if (visited.has(prefix)) {
-      continue;
+  const ensureFolderNode = (folderId: string) => {
+    const parentId = getParentPath(folderId);
+    addChild(childMap, parentId, folderId);
+    if (!nodes.has(folderId)) {
+      const folderNode: FileTreeFolderNode = {
+        id: folderId,
+        type: "folder",
+        name: basename(folderId),
+        path: folderId,
+        parentId,
+        childrenIds: [],
+      };
+      nodes.set(folderId, folderNode);
     }
-    visited.add(prefix);
+  };
 
-    let continuationToken: string | undefined;
+  await processQueueWithConcurrencyLimit({
+    initialItems: [""],
+    concurrency: TREE_SCAN_CONCURRENCY,
+    processItem: async (prefix, enqueue) => {
+      let continuationToken: string | undefined;
 
-    do {
-      const response = await client.send(
-        new ListObjectsV2Command({
-          Bucket: bucket,
-          Prefix: applyVaultPrefix(prefix),
-          Delimiter: "/",
-          ContinuationToken: continuationToken,
-        }),
-      );
+      do {
+        const response = await client.send(
+          new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: applyVaultPrefix(prefix),
+            Delimiter: "/",
+            ContinuationToken: continuationToken,
+          }),
+        );
 
-      const folderEntries = response.CommonPrefixes ?? [];
-      const fileEntries = response.Contents ?? [];
+        const folderEntries = response.CommonPrefixes ?? [];
+        const fileEntries = response.Contents ?? [];
 
-      for (const entry of folderEntries) {
-        const rawPrefix = entry.Prefix;
-        if (!rawPrefix) {
-          continue;
-        }
-        const relative = stripVaultPrefix(rawPrefix);
-        if (!relative) {
-          continue;
-        }
-        const folderId = ensureFolderPath(relative);
-        if (folderId === FILE_TREE_MANIFEST_FILENAME) {
-          continue;
-        }
-        folderQueue.push(folderId);
-        const parentId = getParentPath(folderId);
-        addChild(childMap, parentId, folderId);
-        if (!nodes.has(folderId)) {
-          const folderNode: FileTreeFolderNode = {
-            id: folderId,
-            type: "folder",
-            name: basename(folderId),
-            path: folderId,
-            parentId,
-            childrenIds: [],
-          };
-          nodes.set(folderId, folderNode);
-        }
-      }
-
-      for (const object of fileEntries) {
-        const key = object.Key ?? "";
-        if (!key) {
-          continue;
-        }
-
-        const relative = stripVaultPrefix(key);
-        if (!relative) {
-          continue;
-        }
-        if (relative === FILE_TREE_MANIFEST_FILENAME) {
-          continue;
-        }
-
-        if (key.endsWith("/")) {
-          const folderId = ensureFolderPath(relative);
-          const parentId = getParentPath(folderId);
-          addChild(childMap, parentId, folderId);
-
-          // Ensure we scan this folder for children, even if it only appeared in Contents
-          folderQueue.push(folderId);
-
-          if (!nodes.has(folderId)) {
-            const folderNode: FileTreeFolderNode = {
-              id: folderId,
-              type: "folder",
-              name: basename(folderId),
-              path: folderId,
-              parentId,
-              childrenIds: [],
-            };
-            nodes.set(folderId, folderNode);
+        for (const entry of folderEntries) {
+          const rawPrefix = entry.Prefix;
+          if (!rawPrefix) {
+            continue;
           }
-          continue;
+          const relative = stripVaultPrefix(rawPrefix);
+          if (!relative) {
+            continue;
+          }
+          const folderId = ensureFolderPath(relative);
+          if (folderId === FILE_TREE_MANIFEST_FILENAME) {
+            continue;
+          }
+
+          ensureFolderNode(folderId);
+          if (!scheduled.has(folderId)) {
+            scheduled.add(folderId);
+            enqueue(folderId);
+          }
         }
 
-        if (!relative.endsWith(".md")) {
-          continue;
+        for (const object of fileEntries) {
+          const key = object.Key ?? "";
+          if (!key) {
+            continue;
+          }
+
+          const relative = stripVaultPrefix(key);
+          if (!relative || relative === FILE_TREE_MANIFEST_FILENAME) {
+            continue;
+          }
+
+          if (key.endsWith("/")) {
+            const folderId = ensureFolderPath(relative);
+            ensureFolderNode(folderId);
+            if (!scheduled.has(folderId)) {
+              scheduled.add(folderId);
+              enqueue(folderId);
+            }
+            continue;
+          }
+
+          if (!relative.endsWith(".md")) {
+            continue;
+          }
+
+          const parentId = getParentPath(relative);
+          addChild(childMap, parentId, relative);
+
+          const fileNode: FileTreeFileNode = {
+            id: relative,
+            type: "file",
+            name: basename(relative),
+            path: relative,
+            parentId,
+            lastModified: object.LastModified?.toISOString(),
+            etag: normalizeEtag(object.ETag ?? undefined) ?? undefined,
+            size: typeof object.Size === "number" ? object.Size : undefined,
+          };
+          nodes.set(relative, fileNode);
         }
 
-        const parentId = getParentPath(relative);
-        addChild(childMap, parentId, relative);
-
-        const fileNode: FileTreeFileNode = {
-          id: relative,
-          type: "file",
-          name: basename(relative),
-          path: relative,
-          parentId,
-          lastModified: object.LastModified?.toISOString(),
-          etag: normalizeEtag(object.ETag ?? undefined) ?? undefined,
-          size: typeof object.Size === "number" ? object.Size : undefined,
-        };
-        nodes.set(relative, fileNode);
-      }
-
-      continuationToken = response.NextContinuationToken ?? undefined;
-    } while (continuationToken);
-  }
+        continuationToken = response.NextContinuationToken ?? undefined;
+      } while (continuationToken);
+    },
+  });
 
   return { nodes, childMap };
 }

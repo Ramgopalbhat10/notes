@@ -68,11 +68,9 @@ export function VaultWorkspace({
 
   // Settings
   const settings = useSettingsStore((state) => state.settings);
-  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const settingsInitialized = useSettingsStore((state) => state.initialized);
 
   useWorkspaceSettingsSync({
-    fetchSettings,
     settingsInitialized,
     centeredLayout: settings.appearance.centeredLayout,
     setCentered,
