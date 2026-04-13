@@ -27,6 +27,7 @@ Goal: Add a global quick switcher for the authenticated `/files` workspace so us
 | 2026-04-13 | feat | Added a grouped quick switcher with recent files, file groups, and create actions. |
 | 2026-04-13 | docs | Added Story 24 workflow tracking and updated progress after implementation verification. |
 | 2026-04-13 | fix | Stabilized shell callback wiring to stop the header render loop and added accessible dialog metadata for the quick switcher. |
+| 2026-04-13 | qa | Manually verified quick switcher open, grouped search, file selection, and create-action flows in the authenticated `/files` workspace. |
 
 ## Issues
 
@@ -86,7 +87,7 @@ Test Plan
 Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
-- [ ] Manually verify quick switcher open, search, selection, and create-action behavior.
+- [x] Manually verify quick switcher open, search, selection, and create-action behavior.
 
 Test Plan
 - Smoke test `Cmd/Ctrl+K`, `Cmd/Ctrl+J`, `Cmd/Ctrl+S`, unsaved-change prompts, and grouped result ordering.

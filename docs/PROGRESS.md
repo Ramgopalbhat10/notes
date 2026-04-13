@@ -9,11 +9,12 @@ Previous tasks (latest completed batch only):
 - [x] Integrated the quick switcher into the app shell, header actions, keyboard shortcuts, and existing tree create dialogs.
 - [x] Ran `pnpm lint`.
 - [x] Ran `pnpm build`.
+- [x] Manually verified quick switcher open, search, selection, and create-action behavior.
 
 Next tasks:
-- [ ] Manually verify quick switcher open, search, selection, and create-action behavior.
+- None - all tasks completed.
 
 Notes:
 - Branch: `feature/grouped-quick-switcher`
 - This story is separate from the current AI-sidebar and performance issue work.
-- Lint and build passed locally; manual `/files` verification still requires an authenticated session.
+- Lint/build passed locally and manual `/files` verification is complete.
