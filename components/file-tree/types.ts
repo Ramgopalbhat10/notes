@@ -6,6 +6,12 @@ export type MatchMeta = {
   hasMatchingChild: boolean;
 };
 
+export type ExternalTreeActionRequest = {
+  id: number;
+  type: "create-folder" | "create-file";
+  parentId: NodeId | null;
+};
+
 export type ModalState =
   | { type: "create-folder"; parentId: NodeId | null }
   | { type: "create-file"; parentId: NodeId | null }

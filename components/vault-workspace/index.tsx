@@ -27,12 +27,14 @@ export function VaultWorkspace({
   onOpenChatSidebar,
   onOpenOutlineSidebar,
   onOpenAssistantSidebar,
+  onOpenQuickSwitcher,
 }: {
   className?: string;
   onHeaderChange?: (node: ReactNode | null) => void;
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;
   onOpenAssistantSidebar?: () => void;
+  onOpenQuickSwitcher?: () => void;
 }) {
   const selectedPath = useTreeStore((state) => {
     const id = state.selectedId;
@@ -215,6 +217,7 @@ export function VaultWorkspace({
     hasFile,
     onOpenChatSidebar,
     onOpenOutlineSidebar,
+    onOpenQuickSwitcher,
     sharingState,
     onTogglePublic: handleTogglePublic,
     onCopyPublicLink: handleCopyPublicLink,

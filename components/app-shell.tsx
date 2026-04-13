@@ -22,6 +22,7 @@ import { LeftDesktopSidebar } from "@/components/app-shell/sections/left-desktop
 import { LeftSidebarFooter } from "@/components/app-shell/sections/left-sidebar-footer";
 import { MainFooter } from "@/components/app-shell/sections/main-footer";
 import { MainHeader } from "@/components/app-shell/sections/main-header";
+import { QuickSwitcher } from "@/components/quick-switcher";
 import { RightDesktopSidebar } from "@/components/app-shell/sections/right-desktop-sidebar";
 import { SidebarAutoCollapse } from "@/components/app-shell/sections/sidebar-auto-collapse";
 import { buildStatusDescriptor, computeReadingTimeLabel } from "@/components/app-shell/status-utils";
@@ -31,6 +32,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useEditorStore } from "@/stores/editor";
+import type { NodeId } from "@/stores/tree";
 
 const FOOTER_HEIGHT_CLASS = "h-10 md:h-11";
 const FOOTER_SURFACE_CLASS =
@@ -44,6 +46,7 @@ type AppShellChildren = React.ReactNode | ((helpers: {
   openChatSidebar: () => void;
   openOutlineSidebar: () => void;
   openAssistantSidebar: () => void;
+  openQuickSwitcher: () => void;
 }) => React.ReactNode);
 
 type AppShellProps = {
@@ -52,9 +55,19 @@ type AppShellProps = {
   children: AppShellChildren;
   header?: React.ReactNode;
   onNewChat?: () => void;
+  onQuickCreateFile?: (parentId: NodeId | null) => void;
+  onQuickCreateFolder?: (parentId: NodeId | null) => void;
 };
 
-export function AppShell({ left, right, children, header, onNewChat }: AppShellProps) {
+export function AppShell({
+  left,
+  right,
+  children,
+  header,
+  onNewChat,
+  onQuickCreateFile,
+  onQuickCreateFolder,
+}: AppShellProps) {
   const RIGHT_SIDEBAR_WIDTH_REM = 30;
   const LEFT_SIDEBAR_WIDTH_REM = 17.5;
   const LEFT_SIDEBAR_EXPANDED_REM = 28; // ~448px expanded width
@@ -87,6 +100,7 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
 
   // Mobile-specific state (doesn't need to persist)
   const [leftMobileOpen, setLeftMobileOpen] = useState(false);
+  const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false);
   const hasRight = Boolean(right);
 
   const {
@@ -111,8 +125,10 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
 
   useAppShellShortcuts({
     hasRight,
+    quickSwitcherOpen,
     rightMobileOpen,
     rightSidebarPanel,
+    setQuickSwitcherOpen,
     setRightSidebarPanel,
     setRightMobileOpen,
     toggleRightSidebar,
@@ -127,8 +143,19 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
     setRightSidebarExpanded(false);
   }, [setRightSidebarOpen, setRightSidebarExpanded]);
 
+  const openQuickSwitcher = useCallback(() => {
+    setQuickSwitcherOpen(true);
+  }, []);
+
   const renderedChildren = typeof children === "function"
-    ? children({ toggleRight, openRightPanel, openChatSidebar, openOutlineSidebar, openAssistantSidebar })
+    ? children({
+      toggleRight,
+      openRightPanel,
+      openChatSidebar,
+      openOutlineSidebar,
+      openAssistantSidebar,
+      openQuickSwitcher,
+    })
     : children;
   const { mainScrollRef, isMainScrollable, scrollMainToTop } = useMainScroll({ dependency: renderedChildren });
   const editorStatus = useEditorStore((state) => state.status);
@@ -183,6 +210,12 @@ export function AppShell({ left, right, children, header, onNewChat }: AppShellP
       className="bg-background text-foreground h-svh w-full"
       style={{ "--sidebar-width": leftSidebarWidthValue } as CSSProperties}
     >
+      <QuickSwitcher
+        open={quickSwitcherOpen}
+        onOpenChange={setQuickSwitcherOpen}
+        onCreateFile={(parentId) => onQuickCreateFile?.(parentId)}
+        onCreateFolder={(parentId) => onQuickCreateFolder?.(parentId)}
+      />
       <SidebarAutoCollapse
         leftWidthPx={leftSidebarWidthPx}
         rightWidthPx={RIGHT_SIDEBAR_WIDTH_REM * REM_IN_PX}
