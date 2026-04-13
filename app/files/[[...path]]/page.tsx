@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { AiAssistantSidebar } from "@/components/ai-actions/sidebar-assistant";
 import { SidebarChat, type SidebarChatHandle } from "@/components/ai-chat/sidebar-chat";
 import { FileTree } from "@/components/file-tree";
+import type { ExternalTreeActionRequest } from "@/components/file-tree/types";
 import { OutlineSidebar } from "@/components/vault-workspace/sections/outline-sidebar";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
@@ -16,8 +17,19 @@ import { useWorkspaceLayoutStore } from "@/stores/layout";
 import { useSettingsStore } from "@/stores/settings";
 import { useTreeStore, type SelectByPathResult } from "@/stores/tree";
 
-function LeftSidebar() {
-  return <FileTree />;
+function LeftSidebar({
+  externalActionRequest,
+  onExternalActionHandled,
+}: {
+  externalActionRequest: ExternalTreeActionRequest | null;
+  onExternalActionHandled: (requestId: number) => void;
+}) {
+  return (
+    <FileTree
+      externalActionRequest={externalActionRequest}
+      onExternalActionHandled={onExternalActionHandled}
+    />
+  );
 }
 
 function decodePathSegments(segments: readonly string[] | undefined): string | null {
@@ -194,6 +206,7 @@ export default function FilesPage() {
   const isPending = sessionState?.isPending;
   const rightSidebarPanel = useWorkspaceLayoutStore((state) => state.rightSidebarPanel);
   const [header, setHeader] = useState<ReactNode | null>(null);
+  const [treeActionRequest, setTreeActionRequest] = useState<ExternalTreeActionRequest | null>(null);
   const chatHandleRef = useRef<SidebarChatHandle | null>(null);
 
   const handleNewChatRef = useCallback((handle: SidebarChatHandle | null) => {
@@ -202,6 +215,18 @@ export default function FilesPage() {
 
   const handleNewChat = useCallback(() => {
     chatHandleRef.current?.clearChat();
+  }, []);
+
+  const handleQuickTreeAction = useCallback((type: "create-file" | "create-folder", parentId: string | null) => {
+    setTreeActionRequest({
+      id: Date.now(),
+      type,
+      parentId,
+    });
+  }, []);
+
+  const handleTreeActionHandled = useCallback((requestId: number) => {
+    setTreeActionRequest((current) => (current?.id === requestId ? null : current));
   }, []);
 
   // Keep chat element stable to preserve draft and scroll behavior.
@@ -231,17 +256,25 @@ export default function FilesPage() {
     <>
       <RouteSynchronizer />
       <AppShell
-        left={<LeftSidebar />}
+        left={(
+          <LeftSidebar
+            externalActionRequest={treeActionRequest}
+            onExternalActionHandled={handleTreeActionHandled}
+          />
+        )}
         right={rightSidebar}
         header={header}
         onNewChat={handleNewChat}
+        onQuickCreateFile={(parentId) => handleQuickTreeAction("create-file", parentId)}
+        onQuickCreateFolder={(parentId) => handleQuickTreeAction("create-folder", parentId)}
       >
-        {({ openChatSidebar, openOutlineSidebar, openAssistantSidebar }) => (
+        {({ openChatSidebar, openOutlineSidebar, openAssistantSidebar, openQuickSwitcher }) => (
           <VaultWorkspace
             onHeaderChange={setHeader}
             onOpenChatSidebar={openChatSidebar}
             onOpenOutlineSidebar={openOutlineSidebar}
             onOpenAssistantSidebar={openAssistantSidebar}
+            onOpenQuickSwitcher={openQuickSwitcher}
           />
         )}
       </AppShell>

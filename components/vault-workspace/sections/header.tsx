@@ -19,6 +19,7 @@ import {
   Minimize,
   Maximize,
   MoreHorizontal,
+  Search,
   Save,
   Trash2,
   CircleHelp,
@@ -58,6 +59,7 @@ export type WorkspaceHeaderProps = {
   hasFile: boolean;
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;
+  onOpenQuickSwitcher?: () => void;
   sharingState?: SharingState;
   onTogglePublic?: () => void;
   onCopyPublicLink?: () => void;
@@ -84,6 +86,7 @@ export function WorkspaceHeader({
   hasFile,
   onOpenChatSidebar,
   onOpenOutlineSidebar,
+  onOpenQuickSwitcher,
   sharingState,
   onTogglePublic,
   onCopyPublicLink,
@@ -190,6 +193,22 @@ export function WorkspaceHeader({
           {/* Desktop: Navigation, expand, edit/preview, save icons */}
           {hasFile && (
             <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden md:inline-flex")}
+                    onClick={onOpenQuickSwitcher}
+                    disabled={!onOpenQuickSwitcher}
+                    aria-label="Quick switcher"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Quick switcher</TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -348,6 +367,17 @@ export function WorkspaceHeader({
 
                   <DropdownMenuItem
                     className="flex items-center gap-2"
+                    onClick={onOpenQuickSwitcher}
+                    disabled={!onOpenQuickSwitcher}
+                  >
+                    <Search className="h-4 w-4" />
+                    <span className="text-sm">Quick switcher</span>
+                    <Kbd className="ml-auto">⌘K</Kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
                     onClick={() => onDownload?.("markdown")}
                   >
                     <Download className="h-4 w-4" />
@@ -455,15 +485,26 @@ export function WorkspaceHeader({
               )}
 
               {!hasFile && (
-                <DropdownMenuItem
-                  className="flex items-center gap-2"
-                  onClick={onOpenChatSidebar}
-                  disabled={!onOpenChatSidebar}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="text-sm">Chat</span>
-                  <Kbd className="ml-auto">⌘J</Kbd>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={onOpenQuickSwitcher}
+                    disabled={!onOpenQuickSwitcher}
+                  >
+                    <Search className="h-4 w-4" />
+                    <span className="text-sm">Quick switcher</span>
+                    <Kbd className="ml-auto">⌘K</Kbd>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={onOpenChatSidebar}
+                    disabled={!onOpenChatSidebar}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="text-sm">Chat</span>
+                    <Kbd className="ml-auto">⌘J</Kbd>
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

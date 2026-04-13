@@ -5,8 +5,10 @@ import type { RightSidebarPanel } from "@/stores/layout";
 
 type UseAppShellShortcutsOptions = {
   hasRight: boolean;
+  quickSwitcherOpen: boolean;
   rightMobileOpen: boolean;
   rightSidebarPanel: RightSidebarPanel;
+  setQuickSwitcherOpen: (open: boolean) => void;
   setRightSidebarPanel: (panel: RightSidebarPanel) => void;
   setRightMobileOpen: (open: boolean) => void;
   toggleRightSidebar: (panel?: RightSidebarPanel) => void;
@@ -14,15 +16,27 @@ type UseAppShellShortcutsOptions = {
 
 export function useAppShellShortcuts({
   hasRight,
+  quickSwitcherOpen,
   rightMobileOpen,
   rightSidebarPanel,
+  setQuickSwitcherOpen,
   setRightSidebarPanel,
   setRightMobileOpen,
   toggleRightSidebar,
 }: UseAppShellShortcutsOptions): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setQuickSwitcherOpen(!quickSwitcherOpen);
+        return;
+      }
+
       if (e.key === "Escape") {
+        if (quickSwitcherOpen) {
+          setQuickSwitcherOpen(false);
+          return;
+        }
         setRightMobileOpen(false);
         return;
       }
@@ -64,8 +78,10 @@ export function useAppShellShortcuts({
     return () => window.removeEventListener("keydown", onKey);
   }, [
     hasRight,
+    quickSwitcherOpen,
     rightMobileOpen,
     rightSidebarPanel,
+    setQuickSwitcherOpen,
     setRightSidebarPanel,
     setRightMobileOpen,
     toggleRightSidebar,

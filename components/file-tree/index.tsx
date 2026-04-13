@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ROOT_PARENT_KEY, type Node, type NodeId, useTreeStore } from "@/stores/tree";
 import { ActionDialog } from "./action-dialog";
 import { TreeNode } from "./tree-nodes";
-import { type MatchMeta, type ModalState } from "./types";
+import { type ExternalTreeActionRequest, type MatchMeta, type ModalState } from "./types";
 import { useDebouncedValue as useDebouncedValueHook } from "./hooks/use-debounced-value";
 import { useTreeKeyboardNavigation as useTreeKeyboardNavigationHook } from "./hooks/use-tree-keyboard-navigation";
 import { useModalSubmit } from "./hooks/use-modal-submit";
@@ -64,7 +64,12 @@ function buildIndexedMatchMap(
   return map;
 }
 
-export function FileTree() {
+type FileTreeProps = {
+  externalActionRequest?: ExternalTreeActionRequest | null;
+  onExternalActionHandled?: (requestId: number) => void;
+};
+
+export function FileTree({ externalActionRequest = null, onExternalActionHandled }: FileTreeProps) {
   const router = useRouter();
   const initRoot = useTreeStore((state) => state.initRoot);
   const refreshTree = useTreeStore((state) => state.refreshTree);
@@ -185,6 +190,18 @@ export function FileTree() {
         break;
     }
   }, [modal]);
+
+  useEffect(() => {
+    if (!externalActionRequest) {
+      return;
+    }
+
+    openModal({
+      type: externalActionRequest.type,
+      parentId: externalActionRequest.parentId,
+    });
+    onExternalActionHandled?.(externalActionRequest.id);
+  }, [externalActionRequest, onExternalActionHandled]);
 
   const handleCloseModal = () => {
     if (!modalSubmitting) {

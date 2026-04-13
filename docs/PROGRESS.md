@@ -1,21 +1,18 @@
 # Progress
 
-Current issue: `docs/issues/issue-25.md`
+Current story: `docs/stories/story-24.md`
 
-Current section: Issue 25 - Parallelize cache invalidation and manifest updates
+Current section: Story 24.3 - Verification and Regression Checks
 
 Previous tasks (latest completed batch only):
-- [x] Parallelized revalidateFileTags in lib/fs/file-cache.ts with concurrency of 10.
-- [x] Parallelized deleteFileMetas in lib/fs/file-meta.ts with concurrency of 10.
-- [x] Added concurrency to moveFolder in lib/manifest-updater.ts with threshold of 50 and concurrency of 6.
-- [x] Fixed syntax errors in modified files.
-- [x] Ran `pnpm lint` and `pnpm build` - both passed.
-- [x] Created issue-25.md and updated issues README.
+- [x] Addressed PR review feedback for vault-root file grouping.
+- [x] Re-ran `pnpm lint`.
+- [x] Re-ran `pnpm build`.
 
 Next tasks:
-- Commit changes with prefix `perf:`
-- Create PR from current branch to main
+- None - all tasks completed.
 
 Notes:
-- Branch: `fix/performance-parallel-hot-paths`
-- This is a new performance issue separate from resolved Issue 24.
+- Branch: `feature/grouped-quick-switcher`
+- This story is separate from the current AI-sidebar and performance issue work.
+- Follow-up patch for root-level file grouping is complete and ready on the PR branch.
