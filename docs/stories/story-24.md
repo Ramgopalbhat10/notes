@@ -28,6 +28,7 @@ Goal: Add a global quick switcher for the authenticated `/files` workspace so us
 | 2026-04-13 | docs | Added Story 24 workflow tracking and updated progress after implementation verification. |
 | 2026-04-13 | fix | Stabilized shell callback wiring to stop the header render loop and added accessible dialog metadata for the quick switcher. |
 | 2026-04-13 | qa | Manually verified quick switcher open, grouped search, file selection, and create-action flows in the authenticated `/files` workspace. |
+| 2026-04-13 | fix | Bucketed vault-root files into the `Ungrouped` quick-switcher section to address PR review feedback. |
 
 ## Issues
 

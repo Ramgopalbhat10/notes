@@ -120,7 +120,7 @@ export function QuickSwitcher({
         continue;
       }
 
-      const [topLevelSegment] = entry.path.split("/");
+      const topLevelSegment = entry.path.includes("/") ? entry.path.split("/", 1)[0] : "__ungrouped__";
       const key = topLevelSegment || "__ungrouped__";
       const existing = buckets.get(key);
 
