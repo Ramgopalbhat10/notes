@@ -1,18 +1,17 @@
 # Progress
 
-Current story: `docs/stories/story-24.md`
+Current issue: `docs/issues/issue-26.md`
 
-Current section: Story 24.3 - Verification and Regression Checks
+Current section: Issue 26 — CommandEmpty unreachable in Quick Switcher
 
 Previous tasks (latest completed batch only):
-- [x] Addressed PR review feedback for vault-root file grouping.
-- [x] Re-ran `pnpm lint`.
-- [x] Re-ran `pnpm build`.
+- [x] Replaced unreachable `CommandEmpty` with a conditional plain div keyed to `!hasAnyFileResults`.
+- [x] Removed unused `CommandEmpty` import.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `feature/grouped-quick-switcher`
-- This story is separate from the current AI-sidebar and performance issue work.
-- Follow-up patch for root-level file grouping is complete and ready on the PR branch.
+- Branch: `fix/quick-switcher-empty-state`
+- Related to Story 24 (grouped quick switcher).
+- `shouldFilter={false}` in `CommandDialog` makes cmdk count all rendered `CommandItem` components, so `CommandEmpty` never fires when the Commands group is always present.

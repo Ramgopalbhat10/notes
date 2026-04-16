@@ -34,6 +34,7 @@ Goal: Add a global quick switcher for the authenticated `/files` workspace so us
 
 | Issue | Title | Status | File |
 |---|---|---|---|
+| 26 | CommandEmpty unreachable in Quick Switcher | resolved | `components/quick-switcher.tsx` |
 
 ---
 

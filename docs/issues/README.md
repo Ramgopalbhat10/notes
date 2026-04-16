@@ -31,3 +31,4 @@ Issue template: `docs/issues/template.md`
 | 23 | Implement Phase 1 personal-vault performance plan | resolved | None | `components/blocknote-editor.tsx`, `stores/editor.ts`, `app/actions/documents.ts`, `lib/manifest-updater.ts`, `components/file-tree/index.tsx`, `lib/content/slug-resolver.ts`, `app/files/[[...path]]/page.tsx`, `components/ai-chat/hooks/use-chat-session.ts` |
 | 24 | Parallelize AI and S3 hot paths, and trim startup overhead | resolved | None | `app/api/ai/action/route.ts`, `app/api/fs/folder/route.ts`, `app/api/fs/move/route.ts`, `lib/file-tree-builder.ts`, `components/vault-workspace/*` |
 | 25 | Parallelize cache invalidation and manifest updates | resolved | None | `lib/fs/file-cache.ts`, `lib/fs/file-meta.ts`, `lib/manifest-updater.ts` |
+| 26 | CommandEmpty unreachable in Quick Switcher | resolved | Story 24 | `components/quick-switcher.tsx` |
