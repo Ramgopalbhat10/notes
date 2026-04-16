@@ -5,7 +5,6 @@ import { FilePlus2, FileText, FolderPlus } from "lucide-react";
 
 import {
   CommandDialog,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -198,7 +197,9 @@ export function QuickSwitcher({
         placeholder="Type a file name or path..."
       />
       <CommandList>
-        {!hasAnyFileResults ? <CommandEmpty>No files match your search.</CommandEmpty> : null}
+        {!hasAnyFileResults ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">No files match your search.</div>
+        ) : null}
 
         <CommandGroup heading="Commands">
           <CommandItem
