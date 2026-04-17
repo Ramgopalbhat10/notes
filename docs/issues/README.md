@@ -34,3 +34,4 @@ Issue template: `docs/issues/template.md`
 | 26 | CommandEmpty unreachable in Quick Switcher | resolved | Story 24 | `components/quick-switcher.tsx` |
 | 27 | Audit and Update NPM Packages | resolved | None | `package.json`, `pnpm-lock.yaml`, `drizzle.config.ts` |
 | 28 | AI SDK v6 Migration | resolved | None | `package.json`, `pnpm-lock.yaml`, `app/api/ai/chat/route.ts` |
+| 29 | BlockNote 0.48 + Mantine 8.3.18 Upgrade | resolved | None | `package.json`, `pnpm-lock.yaml` |
