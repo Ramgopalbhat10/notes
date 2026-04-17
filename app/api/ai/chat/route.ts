@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const modelName = resolveModel(requestedModel);
 
-    const convertedMessages = convertToModelMessages(messages);
+    const convertedMessages = await convertToModelMessages(messages);
     const contextMessage = buildContextMessage({
       fileKey: fileContext.key,
       excerpt: fileContext.excerpt,
