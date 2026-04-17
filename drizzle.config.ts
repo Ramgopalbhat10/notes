@@ -1,8 +1,8 @@
 import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 
-config({ path: ".env.local", override: true });
-config();
+config({ path: ".env.local", override: true, quiet: true });
+config({ quiet: true });
 
 const tursoUrl = process.env.TURSO_DB_URL;
 const tursoAuthToken = process.env.TURSO_DB_TOKEN;
