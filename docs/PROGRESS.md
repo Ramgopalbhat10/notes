@@ -13,6 +13,7 @@ Previous tasks (latest completed batch only):
 - [x] Fixed dotenv 17 breaking change (quiet defaults to false) in drizzle.config.ts.
 - [x] Resolved mermaid version mismatch between @streamdown/mermaid and streamdown via pnpm dedupe.
 - [x] Verified lint and build pass.
+- [x] Fixed missed dotenv 17 `quiet` breaking change in `scripts/build-file-tree.ts` — replaced `import "dotenv/config"` with explicit `config({ quiet: true })` calls.
 
 Next tasks:
 - None - all tasks completed.

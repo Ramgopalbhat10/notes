@@ -20,7 +20,7 @@
 - Applied all Tier 1 (patch) and Tier 2 (minor) updates as a batch.
 - Applied Tier 3 tooling updates: `dotenv` 17, `idb` 8, `lucide-react` 1.x, `@libsql/client` 0.17.
 - Reverted `typescript` 6 and `eslint` 10 due to ecosystem peer dependency conflicts (`@typescript-eslint` requires TS <6, `eslint-plugin-import/react/jsx-a11y` requires ESLint ^9).
-- Fixed `dotenv` 17 breaking change (`quiet` now defaults to `false`) in `drizzle.config.ts`.
+- Fixed `dotenv` 17 breaking change (`quiet` now defaults to `false`) in `drizzle.config.ts` and `scripts/build-file-tree.ts`.
 - Resolved `mermaid` version mismatch between `@streamdown/mermaid` and `streamdown` via `pnpm dedupe`.
 - Deferred major framework upgrades (AI SDK 6, BlockNote 0.48, Mantine 9, react-resizable-panels 4) to separate PRs.
 
@@ -28,6 +28,7 @@
 - `package.json`
 - `pnpm-lock.yaml`
 - `drizzle.config.ts`
+- `scripts/build-file-tree.ts`
 
 ## Dev Log
 
