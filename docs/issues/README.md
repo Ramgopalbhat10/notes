@@ -32,3 +32,4 @@ Issue template: `docs/issues/template.md`
 | 24 | Parallelize AI and S3 hot paths, and trim startup overhead | resolved | None | `app/api/ai/action/route.ts`, `app/api/fs/folder/route.ts`, `app/api/fs/move/route.ts`, `lib/file-tree-builder.ts`, `components/vault-workspace/*` |
 | 25 | Parallelize cache invalidation and manifest updates | resolved | None | `lib/fs/file-cache.ts`, `lib/fs/file-meta.ts`, `lib/manifest-updater.ts` |
 | 26 | CommandEmpty unreachable in Quick Switcher | resolved | Story 24 | `components/quick-switcher.tsx` |
+| 27 | Audit and Update NPM Packages | resolved | None | `package.json`, `pnpm-lock.yaml`, `drizzle.config.ts` |
