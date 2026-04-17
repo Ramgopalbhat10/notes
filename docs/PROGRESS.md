@@ -8,6 +8,7 @@ Previous tasks (latest completed batch only):
 - [x] Upgraded `react-resizable-panels` from v3.0.6 to v4.10.0.
 - [x] Updated `components/ui/resizable.tsx` wrapper to use v4 API (`PanelGroup` → `Group`, `PanelResizeHandle` → `Separator`).
 - [x] Kept wrapper's external API unchanged — no consumer code changes needed.
+- [x] Fixed dead CSS selectors: replaced `data-[panel-group-direction=vertical]` with `group-data-[orientation=vertical]/resizable` pattern using Tailwind `group/resizable` + `data-orientation`.
 - [x] Verified lint and build pass.
 
 Next tasks:
