@@ -1,20 +1,19 @@
 # Progress
 
-Current issue: `docs/issues/issue-30.md`
+Current issue: `docs/issues/issue-31.md`
 
-Current section: Chore — react-resizable-panels v4 Migration
+Current section: Issue 31 — Review follow-up complete
 
 Previous tasks (latest completed batch only):
-- [x] Upgraded `react-resizable-panels` from v3.0.6 to v4.10.0.
-- [x] Updated `components/ui/resizable.tsx` wrapper to use v4 API (`PanelGroup` → `Group`, `PanelResizeHandle` → `Separator`).
-- [x] Kept wrapper's external API unchanged — no consumer code changes needed.
-- [x] Fixed dead CSS selectors: replaced `data-[panel-group-direction=vertical]` with `group-data-[orientation=vertical]/resizable` pattern using Tailwind `group/resizable` + `data-orientation`.
-- [x] Verified lint and build pass.
+- [x] Replaced machine-specific workflow-reference links in `.agents/skills/notes-workflow/SKILL.md` with repo-relative links.
+- [x] Logged the review follow-up in `docs/issues/issue-31.md`.
+- [x] Re-ran the skill validator after the link fix.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `chore/1776424218-react-resizable-panels-v4`
-- Wrapper component is not currently used in the codebase, making this a zero-risk migration.
-- v4 renames: `PanelGroup` → `Group`, `PanelResizeHandle` → `Separator`, `direction` → `orientation`.
+- Branch: `chore/notes-workflow-skill`
+- The new `notes-workflow` skill is now the primary agent workflow source for this repo.
+- Backup workflow docs remain in `docs/WORKFLOW.md` and `docs/WORKFLOW_LABELS.md` for humans and reviewers.
+- Review follow-up keeps the skill portable across different checkout locations and operating systems.

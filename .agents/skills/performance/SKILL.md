@@ -33,7 +33,7 @@ If the user does not provide enough information, assume that you have access to 
 - If the change affects caching/data-flow architecture, note that `docs/decisions/` may need updating.
 
 ### 4. Implement
-- Follow `docs/WORKFLOW.md` gates (pre-code gate before any edits).
+- Use `.agents/skills/notes-workflow/SKILL.md` for repo routing, docs, quality gates, commit rules, and PR readiness before making edits.
 - Classify this as an **Issue** (type: `performance`) per §2 of the workflow.
 - Write the performance fix preserving existing behavior.
 - Follow existing codebase patterns and conventions.
@@ -47,15 +47,9 @@ If the user does not provide enough information, assume that you have access to 
 - Confirm no functionality is broken.
 
 ### 6. Document
-- Complete the post-code gate in `docs/WORKFLOW.md` §5.
+- Complete the `notes-workflow` post-code gate and keep the issue/progress docs in sync.
 - If caching/data-flow architecture changed, add/update `docs/decisions/`.
-- Commit with prefix: `perf:` or `fix:`.
-- PR title format: `⚡ [performance improvement description]`
-- PR description:
-  - 🎯 **What:** The performance issue addressed
-  - 📊 **Impact:** Measurable or expected improvement
-  - 🔧 **Approach:** What was changed and why this approach
-  - ✅ **Verification:** How you confirmed the improvement
-  - Refer to `.github/PULL_REQUEST_TEMPLATE.md` for additional required details.
+- Commit with prefix: `fix:`, `refactor:`, or `chore:` based on the actual change.
+- Use `.github/PULL_REQUEST_TEMPLATE.md` for any PR description.
 
 Remember: Performance fixes must not change behavior. Measure before and after when possible. Avoid trading correctness for speed.

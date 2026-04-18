@@ -1,35 +1,35 @@
 # Workflow Labels
 
-Prefix requests with `[label]` to control which workflow phases execute.
+This file is a human-facing backup reference. Agents should route requests with `.agents/skills/notes-workflow/SKILL.md`.
 
 ## Label → Phase Map
 
 | Label | Runs | Gap-fills before? |
 |---|---|---|
-| `[ask]` | Answer only — no files loaded, no workflow | — |
-| *(none, conversational)* | Answer only — same as `[ask]` | — |
-| *(none, implementation)* | All 9 phases in order | — |
-| `[code-only]` | §4 Implementation only | No |
-| `[docs-only]` | §2 Route & Document only | No |
-| `[quality]` | §6 Quality Gate only | No |
-| `[commit]` | §7 Commit | Yes — §2, §3, §5, §6 if incomplete |
-| `[push]` | §9 PR Creation | Yes — all incomplete phases |
+| `[ask]` | Answer only. No workflow context. | No |
+| *(none, conversational)* | Same as `[ask]`. | No |
+| *(none, implementation)* | Full workflow. | No |
+| `[code-only]` | Implementation only. | No |
+| `[docs-only]` | Route/document only. | No |
+| `[quality]` | Quality gate only. | No |
+| `[commit]` | Commit after filling missing route/document, pre-code, post-code, and quality phases. | Yes |
+| `[push]` | PR creation after filling every incomplete phase. | Yes |
 
-## Phases (from `docs/WORKFLOW.md`)
+## Phase Summary
 
-1. *(Mode — always applies)*
-2. **Route & Document** — classify, create story/issue file, update index, reset PROGRESS.md
-3. **Pre-Code Gate** — review learnings/decisions, verify/create branch
-4. **Implementation** — write/modify source code
-5. **Post-Code Gate** — update subtasks, Dev Log, PROGRESS.md, cross-refs
-6. **Quality Gate** — `pnpm lint`, `pnpm build`, delete test files
-7. **Commit** — conventional commit on feature/fix branch, never `main`
-8. **Pre-PR Verification** — verify all checklist items, diff review
-9. **PR Creation** — create PR via template, do not merge
+1. Mode
+2. Route and document
+3. Pre-code gate
+4. Execute one unit of work
+5. Post-code gate
+6. Quality gate
+7. Commit
+8. Pre-PR verification
+9. PR creation
 
-## Gap-Fill Rules
+## Guardrails
 
-- `[commit]`: auto-runs §2, §3, §5, §6 (in order) if not already done, then commits.
-- `[push]`: auto-runs ALL incomplete phases in order, then creates PR.
-- Block PR creation if any required phase is incomplete — list what's missing.
-- If a dependency cannot be resolved (e.g. no code exists to commit), warn and halt.
+- Scan for labels before loading workflow context.
+- Treat unlabeled conversational requests as `[ask]`.
+- Treat unlabeled implementation requests as full workflow execution.
+- Block PR creation when any required phase is incomplete.
