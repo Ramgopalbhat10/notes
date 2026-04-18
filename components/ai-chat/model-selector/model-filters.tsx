@@ -4,7 +4,9 @@ import { useCallback } from "react";
 
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ProviderAvatar } from "./provider-avatar";
 import type { ModelFeatureIcon } from "./types";
+import { toProviderLabel } from "./utils";
 
 type ModelFiltersProps = {
   providerOptions: string[];
@@ -62,26 +64,24 @@ export function ModelFilters({
   const scrollbarClass = isMobile ? scrollbarMobile : scrollbarDesktop;
 
   return (
-    <div className="mt-1.5 space-y-1.5">
+    <div className="mt-2 space-y-1.5">
       {providerOptions.length > 1 ? (
         <div
           ref={providerFiltersScrollRef}
           onWheel={handleWheel}
           className={cn("w-full overflow-x-auto overflow-y-hidden pb-1 pr-1", scrollbarClass)}
         >
-          <div className="flex w-max min-w-full gap-1">
-            <FilterPill
-              label="All providers"
+          <div className="flex w-max min-w-full items-center gap-1">
+            <ProviderAllChip
               active={providerFilter === "all"}
               onClick={() => onProviderFilter("all")}
             />
             {providerOptions.map((provider) => (
-              <FilterPill
+              <ProviderChip
                 key={provider}
-                label={provider}
+                provider={provider}
                 active={providerFilter === provider}
                 onClick={() => onProviderFilter(provider)}
-                truncate
               />
             ))}
           </div>
@@ -93,13 +93,13 @@ export function ModelFilters({
           className={cn("w-full overflow-x-auto overflow-y-hidden pb-1 pr-1", scrollbarClass)}
         >
           <div className="flex w-max min-w-full gap-1">
-            <FilterPill
+            <FeatureChip
               label="Any feature"
               active={featureFilter === "all"}
               onClick={() => onFeatureFilter("all")}
             />
             {featureOptions.map((feature) => (
-              <FilterPill
+              <FeatureChip
                 key={feature.tag}
                 label={feature.label}
                 active={featureFilter === feature.tag}
@@ -114,29 +114,80 @@ export function ModelFilters({
   );
 }
 
-type FilterPillProps = {
-  label: string;
+type ProviderAllChipProps = {
   active: boolean;
   onClick: () => void;
-  truncate?: boolean;
-  icon?: React.ReactNode;
 };
 
-function FilterPill({ label, active, onClick, truncate, icon }: FilterPillProps) {
+function ProviderAllChip({ active, onClick }: ProviderAllChipProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title="All providers"
+      aria-label="All providers"
+      aria-pressed={active}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
-        truncate && "max-w-[140px]",
+        "inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[11px] font-medium transition-colors",
         active
-          ? "border-primary/50 bg-primary/10 text-foreground"
-          : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+          ? "bg-primary/15 text-foreground ring-1 ring-inset ring-primary/40"
+          : "bg-muted/60 text-muted-foreground hover:bg-accent hover:text-foreground",
+      )}
+    >
+      All
+    </button>
+  );
+}
+
+type ProviderChipProps = {
+  provider: string;
+  active: boolean;
+  onClick: () => void;
+};
+
+function ProviderChip({ provider, active, onClick }: ProviderChipProps) {
+  const label = toProviderLabel(provider);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors",
+        active
+          ? "bg-primary/10 ring-1 ring-inset ring-primary/50"
+          : "bg-muted/50 ring-1 ring-inset ring-transparent hover:bg-accent hover:ring-border/60",
+      )}
+    >
+      <ProviderAvatar provider={provider} size="md" />
+    </button>
+  );
+}
+
+type FeatureChipProps = {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  icon?: React.ReactNode;
+};
+
+function FeatureChip({ label, active, onClick, icon }: FeatureChipProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-medium transition-colors",
+        active
+          ? "bg-primary/10 text-foreground ring-1 ring-inset ring-primary/40"
+          : "bg-muted/60 text-muted-foreground hover:bg-accent hover:text-foreground",
       )}
     >
       {icon}
-      {truncate ? <span className="block truncate">{label}</span> : <span>{label}</span>}
+      <span>{label}</span>
     </button>
   );
 }
