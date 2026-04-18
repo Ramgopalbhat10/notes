@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, isAllowedUser } from "@/lib/auth";
+import { getApiSession, isAllowedUser } from "@/lib/auth";
+import { AUTH_BYPASS_ENABLED } from "@/lib/auth/config";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -41,7 +42,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await auth.api.getSession({ headers: request.headers });
+  if (AUTH_BYPASS_ENABLED) {
+    return NextResponse.next();
+  }
+
+  const session = await getApiSession(request);
   const isApi = pathname.startsWith("/api/");
 
   if (!session) {

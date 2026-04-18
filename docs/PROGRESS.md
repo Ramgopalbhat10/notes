@@ -1,21 +1,17 @@
 # Progress
 
-Current issue: `docs/issues/issue-32.md`
+Current issue: `docs/issues/issue-33.md`
 
-Current section: Issue 32 — Redesign Chat Sidebar Model Selector
+Current section: Issue 33 — Add single-flag auth bypass for local testing
 
 Previous tasks (latest completed batch only):
-- [x] Added `getProviderInitials` + `getProviderAccentClass` to `components/ai-chat/model-selector/utils.ts` and introduced the new `ProviderAvatar` component.
-- [x] Redesigned `ModelFilters` to use circular provider avatar chips and tighter feature chips.
-- [x] Redesigned `ModelList` rows (avatar + name + capability icons + selected accent stripe) and made provider group headers sticky.
-- [x] Redesigned `ModelSelector` trigger and popover header (flush command-palette feel) while preserving all existing state/behavior.
-- [x] Ran `pnpm lint` and `pnpm build` (both pass).
+- [x] Removed the fixed auth-bypass banner from the global layout and kept the bypass state as a non-visual body data attribute.
+- [x] Added a shared hover-card UI primitive and moved the bypass warning into the sidebar footer next to the profile avatar.
+- [x] Ran `pnpm lint` and `pnpm build` after the UI change.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `refactor/model-selector-redesign`
-- Constraints preserved: narrow sidebar (~24rem), search with clear button, filter reset on close, focus-on-open for desktop, mobile sheet portal, wheel-to-horizontal scroll on filter rows, provider/feature filter resets when options change.
-- No hover card / details panel — explicitly dropped per issue requester.
-- Provider avatars use a deterministic tint derived from existing theme tokens so each provider has a stable identity across light and dark mode.
+- Branch: `chore/auth-bypass-local-dev`
+- Leave `.windsurf/workflows/review.md` untouched; it is unrelated local workspace state.

@@ -3,6 +3,7 @@ import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { PwaRegister } from "@/components/pwa/pwa-register";
+import { AUTH_BYPASS_ENABLED } from "@/lib/auth/config";
 import { siteMetadata } from "@/lib/platform/site-metadata";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -68,6 +69,7 @@ export default function RootLayout({
     <html className="dark" lang="en" suppressHydrationWarning>
       <body
         className={`${jetbrainsMono.variable} antialiased`}
+        data-auth-bypass={AUTH_BYPASS_ENABLED ? "true" : "false"}
       >
         {children}
         <PwaRegister />
