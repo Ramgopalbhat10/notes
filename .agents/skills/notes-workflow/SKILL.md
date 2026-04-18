@@ -16,14 +16,14 @@ Follow this skill as the primary agent workflow source for this repository. Do n
 ## Workflow Decision Tree
 
 ### Request routing
-- Read [request-routing.md](M:\Projects\mrgb\notes\.agents\skills\notes-workflow\references\request-routing.md) for label handling, unlabeled request rules, and gap-fill behavior.
+- Read [request-routing.md](references/request-routing.md) for label handling, unlabeled request rules, and gap-fill behavior.
 
 ### Work tracking and docs
-- Read [tracking-and-docs.md](M:\Projects\mrgb\notes\.agents\skills\notes-workflow\references\tracking-and-docs.md) when the task is not `[ask]`.
+- Read [tracking-and-docs.md](references/tracking-and-docs.md) when the task is not `[ask]`.
 - Use it to classify Story vs Issue, decide whether to reuse active work, create or update the correct docs, and keep `docs/PROGRESS.md` in sync.
 
 ### Execution gates
-- Read [execution-gates.md](M:\Projects\mrgb\notes\.agents\skills\notes-workflow\references\execution-gates.md) before edits and again before quality, commit, or PR actions.
+- Read [execution-gates.md](references/execution-gates.md) before edits and again before quality, commit, or PR actions.
 - Treat repo-enforced checks in `scripts/workflow/` and `.githooks/` as the final source of truth if any wording drifts.
 
 ## Non-Negotiables

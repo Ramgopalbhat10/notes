@@ -40,6 +40,7 @@
 | 2026-04-18 | chore | Added the repo-local `notes-workflow` skill with extracted routing, tracking, and execution-gate references plus `agents/openai.yaml` metadata |
 | 2026-04-18 | docs | Repointed `AGENTS.md`, backup workflow docs, and existing repo-local skills to the `notes-workflow` skill |
 | 2026-04-18 | chore | Validated the skill, synced dependencies with the lockfile, and reran lint/build against the updated local install state |
+| 2026-04-18 | fix | Replaced machine-specific workflow-reference links in `notes-workflow/SKILL.md` with repo-relative links so the skill works in any checkout path |
 
 ## Test Plan
 - `python "C:\Users\ramgo\.codex\skills\.system\skill-creator\scripts\quick_validate.py" "M:\Projects\mrgb\notes\.agents\skills\notes-workflow"` passes.
