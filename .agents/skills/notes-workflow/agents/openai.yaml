@@ -1,0 +1,4 @@
+interface:
+  display_name: "Notes Workflow"
+  short_description: "Repo workflow routing and quality gates"
+  default_prompt: "Use $notes-workflow to follow this repository's label-driven workflow correctly."

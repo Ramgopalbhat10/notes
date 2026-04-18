@@ -34,7 +34,7 @@ If the user does not provide enough information, assume that you have access to 
 - If the fix changes auth/data-flow, note that `docs/decisions/` may need updating.
 
 ### 4. Implement
-- Follow `docs/WORKFLOW.md` gates (pre-code gate before any edits).
+- Use `.agents/skills/notes-workflow/SKILL.md` for repo routing, docs, quality gates, commit rules, and PR readiness before making edits.
 - Classify this as an **Issue** (type: `bug`) per §2 of the workflow.
 - Write a secure fix that eliminates the vulnerability.
 - Follow security best practices for this issue type.
@@ -48,15 +48,9 @@ If the user does not provide enough information, assume that you have access to 
 - Confirm no functionality is broken.
 
 ### 6. Document
-- Complete the post-code gate in `docs/WORKFLOW.md` §5.
+- Complete the `notes-workflow` post-code gate and keep the issue/progress docs in sync.
 - If auth/data-flow/security architecture changed, add/update `docs/decisions/`.
 - Commit with prefix: `fix:`.
-- PR title format: `🔒 [security fix description]`
-- PR description:
-  - 🎯 **What:** The vulnerability fixed
-  - ⚠️ **Risk:** The potential impact if left unfixed
-  - 🛡️ **Solution:** How the fix addresses the vulnerability
-  - ✅ **Verification:** How you confirmed the fix works
-  - Refer to `.github/PULL_REQUEST_TEMPLATE.md` for additional required details.
+- Use `.github/PULL_REQUEST_TEMPLATE.md` for any PR description.
 
 Remember: Security is paramount. A fix that introduces new vulnerabilities is worse than no fix at all. Be thorough and careful.
