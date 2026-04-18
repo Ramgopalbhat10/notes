@@ -6,12 +6,12 @@ import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import type { GatewayLanguageModelOption } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useModels } from "../hooks/use-models";
 import { ModelFilters } from "./model-filters";
 import { ModelList } from "./model-list";
+import { ProviderAvatar } from "./provider-avatar";
 import { deriveModelFeatureTags, groupModelsByProvider, toProviderLabel, MODEL_FEATURE_ICONS } from "./utils";
 
 type ModelSelectorProps = {
@@ -75,10 +75,12 @@ export function ModelSelector({ portalContainer }: ModelSelectorProps) {
       .filter((group) => group.models.length > 0);
   }, [modelGroups, searchQuery, providerFilter, featureFilter]);
 
-  const selectedModelName = useMemo(
-    () => availableModels.find((model) => model.id === selectedModel)?.name ?? selectedModel,
+  const selectedModelOption = useMemo(
+    () => availableModels.find((model) => model.id === selectedModel),
     [availableModels, selectedModel],
   );
+  const selectedModelName = selectedModelOption?.name ?? selectedModel;
+  const selectedProvider = selectedModelOption?.provider ?? "";
 
   // Reset filters when provider/feature options change
   useEffect(() => {
@@ -121,11 +123,15 @@ export function ModelSelector({ portalContainer }: ModelSelectorProps) {
       <PopoverTrigger asChild>
         <Button
           type="button"
-          variant="outline"
-          className="h-7 gap-1 border-border/40 bg-background/80 px-2 text-xs font-normal text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+          variant="ghost"
+          className="h-7 gap-1.5 rounded-full bg-muted/50 px-2 pr-2 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground"
+          title={selectedProvider ? `${toProviderLabel(selectedProvider)} — ${selectedModelName}` : selectedModelName}
         >
+          {selectedProvider ? (
+            <ProviderAvatar provider={selectedProvider} size="sm" />
+          ) : null}
           <span className="max-w-[140px] truncate">{selectedModelName}</span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -134,25 +140,25 @@ export function ModelSelector({ portalContainer }: ModelSelectorProps) {
         sideOffset={8}
         avoidCollisions
         collisionPadding={8}
-        className="w-[min(24rem,calc(100vw-2rem))] max-h-[min(70dvh,460px)] overflow-hidden p-0"
+        className="w-[min(24rem,calc(100vw-2rem))] max-h-[min(70dvh,460px)] overflow-hidden rounded-xl p-0 shadow-lg"
         container={portalContainer ?? undefined}
       >
-        <div className="border-b bg-popover px-2 py-1.5">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
-            <div className="relative min-w-0 flex-1">
+        <div className="border-b border-border/60 bg-popover px-2 pb-1.5 pt-1.5">
+          <div className="flex items-center gap-1">
+            <div className="relative flex min-w-0 flex-1 items-center">
               <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
+              <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search models..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-8 border-border/60 bg-background pl-7 pr-7 text-xs"
+                className="h-8 w-full rounded-sm bg-transparent pl-7 pr-7 text-xs text-foreground placeholder:text-muted-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/60"
               />
               {searchQuery ? (
                 <button
                   type="button"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear model search"
                 >
@@ -164,11 +170,12 @@ export function ModelSelector({ portalContainer }: ModelSelectorProps) {
               <button
                 type="button"
                 onClick={handleToggleFilters}
+                aria-pressed={showFilters || hasActiveFilters}
                 className={cn(
-                  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors",
+                  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
                   hasActiveFilters
-                    ? "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15"
-                    : "border-border/60 bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
+                    ? "bg-primary/10 text-foreground hover:bg-primary/15"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
                 aria-label="Toggle model filters"
               >

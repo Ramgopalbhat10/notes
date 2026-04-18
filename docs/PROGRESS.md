@@ -1,19 +1,21 @@
 # Progress
 
-Current issue: `docs/issues/issue-31.md`
+Current issue: `docs/issues/issue-32.md`
 
-Current section: Issue 31 — Review follow-up complete
+Current section: Issue 32 — Redesign Chat Sidebar Model Selector
 
 Previous tasks (latest completed batch only):
-- [x] Replaced machine-specific workflow-reference links in `.agents/skills/notes-workflow/SKILL.md` with repo-relative links.
-- [x] Logged the review follow-up in `docs/issues/issue-31.md`.
-- [x] Re-ran the skill validator after the link fix.
+- [x] Added `getProviderInitials` + `getProviderAccentClass` to `components/ai-chat/model-selector/utils.ts` and introduced the new `ProviderAvatar` component.
+- [x] Redesigned `ModelFilters` to use circular provider avatar chips and tighter feature chips.
+- [x] Redesigned `ModelList` rows (avatar + name + capability icons + selected accent stripe) and made provider group headers sticky.
+- [x] Redesigned `ModelSelector` trigger and popover header (flush command-palette feel) while preserving all existing state/behavior.
+- [x] Ran `pnpm lint` and `pnpm build` (both pass).
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `chore/notes-workflow-skill`
-- The new `notes-workflow` skill is now the primary agent workflow source for this repo.
-- Backup workflow docs remain in `docs/WORKFLOW.md` and `docs/WORKFLOW_LABELS.md` for humans and reviewers.
-- Review follow-up keeps the skill portable across different checkout locations and operating systems.
+- Branch: `refactor/model-selector-redesign`
+- Constraints preserved: narrow sidebar (~24rem), search with clear button, filter reset on close, focus-on-open for desktop, mobile sheet portal, wheel-to-horizontal scroll on filter rows, provider/feature filter resets when options change.
+- No hover card / details panel — explicitly dropped per issue requester.
+- Provider avatars use a deterministic tint derived from existing theme tokens so each provider has a stable identity across light and dark mode.
