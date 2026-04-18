@@ -153,7 +153,7 @@ export function ModelSelector({ portalContainer }: ModelSelectorProps) {
                 placeholder="Search models..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-8 w-full bg-transparent pl-7 pr-7 text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                className="h-8 w-full rounded-sm bg-transparent pl-7 pr-7 text-xs text-foreground placeholder:text-muted-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring/60"
               />
               {searchQuery ? (
                 <button
