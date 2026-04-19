@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowUp, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,18 @@ export function AssistantRefineComposer({
   canSubmit,
   portalContainer,
 }: AssistantRefineComposerProps) {
+  // Detect macOS on mount to render the correct modifier glyph. Defaults to
+  // mac so first paint matches the convention used elsewhere in the app; we
+  // flip to "Ctrl" post-hydration on Windows/Linux.
+  const [isMac, setIsMac] = useState(true);
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const platform =
+      (navigator as Navigator & { userAgentData?: { platform?: string } })
+        .userAgentData?.platform ?? navigator.platform ?? "";
+    setIsMac(/mac|iphone|ipad|ipod/i.test(platform));
+  }, []);
+
   return (
     <div className="border-t border-border/50 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div
@@ -86,7 +99,9 @@ export function AssistantRefineComposer({
         </div>
       </div>
       <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
-        <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">⌘</kbd>
+        <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">
+          {isMac ? "⌘" : "Ctrl"}
+        </kbd>
         <span className="mx-0.5">+</span>
         <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">Enter</kbd>
         {" "}to refine

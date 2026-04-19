@@ -14,16 +14,26 @@ import { ModelList } from "./model-list";
 import { ProviderAvatar } from "./provider-avatar";
 import { deriveModelFeatureTags, groupModelsByProvider, toProviderLabel, MODEL_FEATURE_ICONS } from "./utils";
 
+/**
+ * Controlled mode: `value` and `onChange` must be supplied together. When both
+ * are present the selector reads/writes the caller's value instead of
+ * `useChatStore` — used by the Settings modal to edit a draft without
+ * mutating the active chat session. Omitting both reverts to the
+ * `useChatStore`-backed default used by the chat/assistant sidebars.
+ */
+type ModelSelectorControlledProps = {
+  value: string;
+  onChange: (modelId: string) => void;
+};
+
+type ModelSelectorUncontrolledProps = {
+  value?: undefined;
+  onChange?: undefined;
+};
+
 type ModelSelectorProps = {
   portalContainer: HTMLElement | null;
-  /**
-   * Controlled mode: when provided, the selector reads/writes the caller's value
-   * instead of `useChatStore`. Used by the Settings modal to edit a draft value
-   * without mutating the active chat session model.
-   */
-  value?: string;
-  onChange?: (modelId: string) => void;
-};
+} & (ModelSelectorControlledProps | ModelSelectorUncontrolledProps);
 
 export function ModelSelector({ portalContainer, value, onChange }: ModelSelectorProps) {
   const isMobile = useIsMobile();
@@ -34,11 +44,18 @@ export function ModelSelector({ portalContainer, value, onChange }: ModelSelecto
     setSelectedModel: storeSetSelectedModel,
   } = useModels();
 
-  const isControlled = value !== undefined && onChange !== undefined;
+  const isControlled = value !== undefined;
   const selectedModel = isControlled ? value : storeSelectedModel;
-  const setSelectedModel = isControlled
-    ? (id: string) => onChange(id)
-    : (id: string) => storeSetSelectedModel(id, { source: "user" });
+  const setSelectedModel = useCallback(
+    (id: string) => {
+      if (isControlled) {
+        onChange(id);
+        return;
+      }
+      storeSetSelectedModel(id, { source: "user" });
+    },
+    [isControlled, onChange, storeSetSelectedModel],
+  );
 
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

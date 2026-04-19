@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { useChatStore } from "@/stores/chat";
 import { useSettingsStore } from "@/stores/settings";
 
 /**
- * Seeds `useChatStore.selectedModel` from the persisted default in Settings
- * (`settings.ai.defaultModel`) on the first load of the chat surface.
+ * Keeps `useChatStore.selectedModel` in sync with the persisted default in
+ * Settings (`settings.ai.defaultModel`) for the chat surface.
  *
  * Behavior:
- *  - Fires once per page load: fetches settings if not already initialized,
- *    then applies the saved default when it differs from the in-memory model
- *    AND the user has not manually picked a model during this session.
- *  - A user pick in the chat sidebar flips `modelUserOverridden = true`, which
- *    prevents this sync from clobbering the session choice (including across
- *    New Chat). Only a full reload — which resets the in-memory store — clears
- *    the override and allows the Settings default to take effect again.
+ *  - Fetches settings on first mount if they are not already initialized.
+ *  - When `!modelUserOverridden`, propagates changes to the Settings default
+ *    into the in-memory chat store so that saving a new default in Settings
+ *    takes effect immediately (no reload required).
+ *  - A user pick in the chat sidebar flips `modelUserOverridden = true`,
+ *    which latches the session choice across New Chat. Only a full reload —
+ *    which resets the in-memory store — clears the override and lets the
+ *    Settings default take effect again.
  */
 export function useDefaultModelSync(): void {
   const initialized = useSettingsStore((state) => state.initialized);
@@ -27,8 +28,6 @@ export function useDefaultModelSync(): void {
   const selectedModel = useChatStore((state) => state.selectedModel);
   const setSelectedModel = useChatStore((state) => state.setSelectedModel);
 
-  const appliedRef = useRef(false);
-
   useEffect(() => {
     if (!initialized) {
       void fetchSettings();
@@ -36,23 +35,10 @@ export function useDefaultModelSync(): void {
   }, [initialized, fetchSettings]);
 
   useEffect(() => {
-    if (appliedRef.current) {
-      return;
-    }
-    if (!initialized) {
-      return;
-    }
-    appliedRef.current = true;
-
-    if (modelUserOverridden) {
-      return;
-    }
-    if (!defaultModel) {
-      return;
-    }
-    if (defaultModel === selectedModel) {
-      return;
-    }
+    if (!initialized) return;
+    if (modelUserOverridden) return;
+    if (!defaultModel) return;
+    if (defaultModel === selectedModel) return;
 
     setSelectedModel(defaultModel, { source: "system" });
   }, [initialized, modelUserOverridden, defaultModel, selectedModel, setSelectedModel]);

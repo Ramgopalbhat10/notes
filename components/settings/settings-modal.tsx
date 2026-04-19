@@ -69,7 +69,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const { settings, fetchSettings, saveSettings, resetToDefaults, initialized, loading, saving } = useSettingsStore();
   const setCentered = useWorkspaceLayoutStore((state) => state.setCentered);
   const { toast } = useToast();
-  const dialogContentRef = React.useRef<HTMLDivElement>(null);
 
   // Local draft state for form
   const [draft, setDraft] = React.useState<UserSettings>(settings);
@@ -147,7 +146,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
-        ref={dialogContentRef}
         className="w-[calc(100%-2rem)] max-w-2xl md:h-[70vh] md:max-h-[520px] h-auto max-h-[85vh] p-0 gap-0 overflow-hidden rounded-lg border-sidebar-border"
       >
         <div className="flex flex-col md:flex-row h-full">
@@ -236,7 +234,6 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                     hasChanges={hasChanges}
                     saving={saving}
                     onSave={handleSave}
-                    dialogContainer={dialogContentRef.current}
                   />
                 </div>
               </ScrollArea>
@@ -259,7 +256,6 @@ type SettingsContentProps = {
   hasChanges: boolean;
   saving: boolean;
   onSave: () => void;
-  dialogContainer: HTMLElement | null;
 };
 
 function SettingsContent({
@@ -273,7 +269,6 @@ function SettingsContent({
   hasChanges,
   saving,
   onSave,
-  dialogContainer,
 }: SettingsContentProps) {
   const saveButton = section !== "about" && (
     <div className="flex justify-end mt-auto pt-4">
@@ -303,7 +298,6 @@ function SettingsContent({
           <ChatSettings
             draft={draft}
             updateDraft={updateDraftAi}
-            portalContainer={null}
           />
         )}
         {section === "privacy" && <PrivacySettings draft={draft} updateDraft={updateDraftPrivacy} onReset={onReset} />}
@@ -443,12 +437,13 @@ function AppearanceSettings({
 function ChatSettings({
   draft,
   updateDraft,
-  portalContainer,
 }: {
   draft: UserSettings;
   updateDraft: (updates: Partial<UserSettings["ai"]>) => void;
-  portalContainer: HTMLElement | null;
 }) {
+  // Portal the popover into document.body (`portalContainer={null}`) so it
+  // can escape the dialog's `overflow-hidden` clip rect. Keeping it inside
+  // DialogContent clips long model names against the dialog's right edge.
   return (
     <SettingsGroup
       title="Chat"
@@ -459,7 +454,7 @@ function ChatSettings({
         description="Used on launch and for every new chat and assistant session"
       >
         <ModelSelector
-          portalContainer={portalContainer}
+          portalContainer={null}
           value={draft.ai.defaultModel}
           onChange={(defaultModel) => updateDraft({ defaultModel })}
         />
