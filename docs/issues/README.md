@@ -39,3 +39,4 @@ Issue template: `docs/issues/template.md`
 | 31 | Convert Repo Workflow Into a Repo-Local Skill | resolved | None | `.agents/skills/notes-workflow/*`, `AGENTS.md`, `docs/WORKFLOW.md`, `docs/WORKFLOW_LABELS.md` |
 | 32 | Redesign Chat Sidebar Model Selector | resolved | None | `components/ai-chat/model-selector/*` |
 | 33 | Add single-flag auth bypass for local testing | resolved | None | `lib/auth/*`, `proxy.ts`, `app/api/auth/[...betterauth]/route.ts`, `app/layout.tsx` |
+| 34 | Redesign Markdown Table Rendering Styles | in-progress | None | `app/globals.css` |
