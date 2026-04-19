@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedisClient } from "@/lib/cache/redis-client";
 import { requireApiUser } from "@/lib/auth";
+import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 
 const SETTINGS_KEY_PREFIX = "user:settings:";
 
@@ -14,6 +15,9 @@ export type UserSettings = {
   privacy: {
     rememberLastOpenedFile: boolean;
   };
+  ai: {
+    defaultModel: string;
+  };
 };
 
 export const defaultUserSettings: UserSettings = {
@@ -26,7 +30,21 @@ export const defaultUserSettings: UserSettings = {
   privacy: {
     rememberLastOpenedFile: true,
   },
+  ai: {
+    defaultModel: DEFAULT_CHAT_MODEL,
+  },
 };
+
+function sanitizeAiSettings(
+  incoming: unknown,
+  fallback: UserSettings["ai"],
+): UserSettings["ai"] {
+  const raw = (incoming ?? {}) as Partial<UserSettings["ai"]>;
+  const validated = parseModelId(raw.defaultModel);
+  return {
+    defaultModel: validated ?? fallback.defaultModel,
+  };
+}
 
 function getSettingsKey(userId: string): string {
   return `${SETTINGS_KEY_PREFIX}${userId}`;
@@ -52,6 +70,7 @@ export async function GET(request: NextRequest) {
       editor: { ...defaultUserSettings.editor, ...data?.editor },
       appearance: { ...defaultUserSettings.appearance, ...data?.appearance },
       privacy: { ...defaultUserSettings.privacy, ...data?.privacy },
+      ai: sanitizeAiSettings(data?.ai, defaultUserSettings.ai),
     };
 
     return NextResponse.json(settings);
@@ -82,6 +101,10 @@ export async function PUT(request: NextRequest) {
       editor: { ...(current?.editor ?? defaultUserSettings.editor), ...body.editor },
       appearance: { ...(current?.appearance ?? defaultUserSettings.appearance), ...body.appearance },
       privacy: { ...(current?.privacy ?? defaultUserSettings.privacy), ...body.privacy },
+      ai: sanitizeAiSettings(
+        { ...(current?.ai ?? defaultUserSettings.ai), ...body.ai },
+        current?.ai ?? defaultUserSettings.ai,
+      ),
     };
 
     // Store in Redis (no expiration - persistent)

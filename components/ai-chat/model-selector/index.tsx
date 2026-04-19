@@ -14,13 +14,48 @@ import { ModelList } from "./model-list";
 import { ProviderAvatar } from "./provider-avatar";
 import { deriveModelFeatureTags, groupModelsByProvider, toProviderLabel, MODEL_FEATURE_ICONS } from "./utils";
 
-type ModelSelectorProps = {
-  portalContainer: HTMLElement | null;
+/**
+ * Controlled mode: `value` and `onChange` must be supplied together. When both
+ * are present the selector reads/writes the caller's value instead of
+ * `useChatStore` — used by the Settings modal to edit a draft without
+ * mutating the active chat session. Omitting both reverts to the
+ * `useChatStore`-backed default used by the chat/assistant sidebars.
+ */
+type ModelSelectorControlledProps = {
+  value: string;
+  onChange: (modelId: string) => void;
 };
 
-export function ModelSelector({ portalContainer }: ModelSelectorProps) {
+type ModelSelectorUncontrolledProps = {
+  value?: undefined;
+  onChange?: undefined;
+};
+
+type ModelSelectorProps = {
+  portalContainer: HTMLElement | null;
+} & (ModelSelectorControlledProps | ModelSelectorUncontrolledProps);
+
+export function ModelSelector({ portalContainer, value, onChange }: ModelSelectorProps) {
   const isMobile = useIsMobile();
-  const { availableModels, modelsLoading, selectedModel, setSelectedModel } = useModels();
+  const {
+    availableModels,
+    modelsLoading,
+    selectedModel: storeSelectedModel,
+    setSelectedModel: storeSetSelectedModel,
+  } = useModels();
+
+  const isControlled = value !== undefined;
+  const selectedModel = isControlled ? value : storeSelectedModel;
+  const setSelectedModel = useCallback(
+    (id: string) => {
+      if (isControlled) {
+        onChange(id);
+        return;
+      }
+      storeSetSelectedModel(id, { source: "user" });
+    },
+    [isControlled, onChange, storeSetSelectedModel],
+  );
 
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

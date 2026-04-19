@@ -211,7 +211,8 @@ export function useModels() {
 
     const fallback = resolveDefaultModel(availableModels, gatewayDefaultModel);
     if (fallback !== selectedModel) {
-      setSelectedModel(fallback);
+      // System-driven reconciliation; must not flip the user-override flag.
+      setSelectedModel(fallback, { source: "system" });
     }
   }, [modelsLoading, availableModels, gatewayDefaultModel, selectedModel, setSelectedModel]);
 

@@ -3,6 +3,10 @@ import type { UIMessage } from "ai";
 
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 
+export type SetSelectedModelOptions = {
+  source?: "user" | "system";
+};
+
 type ChatState = {
   messages: UIMessage[];
   setMessages: (messages: UIMessage[] | ((prev: UIMessage[]) => UIMessage[])) => void;
@@ -11,7 +15,8 @@ type ChatState = {
   draft: string;
   setDraft: (draft: string) => void;
   selectedModel: string;
-  setSelectedModel: (model: string) => void;
+  modelUserOverridden: boolean;
+  setSelectedModel: (model: string, options?: SetSelectedModelOptions) => void;
   contextFile: string | null;
   setContextFile: (file: string | null) => void;
   scrollPosition: number;
@@ -32,7 +37,13 @@ export const useChatStore = create<ChatState>((set) => ({
   draft: "",
   setDraft: (draft) => set({ draft }),
   selectedModel: DEFAULT_CHAT_MODEL,
-  setSelectedModel: (selectedModel) => set({ selectedModel }),
+  modelUserOverridden: false,
+  setSelectedModel: (selectedModel, options) =>
+    set((state) => ({
+      selectedModel,
+      modelUserOverridden:
+        options?.source === "system" ? state.modelUserOverridden : true,
+    })),
   contextFile: null,
   setContextFile: (contextFile) => set({ contextFile }),
   scrollPosition: 0,

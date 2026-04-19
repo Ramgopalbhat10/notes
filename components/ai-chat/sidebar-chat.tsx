@@ -17,6 +17,7 @@ import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessageRow } from "./chat-message";
 import { ChatComposer } from "./chat-composer";
 import { useChatSession } from "./hooks/use-chat-session";
+import { useDefaultModelSync } from "./hooks/use-default-model-sync";
 import { messageToPlainText } from "./utils";
 import type { SidebarChatProps } from "./types";
 
@@ -27,6 +28,9 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
   const editorStatus = useEditorStore((state) => state.status);
   const applyAiResult = useEditorStore((state) => state.applyAiResult);
   const { toast } = useToast();
+
+  // Seed selectedModel from settings.ai.defaultModel on first load.
+  useDefaultModelSync();
 
   const conversationRef = useRef<ConversationHandle>(null);
   const rootRef = useRef<HTMLDivElement>(null);

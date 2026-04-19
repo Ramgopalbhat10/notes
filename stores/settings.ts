@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { type UserSettings, defaultUserSettings } from "@/components/settings/types";
 import { extractResponseError } from "@/lib/http/client";
+import { parseModelId } from "@/lib/ai/models";
 
 const LOCAL_SETTINGS_STORAGE_KEY = "mrgb-user-settings";
 
@@ -24,10 +25,19 @@ function isBrowser(): boolean {
 
 function normalizeSettings(candidate: unknown): UserSettings {
   const value = (candidate ?? {}) as Partial<UserSettings>;
+  // Mirror the server-side `sanitizeAiSettings` guard: a junk `defaultModel`
+  // (manually edited localStorage, legacy payload, etc.) must fall back to the
+  // built-in default instead of poisoning downstream reads.
+  const aiDraft = { ...defaultUserSettings.ai, ...(value.ai ?? {}) };
+  const validatedModel = parseModelId(aiDraft.defaultModel);
   return {
     editor: { ...defaultUserSettings.editor, ...(value.editor ?? {}) },
     appearance: { ...defaultUserSettings.appearance, ...(value.appearance ?? {}) },
     privacy: { ...defaultUserSettings.privacy, ...(value.privacy ?? {}) },
+    ai: {
+      ...aiDraft,
+      defaultModel: validatedModel ?? defaultUserSettings.ai.defaultModel,
+    },
   };
 }
 
