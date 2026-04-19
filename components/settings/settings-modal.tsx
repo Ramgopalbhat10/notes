@@ -303,7 +303,7 @@ function SettingsContent({
           <ChatSettings
             draft={draft}
             updateDraft={updateDraftAi}
-            portalContainer={dialogContainer}
+            portalContainer={null}
           />
         )}
         {section === "privacy" && <PrivacySettings draft={draft} updateDraft={updateDraftPrivacy} onReset={onReset} />}
