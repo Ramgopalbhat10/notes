@@ -237,45 +237,65 @@
 }
 
 @layer components {
+  /* Markdown tables render as a single rounded surface that matches the
+     app's design tokens, replacing Streamdown's default
+     `rounded-lg border bg-sidebar p-2` outer wrapper. */
   .markdown-preview [data-streamdown="table-wrapper"] {
-    @apply my-4 space-y-2;
+    @apply my-4 w-full overflow-hidden rounded-[var(--radius)] border border-border/60;
+    background: color-mix(in srgb, var(--muted) 40%, var(--background) 60%);
+    padding: 0;
+    gap: 0;
   }
 
-  .markdown-preview [data-streamdown="table-wrapper"]>div:last-child {
-    @apply overflow-x-auto rounded-[var(--radius)] border border-border/60;
-    background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
+  /* Action row (copy / download / fullscreen) as a subtle header strip. */
+  .markdown-preview [data-streamdown="table-wrapper"] > div:first-child:not(:only-child) {
+    @apply flex items-center justify-end gap-0.5 px-2;
+    min-height: 32px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    background: color-mix(in srgb, var(--muted) 55%, transparent);
+  }
+
+  /* Inner scroll container — strip Streamdown's default card so the outer
+     wrapper is the only visible surface. */
+  .markdown-preview [data-streamdown="table-wrapper"] > div:last-child {
+    @apply overflow-x-auto rounded-none;
+    border: 0 !important;
+    background: transparent !important;
   }
 
   .markdown-preview table {
-    @apply w-full max-w-full border-collapse text-left text-xs md:text-sm;
+    @apply w-full max-w-full border-collapse text-left text-[13px] md:text-sm;
     border: 0 !important;
+  }
+
+  .markdown-preview [data-streamdown="table-header"] {
+    background: color-mix(in srgb, var(--muted) 50%, transparent);
   }
 
   .markdown-preview table th,
   .markdown-preview table td {
-    @apply border-b border-r border-border/60 px-2 md:px-3 py-2 align-top break-words text-[13px] md:text-sm;
+    @apply px-3 md:px-4 py-2 align-top break-words;
+    border: 0;
   }
 
   .markdown-preview table th {
-    @apply text-muted-foreground font-medium bg-popover;
+    @apply text-muted-foreground text-xs font-medium uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   }
 
-  .markdown-preview [data-streamdown="table-row"] {
-    @apply bg-card;
+  .markdown-preview table td {
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   }
 
-  .markdown-preview table th:last-child,
-  .markdown-preview table td:last-child {
-    @apply border-r-0;
+  .markdown-preview table tbody tr:last-child td,
+  .markdown-preview [data-streamdown="table-body"] [data-streamdown="table-row"]:last-child [data-streamdown="table-cell"] {
+    border-bottom: 0;
   }
 
-  .markdown-preview table tr:last-child td {
-    border-bottom: none !important;
-  }
-
-  .markdown-preview [data-streamdown="table-row"]:last-child,
-  .markdown-preview table tr:last-child {
-    border-bottom: 0 !important;
+  .markdown-preview table tbody tr:hover td,
+  .markdown-preview [data-streamdown="table-body"] [data-streamdown="table-row"]:hover [data-streamdown="table-cell"] {
+    background: color-mix(in srgb, var(--muted) 35%, transparent);
   }
 
   .markdown-preview [data-streamdown="image-wrapper"] {
