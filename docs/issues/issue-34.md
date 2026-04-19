@@ -32,6 +32,7 @@
 | 2026-04-19 | refactor | Rewrote `.markdown-preview` table styles to a single themed surface and removed Streamdown's default `bg-sidebar` outer wrapper. |
 | 2026-04-19 | fix | Moved table/code-block/mermaid overrides out of `@layer components`. Tailwind v4 utility-layer classes (`bg-sidebar`, `divide-y`, `sticky`, `-mt-10`) beat component-layer rules regardless of specificity, so the previous iteration rendered per-row backgrounds with gutters and kept the floating action pill overlaying the code header. Rules now live in the unlayered bucket and reliably override Streamdown. |
 | 2026-04-19 | fix | Docked Streamdown's `code-block-actions` / `mermaid-block-actions` into the block header strip via absolute positioning (top-right) and stripped the floating pill's border / backdrop-blur so the icons no longer overlap content. |
+| 2026-04-19 | fix | Made `useWorkspaceSettingsSync` one-shot: bootstrap the workspace layout store from the first initialized settings snapshot, then stop. Previously the effect re-asserted the server-side `appearance.centeredLayout` value on every settings-related dep change, which clobbered the header centered-layout toggle whenever the user switched files (server value stayed `false` because the header toggle only updates local Zustand). Settings-modal save and reset paths already call `setCentered` directly, so propagation still works there. |
 
 ## Test Plan
 - `pnpm lint` passes.
