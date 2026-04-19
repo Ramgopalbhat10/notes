@@ -237,66 +237,9 @@
 }
 
 @layer components {
-  /* Markdown tables render as a single rounded surface that matches the
-     app's design tokens, replacing Streamdown's default
-     `rounded-lg border bg-sidebar p-2` outer wrapper. */
-  .markdown-preview [data-streamdown="table-wrapper"] {
-    @apply my-4 w-full overflow-hidden rounded-[var(--radius)] border border-border/60;
-    background: color-mix(in srgb, var(--muted) 40%, var(--background) 60%);
-    padding: 0;
-    gap: 0;
-  }
-
-  /* Action row (copy / download / fullscreen) as a subtle header strip. */
-  .markdown-preview [data-streamdown="table-wrapper"] > div:first-child:not(:only-child) {
-    @apply flex items-center justify-end gap-0.5 px-2;
-    min-height: 32px;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-    background: color-mix(in srgb, var(--muted) 55%, transparent);
-  }
-
-  /* Inner scroll container — strip Streamdown's default card so the outer
-     wrapper is the only visible surface. */
-  .markdown-preview [data-streamdown="table-wrapper"] > div:last-child {
-    @apply overflow-x-auto rounded-none;
-    border: 0 !important;
-    background: transparent !important;
-  }
-
-  .markdown-preview table {
-    @apply w-full max-w-full border-collapse text-left text-[13px] md:text-sm;
-    border: 0 !important;
-  }
-
-  .markdown-preview [data-streamdown="table-header"] {
-    background: color-mix(in srgb, var(--muted) 50%, transparent);
-  }
-
-  .markdown-preview table th,
-  .markdown-preview table td {
-    @apply px-3 md:px-4 py-2 align-top break-words;
-    border: 0;
-  }
-
-  .markdown-preview table th {
-    @apply text-muted-foreground text-xs font-medium uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  }
-
-  .markdown-preview table td {
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
-  }
-
-  .markdown-preview table tbody tr:last-child td,
-  .markdown-preview [data-streamdown="table-body"] [data-streamdown="table-row"]:last-child [data-streamdown="table-cell"] {
-    border-bottom: 0;
-  }
-
-  .markdown-preview table tbody tr:hover td,
-  .markdown-preview [data-streamdown="table-body"] [data-streamdown="table-row"]:hover [data-streamdown="table-cell"] {
-    background: color-mix(in srgb, var(--muted) 35%, transparent);
-  }
+  /* Table, code-block, and mermaid-block surfaces are styled outside this
+     layer (below) so they beat Streamdown's `@layer utilities` classes
+     (`bg-sidebar`, `divide-y`, `bg-muted/80`, etc.) in the cascade. */
 
   .markdown-preview [data-streamdown="image-wrapper"] {
     @apply my-4;
@@ -306,31 +249,8 @@
     @apply h-auto max-w-full rounded-lg border border-border/40;
   }
 
-  .markdown-preview [data-streamdown="mermaid-block"] {
-    @apply my-4 w-full overflow-hidden rounded-[var(--radius)] border border-border/60 p-3;
-    background: color-mix(in srgb, var(--muted) 72%, var(--background) 28%);
-  }
-
   .markdown-preview [data-streamdown="mermaid"] {
     @apply w-full;
-  }
-
-  .markdown-preview [data-streamdown="code-block"] {
-    @apply my-4 overflow-hidden rounded-[var(--radius)] border border-border/60;
-    border-top: 0 !important;
-  }
-
-  .markdown-preview [data-streamdown="code-block-header"] {
-    @apply border-none text-[11px] text-muted-foreground;
-    padding: 6px !important;
-  }
-
-  .markdown-preview [data-streamdown="code-block-header"] > span {
-    @apply uppercase tracking-wide;
-  }
-
-  .markdown-preview [data-streamdown="code-block-body"] {
-    padding: 0.625rem 0.875rem !important;
   }
 
   /* Streamdown line numbers are injected via ::before on each code line span. */
@@ -456,6 +376,229 @@
     font-size: 0.875rem;
     line-height: 1.3rem;
   }
+}
+
+/* -----------------------------------------------------------------------
+ * Streamdown surface overrides (tables, code blocks, mermaid blocks)
+ *
+ * Streamdown applies utility classes like `bg-sidebar`, `bg-muted/80`,
+ * `divide-y`, `rounded-xl`, `border`, `p-2`, `gap-2`, `sticky`, `-mt-10`
+ * directly on its rendered elements. Those classes live in Tailwind v4's
+ * `@layer utilities`, which beats any rule defined inside `@layer
+ * components` regardless of selector specificity. These rules are kept
+ * OUTSIDE every `@layer` block so they sit in the default (unlayered)
+ * cascade bucket and reliably win over Streamdown's utility-layer styles.
+ * ----------------------------------------------------------------------- */
+
+/* Tables: a single themed card. Only the <thead> row gets a distinct tint.
+ * `table-wrapper` is Streamdown's outer `rounded-lg border bg-sidebar p-2`
+ * card that also wraps the copy/download/fullscreen action row. */
+.markdown-preview [data-streamdown="table-wrapper"] {
+  margin: 1rem 0;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--muted) 40%, var(--background) 60%);
+  padding: 0;
+  gap: 0;
+}
+
+/* Action strip (present only when copy/download/fullscreen are enabled).
+ * Matches the wrapper background with a hairline divider below. */
+.markdown-preview [data-streamdown="table-wrapper"] > div:first-child:not(:only-child) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 4px 6px;
+  min-height: 32px;
+  background: transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+/* Strip Streamdown's inner scroll-container card (rounded-md border bg-background)
+ * so the outer wrapper is the only visible surface. */
+.markdown-preview [data-streamdown="table-wrapper"] > div:last-child {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow-x: auto;
+}
+
+.markdown-preview [data-streamdown="table-wrapper"] table,
+.markdown-preview [data-streamdown="table"] {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  border: 0;
+}
+
+@media (min-width: 768px) {
+  .markdown-preview [data-streamdown="table-wrapper"] table,
+  .markdown-preview [data-streamdown="table"] {
+    font-size: 14px;
+  }
+}
+
+/* Header row — the only differentiated surface inside the table. */
+.markdown-preview [data-streamdown="table-header"] {
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+.markdown-preview [data-streamdown="table-header-cell"],
+.markdown-preview [data-streamdown="table-wrapper"] thead th {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  vertical-align: top;
+  word-break: break-word;
+}
+
+@media (min-width: 768px) {
+  .markdown-preview [data-streamdown="table-header-cell"],
+  .markdown-preview [data-streamdown="table-wrapper"] thead th {
+    font-size: 12px;
+    padding: 10px 16px;
+  }
+}
+
+/* Body cells — transparent background, horizontal dividers only. */
+.markdown-preview [data-streamdown="table-cell"],
+.markdown-preview [data-streamdown="table-wrapper"] tbody td {
+  background: transparent;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
+  vertical-align: top;
+  word-break: break-word;
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  .markdown-preview [data-streamdown="table-cell"],
+  .markdown-preview [data-streamdown="table-wrapper"] tbody td {
+    padding: 10px 16px;
+  }
+}
+
+/* Kill Streamdown's `divide-y divide-border` on the <tbody>. */
+.markdown-preview [data-streamdown="table-body"] > * + * {
+  border-top: 0 !important;
+}
+
+/* Last-row: no trailing divider. */
+.markdown-preview [data-streamdown="table-body"] > [data-streamdown="table-row"]:last-child > [data-streamdown="table-cell"],
+.markdown-preview [data-streamdown="table-wrapper"] tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Subtle row hover. */
+.markdown-preview [data-streamdown="table-body"] > [data-streamdown="table-row"]:hover > [data-streamdown="table-cell"],
+.markdown-preview [data-streamdown="table-wrapper"] tbody tr:hover td {
+  background: color-mix(in srgb, var(--muted) 25%, transparent);
+}
+
+/* -----------------------------------------------------------------------
+ * Code blocks: themed card with a dedicated header strip where the label
+ * and the copy/download action group live side-by-side. Streamdown's
+ * default layout floats the action pill via `sticky top-2 z-10 -mt-10`,
+ * which overlays the header and the first line of code. We dock it into
+ * the header strip instead.
+ * ----------------------------------------------------------------------- */
+.markdown-preview [data-streamdown="code-block"],
+.markdown-preview [data-streamdown="mermaid-block"] {
+  position: relative;
+  margin: 1rem 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--muted) 55%, var(--background) 45%);
+}
+
+/* Header strip (language label). */
+.markdown-preview [data-streamdown="code-block-header"] {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.markdown-preview [data-streamdown="code-block-header"] > span,
+.markdown-preview [data-streamdown="mermaid-block"] > div:first-child > span {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* Mermaid-block header wrapper (first child) matches code-block-header. */
+.markdown-preview [data-streamdown="mermaid-block"] > div:first-child {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+/* Dock the sticky action-pill container into the top-right of the header
+ * strip instead of letting it float via `sticky + -mt-10`. Targets the
+ * unlabelled wrapper Streamdown emits around the actions pill. */
+.markdown-preview [data-streamdown="code-block"] > div:has(> [data-streamdown="code-block-actions"]),
+.markdown-preview [data-streamdown="mermaid-block"] > div:has(> [data-streamdown="mermaid-block-actions"]) {
+  position: absolute !important;
+  top: 0;
+  right: 0;
+  height: 32px;
+  margin: 0 !important;
+  padding: 0 6px;
+  z-index: 2;
+}
+
+/* Strip the floating pill styling so the icons blend with the header. */
+.markdown-preview [data-streamdown="code-block-actions"],
+.markdown-preview [data-streamdown="mermaid-block-actions"] {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  border-radius: 0;
+  padding: 0;
+  gap: 2px;
+}
+
+/* Code body: no rounding, no border (wrapper owns them), modest padding. */
+.markdown-preview [data-streamdown="code-block-body"] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 10px 14px !important;
+  background: transparent !important;
+}
+
+/* Mermaid diagram inner padding. */
+.markdown-preview [data-streamdown="mermaid-block"] [data-streamdown="mermaid"] {
+  padding: 12px;
 }
 
 .markdown-preview td {
