@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 type UseWorkspaceSettingsSyncOptions = {
   settingsInitialized: boolean;
@@ -9,24 +9,29 @@ type UseWorkspaceSettingsSyncOptions = {
 /**
  * Bootstraps the workspace layout store from persisted user settings.
  *
- * This runs once — the first time settings are initialized — and is never
- * re-asserted afterwards. Header affordances (e.g. the centered-layout
- * toggle) mutate the layout store directly, and settings-modal save/reset
- * paths call `setCentered` themselves after persisting. Re-syncing on every
- * settings change would clobber those in-session user actions.
+ * Runs at most once per page load. Uses a module-scoped flag rather than a
+ * `useRef`/component-scoped state so it survives `VaultWorkspace` remounts —
+ * the `files/[[...path]]/layout.tsx` `Suspense` + `connection()` boundary
+ * re-mounts the workspace tree on every file switch, which would otherwise
+ * re-run the effect and clobber in-session layout state (e.g. the header
+ * centered-layout toggle) with the stale server value.
+ *
+ * Header affordances mutate the layout store directly, and the settings
+ * modal's save/reset paths call `setCentered` themselves after persisting,
+ * so downstream propagation still works once bootstrapped.
  */
+let bootstrapped = false;
+
 export function useWorkspaceSettingsSync({
   settingsInitialized,
   centeredLayout,
   setCentered,
 }: UseWorkspaceSettingsSyncOptions): void {
-  const bootstrappedRef = useRef(false);
-
   useEffect(() => {
-    if (!settingsInitialized || bootstrappedRef.current) {
+    if (!settingsInitialized || bootstrapped) {
       return;
     }
-    bootstrappedRef.current = true;
+    bootstrapped = true;
     setCentered(centeredLayout);
   }, [settingsInitialized, centeredLayout, setCentered]);
 }
