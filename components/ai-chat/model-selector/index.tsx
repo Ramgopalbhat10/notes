@@ -16,11 +16,29 @@ import { deriveModelFeatureTags, groupModelsByProvider, toProviderLabel, MODEL_F
 
 type ModelSelectorProps = {
   portalContainer: HTMLElement | null;
+  /**
+   * Controlled mode: when provided, the selector reads/writes the caller's value
+   * instead of `useChatStore`. Used by the Settings modal to edit a draft value
+   * without mutating the active chat session model.
+   */
+  value?: string;
+  onChange?: (modelId: string) => void;
 };
 
-export function ModelSelector({ portalContainer }: ModelSelectorProps) {
+export function ModelSelector({ portalContainer, value, onChange }: ModelSelectorProps) {
   const isMobile = useIsMobile();
-  const { availableModels, modelsLoading, selectedModel, setSelectedModel } = useModels();
+  const {
+    availableModels,
+    modelsLoading,
+    selectedModel: storeSelectedModel,
+    setSelectedModel: storeSetSelectedModel,
+  } = useModels();
+
+  const isControlled = value !== undefined && onChange !== undefined;
+  const selectedModel = isControlled ? value : storeSelectedModel;
+  const setSelectedModel = isControlled
+    ? (id: string) => onChange(id)
+    : (id: string) => storeSetSelectedModel(id, { source: "user" });
 
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

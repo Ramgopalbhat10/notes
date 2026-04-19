@@ -1,17 +1,20 @@
 # Progress
 
-Current issue: `docs/issues/issue-33.md`
+Current story: `docs/stories/story-25.md`
 
-Current section: Issue 33 — Add single-flag auth bypass for local testing
+Current section: Story 25 — Configurable Default Chat Model + Assistant Sidebar Redesign
 
 Previous tasks (latest completed batch only):
-- [x] Removed the fixed auth-bypass banner from the global layout and kept the bypass state as a non-visual body data attribute.
-- [x] Added a shared hover-card UI primitive and moved the bypass warning into the sidebar footer next to the profile avatar.
-- [x] Ran `pnpm lint` and `pnpm build` after the UI change.
+- [x] Extended `UserSettings` with `ai.defaultModel` across client types, settings store, and `/api/settings` route (with `parseModelId` validation).
+- [x] Added `modelUserOverridden` to `useChatStore`; `setSelectedModel` now accepts a source meta; `clearChat` preserves the override.
+- [x] Made `ModelSelector` support controlled `value` / `onChange`; added `useDefaultModelSync` and mounted it in `SidebarChat`.
+- [x] Added the "Chat" section to the Settings modal with a default-model picker portalled inside the dialog.
+- [x] Redesigned the Assistant sidebar into `AssistantHeader` / `AssistantDraftCard` / `AssistantRefineComposer` / `AssistantEmptyState`, with a segmented Preview|Raw toggle, streaming skeleton, and sticky footer CTAs.
+- [x] Ran `pnpm lint` and `pnpm build` — both pass.
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Commit the feature branch and open a PR.
 
 Notes:
-- Branch: `chore/auth-bypass-local-dev`
-- Leave `.windsurf/workflows/review.md` untouched; it is unrelated local workspace state.
+- Branch: `feature/default-model-settings-assistant-redesign`
+- User decisions applied: sidebar pick survives New Chat (reload-only reset), segmented Preview|Raw, model selector stays only inside the refine composer, empty state gets clickable quick-action chips.

@@ -30,3 +30,4 @@ Story template: `docs/stories/template.md`
 | 22 | Public View Look and Feel Polish (Fonts, Date, Reading Time, Outline Default) | `docs/stories/story-22.md` |
 | 23 | AI Actions Sidebar Workspace and Selection-First UX | `docs/stories/story-23.md` |
 | 24 | Grouped Quick Switcher With Shadcn Command | `docs/stories/story-24.md` |
+| 25 | Configurable Default Chat Model + Assistant Sidebar Redesign | `docs/stories/story-25.md` |

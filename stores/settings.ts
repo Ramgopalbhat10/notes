@@ -28,6 +28,7 @@ function normalizeSettings(candidate: unknown): UserSettings {
     editor: { ...defaultUserSettings.editor, ...(value.editor ?? {}) },
     appearance: { ...defaultUserSettings.appearance, ...(value.appearance ?? {}) },
     privacy: { ...defaultUserSettings.privacy, ...(value.privacy ?? {}) },
+    ai: { ...defaultUserSettings.ai, ...(value.ai ?? {}) },
   };
 }
 

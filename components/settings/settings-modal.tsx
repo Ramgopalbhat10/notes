@@ -13,6 +13,7 @@ import {
   Pencil,
   ChevronDown,
   Check,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -42,6 +43,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useSettingsStore } from "@/stores/settings";
 import { useWorkspaceLayoutStore } from "@/stores/layout";
+import { ModelSelector } from "@/components/ai-chat/model-selector";
 import { type SettingsSection, type UserSettings, defaultUserSettings } from "./types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,6 +55,7 @@ type SettingsModalProps = {
 const settingsSections: { id: SettingsSection; label: string; icon: React.ElementType }[] = [
   { id: "editor", label: "Editor", icon: FileText },
   { id: "appearance", label: "Appearance", icon: Layout },
+  { id: "chat", label: "Chat", icon: Sparkles },
   { id: "privacy", label: "Privacy", icon: Shield },
   { id: "about", label: "About", icon: Info },
 ];
@@ -66,6 +69,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
   const { settings, fetchSettings, saveSettings, resetToDefaults, initialized, loading, saving } = useSettingsStore();
   const setCentered = useWorkspaceLayoutStore((state) => state.setCentered);
   const { toast } = useToast();
+  const dialogContentRef = React.useRef<HTMLDivElement>(null);
 
   // Local draft state for form
   const [draft, setDraft] = React.useState<UserSettings>(settings);
@@ -136,9 +140,16 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
     setDraft((prev) => ({ ...prev, privacy: { ...prev.privacy, ...updates } }));
   };
 
+  const updateDraftAi = (updates: Partial<UserSettings["ai"]>) => {
+    setDraft((prev) => ({ ...prev, ai: { ...prev.ai, ...updates } }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-2xl md:h-[70vh] md:max-h-[520px] h-auto max-h-[85vh] p-0 gap-0 overflow-hidden rounded-lg border-sidebar-border">
+      <DialogContent
+        ref={dialogContentRef}
+        className="w-[calc(100%-2rem)] max-w-2xl md:h-[70vh] md:max-h-[520px] h-auto max-h-[85vh] p-0 gap-0 overflow-hidden rounded-lg border-sidebar-border"
+      >
         <div className="flex flex-col md:flex-row h-full">
           {/* Sidebar navigation - hidden on mobile */}
           <div className="hidden md:flex w-48 flex-col bg-sidebar border-r border-sidebar-border shrink-0">
@@ -220,10 +231,12 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
                     updateDraftEditor={updateDraftEditor}
                     updateDraftAppearance={updateDraftAppearance}
                     updateDraftPrivacy={updateDraftPrivacy}
+                    updateDraftAi={updateDraftAi}
                     onReset={handleReset}
                     hasChanges={hasChanges}
                     saving={saving}
                     onSave={handleSave}
+                    dialogContainer={dialogContentRef.current}
                   />
                 </div>
               </ScrollArea>
@@ -241,10 +254,12 @@ type SettingsContentProps = {
   updateDraftEditor: (updates: Partial<UserSettings["editor"]>) => void;
   updateDraftAppearance: (updates: Partial<UserSettings["appearance"]>) => void;
   updateDraftPrivacy: (updates: Partial<UserSettings["privacy"]>) => void;
+  updateDraftAi: (updates: Partial<UserSettings["ai"]>) => void;
   onReset: () => void;
   hasChanges: boolean;
   saving: boolean;
   onSave: () => void;
+  dialogContainer: HTMLElement | null;
 };
 
 function SettingsContent({
@@ -253,10 +268,12 @@ function SettingsContent({
   updateDraftEditor,
   updateDraftAppearance,
   updateDraftPrivacy,
+  updateDraftAi,
   onReset,
   hasChanges,
   saving,
   onSave,
+  dialogContainer,
 }: SettingsContentProps) {
   const saveButton = section !== "about" && (
     <div className="flex justify-end mt-auto pt-4">
@@ -282,6 +299,13 @@ function SettingsContent({
       <div className="flex-1">
         {section === "editor" && <EditorSettings draft={draft} updateDraft={updateDraftEditor} />}
         {section === "appearance" && <AppearanceSettings draft={draft} updateDraft={updateDraftAppearance} />}
+        {section === "chat" && (
+          <ChatSettings
+            draft={draft}
+            updateDraft={updateDraftAi}
+            portalContainer={dialogContainer}
+          />
+        )}
         {section === "privacy" && <PrivacySettings draft={draft} updateDraft={updateDraftPrivacy} onReset={onReset} />}
         {section === "about" && <AboutSection />}
       </div>
@@ -410,6 +434,34 @@ function AppearanceSettings({
           checked={draft.appearance.centeredLayout}
           onCheckedChange={(checked) => updateDraft({ centeredLayout: checked })}
           className="data-[state=unchecked]:bg-muted"
+        />
+      </SettingRow>
+    </SettingsGroup>
+  );
+}
+
+function ChatSettings({
+  draft,
+  updateDraft,
+  portalContainer,
+}: {
+  draft: UserSettings;
+  updateDraft: (updates: Partial<UserSettings["ai"]>) => void;
+  portalContainer: HTMLElement | null;
+}) {
+  return (
+    <SettingsGroup
+      title="Chat"
+      description="Configure defaults for the AI chat and assistant."
+    >
+      <SettingRow
+        label="Default model"
+        description="Used on launch and for every new chat and assistant session"
+      >
+        <ModelSelector
+          portalContainer={portalContainer}
+          value={draft.ai.defaultModel}
+          onChange={(defaultModel) => updateDraft({ defaultModel })}
         />
       </SettingRow>
     </SettingsGroup>
