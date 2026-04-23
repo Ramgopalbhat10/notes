@@ -27,6 +27,7 @@
 - Collapse the refine composer into a single compact row with input, icon-only model selector, and small send/stop control.
 - Align the refine composer footer to the main editor footer height and remove the inner bordered container.
 - Normalize AI draft and original note typography in compare mode and tighten line height in both panes.
+- Restore safe-area bottom padding for the assistant composer footer in mobile sheet layouts.
 
 ## Files Changed
 - `components/ai-actions/assistant-header.tsx`
@@ -45,6 +46,7 @@
 | 2026-04-23 | fix | Replaced side-by-side compare with a vertical resizable split inside the draft card and collapsed the refine composer into one compact row. |
 | 2026-04-23 | fix | Removed the bordered composer frame and aligned the refine composer to the main editor footer height. |
 | 2026-04-23 | fix | Matched original-note compare typography to the AI draft and tightened shared line-height for a more compact preview. |
+| 2026-04-23 | fix | Restored safe-area bottom padding for the assistant composer footer after PR review feedback. |
 
 ## Test Plan
 - Manual: open `/files/welcome`, trigger an assistant draft, and verify the "Acting on ..." line is not rendered.
@@ -58,6 +60,7 @@
 - Manual: verify the refine composer uses a single compact row with input, icon-only model selector, and send/stop button.
 - Manual: verify the refine composer has no inner border frame and aligns visually with the main file footer height.
 - Manual: enable compare mode and verify the AI draft and original note use matching compact typography.
+- Manual: verify the assistant composer footer keeps safe bottom padding on devices with a non-zero bottom inset.
 - `pnpm lint` and `pnpm build` pass.
 
 ## Definition of Done

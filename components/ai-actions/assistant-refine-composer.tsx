@@ -28,7 +28,7 @@ export function AssistantRefineComposer({
   portalContainer,
 }: AssistantRefineComposerProps) {
   return (
-    <div className="flex h-11 items-center gap-1.5 border-t border-border/50 px-3 py-1">
+    <div className="flex min-h-11 items-center gap-1.5 border-t border-border/50 px-3 pb-[calc(0.25rem+env(safe-area-inset-bottom))] pt-1">
       <Textarea
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
