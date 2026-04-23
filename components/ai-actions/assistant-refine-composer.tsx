@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ArrowUp, Loader2 } from "lucide-react";
 
+import { ModelSelector } from "@/components/ai-chat/model-selector";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ModelSelector } from "@/components/ai-chat/model-selector";
-import { cn } from "@/lib/utils";
 
 type AssistantRefineComposerProps = {
   value: string;
@@ -18,10 +16,8 @@ type AssistantRefineComposerProps = {
   portalContainer: HTMLElement | null;
 };
 
-// Refine composer modelled on the chat sidebar composer so the two surfaces
-// feel consistent. The model selector lives in the footer (always visible) and
-// the primary send/stop button sits on the trailing side with a matching icon
-// treatment. Supports Cmd/Ctrl+Enter to submit for keyboard users.
+// Compact single-row refine composer. The input owns the available width while
+// model selection and send/stop stay as small controls on the trailing edge.
 export function AssistantRefineComposer({
   value,
   onValueChange,
@@ -31,81 +27,52 @@ export function AssistantRefineComposer({
   canSubmit,
   portalContainer,
 }: AssistantRefineComposerProps) {
-  // Detect macOS on mount to render the correct modifier glyph. Defaults to
-  // mac so first paint matches the convention used elsewhere in the app; we
-  // flip to "Ctrl" post-hydration on Windows/Linux.
-  const [isMac, setIsMac] = useState(true);
-  useEffect(() => {
-    if (typeof navigator === "undefined") return;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } })
-        .userAgentData?.platform ?? navigator.platform ?? "";
-    setIsMac(/mac|iphone|ipad|ipod/i.test(platform));
-  }, []);
-
   return (
-    <div className="border-t border-border/50 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-      <div
-        className={cn(
-          "group overflow-hidden rounded-xl border border-border/70 bg-muted/30 shadow-sm transition-colors",
-          "focus-within:border-border focus-within:bg-background focus-within:shadow",
-        )}
-      >
-        <Textarea
-          value={value}
-          onChange={(event) => onValueChange(event.target.value)}
-          placeholder="Refine this draft, change tone, make it shorter, or ask for more detail…"
-          rows={3}
-          disabled={isStreaming}
-          onKeyDown={(event) => {
-            if (
-              (event.key === "Enter") &&
-              (event.metaKey || event.ctrlKey) &&
-              !event.shiftKey &&
-              !isStreaming &&
-              canSubmit
-            ) {
-              event.preventDefault();
-              onSubmit();
-            }
-          }}
-          className="min-h-[72px] resize-none border-0 bg-transparent px-3 pt-2.5 text-sm shadow-none focus-visible:ring-0"
-        />
-        <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
-          <ModelSelector portalContainer={portalContainer} />
-          {isStreaming ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5"
-              onClick={onStop}
-            >
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Stop
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="icon"
-              className="h-8 w-8 rounded-md"
-              disabled={!canSubmit}
-              onClick={onSubmit}
-              aria-label="Refine draft"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-      <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
-        <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">
-          {isMac ? "⌘" : "Ctrl"}
-        </kbd>
-        <span className="mx-0.5">+</span>
-        <kbd className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium">Enter</kbd>
-        {" "}to refine
-      </p>
+    <div className="flex h-11 items-center gap-1.5 border-t border-border/50 px-3 py-1">
+      <Textarea
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder="Refine this draft, change tone, make it shorter, or ask for more detail..."
+        rows={1}
+        disabled={isStreaming}
+        onKeyDown={(event) => {
+          if (
+            event.key === "Enter" &&
+            (event.metaKey || event.ctrlKey) &&
+            !event.shiftKey &&
+            !isStreaming &&
+            canSubmit
+          ) {
+            event.preventDefault();
+            onSubmit();
+          }
+        }}
+        className="h-7 min-h-7 flex-1 resize-none overflow-hidden border-0 bg-transparent px-0 py-1 text-xs leading-5 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+      <ModelSelector portalContainer={portalContainer} triggerVariant="icon" />
+      {isStreaming ? (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 rounded-full bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground"
+          onClick={onStop}
+          aria-label="Stop refining"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          size="icon"
+          className="h-7 w-7 rounded-full"
+          disabled={!canSubmit}
+          onClick={onSubmit}
+          aria-label="Refine draft"
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 }

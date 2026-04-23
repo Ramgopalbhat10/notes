@@ -26,7 +26,6 @@ type AssistantHeaderProps = {
   onClear: () => void;
   status: AiAssistantStatus;
   statusMessage: string | null;
-  contextHint: string | null;
 };
 
 // Premium header for the assistant sidebar. Three primary actions sit in a
@@ -48,7 +47,6 @@ export function AssistantHeader({
   onClear,
   status,
   statusMessage,
-  contextHint,
 }: AssistantHeaderProps) {
   const statusTone: StatusTone =
     status === "error" ? "error" : status === "streaming" ? "info" : "muted";
@@ -60,13 +58,13 @@ export function AssistantHeader({
         : "text-muted-foreground";
 
   return (
-    <div className="border-b border-border/50 px-3 pt-3 pb-2.5">
+    <div className="border-b border-border/50 px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <div
           role="group"
           aria-label="AI actions"
           className={cn(
-            "inline-flex items-center rounded-lg border border-border/70 bg-muted/40 p-0.5 shadow-[inset_0_0_0_1px_transparent]",
+            "inline-flex items-center rounded-md border border-border/70 bg-muted/40 p-0.5 shadow-[inset_0_0_0_1px_transparent]",
           )}
         >
           {AI_ACTIONS.map((action) => {
@@ -114,13 +112,13 @@ export function AssistantHeader({
         ) : null}
       </div>
 
-      <div
-        className={cn(
-          "mt-2 flex min-h-[1rem] items-center gap-2 text-[11px] leading-4",
-          statusToneClass,
-        )}
-      >
-        {statusMessage ? (
+      {statusMessage ? (
+        <div
+          className={cn(
+            "mt-1.5 flex min-h-[1rem] items-center gap-2 text-[11px] leading-4",
+            statusToneClass,
+          )}
+        >
           <span className="inline-flex items-center gap-1.5">
             {status === "streaming" ? (
               <span
@@ -130,12 +128,8 @@ export function AssistantHeader({
             ) : null}
             {statusMessage}
           </span>
-        ) : contextHint ? (
-          <span className="text-muted-foreground">{contextHint}</span>
-        ) : (
-          <span>&nbsp;</span>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -162,7 +156,7 @@ function SegmentedActionButton({
       disabled={disabled}
       aria-pressed={isActive}
       className={cn(
-        "group relative inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors",
+        "group relative inline-flex h-6 items-center gap-1.5 rounded-[5px] px-2 text-[11px] font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
         isActive
           ? "bg-background text-foreground shadow-sm ring-1 ring-border/60"
@@ -172,7 +166,7 @@ function SegmentedActionButton({
     >
       <Icon
         className={cn(
-          "h-3.5 w-3.5 transition-colors",
+          "h-3 w-3 transition-colors",
           isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
         )}
         aria-hidden="true"
@@ -207,7 +201,7 @@ function IconClusterButton({
           variant="ghost"
           size="icon"
           className={cn(
-            "h-7 w-7 text-muted-foreground hover:text-foreground",
+            "h-6 w-6 text-muted-foreground hover:text-foreground",
             active && "bg-accent text-foreground",
             destructive && "hover:text-destructive",
           )}

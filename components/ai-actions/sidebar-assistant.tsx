@@ -83,20 +83,9 @@ export function AiAssistantSidebar() {
       ? session.error ?? "AI request failed."
       : session.status === "cancelled"
         ? "AI request cancelled."
-        : session.status === "streaming"
-          ? "Generating a new draft…"
-          : session.truncated
-            ? "The source was partially processed."
-            : null;
-
-  // Muted hint rendered when there is no active status — gives the header a
-  // sense of context ("Operating on <file>"/"<selection>") without competing
-  // with the primary status.
-  const contextHint = hasActionSelected
-    ? session.contextMode === "selection"
-      ? "Acting on the current selection"
-      : `Acting on ${currentFileName}`
-    : null;
+        : session.truncated
+          ? "The source was partially processed."
+          : null;
 
   const handleSelectAction = useCallback(
     (action: AiActionType) => {
@@ -130,7 +119,6 @@ export function AiAssistantSidebar() {
         onClear={resetSession}
         status={session.status}
         statusMessage={statusMessage}
-        contextHint={contextHint}
       />
 
       {hasActionSelected ? (

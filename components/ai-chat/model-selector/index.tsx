@@ -33,9 +33,15 @@ type ModelSelectorUncontrolledProps = {
 
 type ModelSelectorProps = {
   portalContainer: HTMLElement | null;
+  triggerVariant?: "default" | "icon";
 } & (ModelSelectorControlledProps | ModelSelectorUncontrolledProps);
 
-export function ModelSelector({ portalContainer, value, onChange }: ModelSelectorProps) {
+export function ModelSelector({
+  portalContainer,
+  triggerVariant = "default",
+  value,
+  onChange,
+}: ModelSelectorProps) {
   const isMobile = useIsMobile();
   const {
     availableModels,
@@ -116,6 +122,9 @@ export function ModelSelector({ portalContainer, value, onChange }: ModelSelecto
   );
   const selectedModelName = selectedModelOption?.name ?? selectedModel;
   const selectedProvider = selectedModelOption?.provider ?? "";
+  const triggerTitle = selectedProvider
+    ? `${toProviderLabel(selectedProvider)} - ${selectedModelName}`
+    : selectedModelName;
 
   // Reset filters when provider/feature options change
   useEffect(() => {
@@ -159,14 +168,24 @@ export function ModelSelector({ portalContainer, value, onChange }: ModelSelecto
         <Button
           type="button"
           variant="ghost"
-          className="h-7 gap-1.5 rounded-full bg-muted/50 px-2 pr-2 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground"
-          title={selectedProvider ? `${toProviderLabel(selectedProvider)} — ${selectedModelName}` : selectedModelName}
+          className={cn(
+            "rounded-full bg-muted/50 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground",
+            triggerVariant === "icon"
+              ? "h-7 w-7 px-0"
+              : "h-7 gap-1.5 px-2 pr-2",
+          )}
+          title={triggerTitle}
+          aria-label={`Select model: ${triggerTitle}`}
         >
           {selectedProvider ? (
             <ProviderAvatar provider={selectedProvider} size="sm" />
           ) : null}
-          <span className="max-w-[140px] truncate">{selectedModelName}</span>
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          {triggerVariant === "default" ? (
+            <>
+              <span className="max-w-[140px] truncate">{selectedModelName}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            </>
+          ) : null}
         </Button>
       </PopoverTrigger>
       <PopoverContent
