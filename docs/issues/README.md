@@ -41,3 +41,4 @@ Issue template: `docs/issues/template.md`
 | 33 | Add single-flag auth bypass for local testing | resolved | None | `lib/auth/*`, `proxy.ts`, `app/api/auth/[...betterauth]/route.ts`, `app/layout.tsx` |
 | 34 | Redesign Markdown Table Rendering Styles | in-progress | None | `app/globals.css` |
 | 35 | Tighten Assistant Refine Panel Chrome | resolved | None | `components/ai-actions/*` |
+| 36 | Fix Assistant Sidebar Responsive Layout | resolved | None | `components/ai-actions/*`, `components/app-shell.tsx` |

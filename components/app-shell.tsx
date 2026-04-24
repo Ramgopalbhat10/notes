@@ -11,7 +11,7 @@ import { cn } from "../lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Maximize2, Minimize2, PanelRight, Plus, X } from "lucide-react";
+import { PanelRight, Plus, X } from "lucide-react";
 import { useWorkspaceLayoutStore, type RightSidebarPanel } from "@/stores/layout";
 import { useAppShellShortcuts } from "@/components/app-shell/hooks/use-app-shell-shortcuts";
 import { useLeftSidebarLayout } from "@/components/app-shell/hooks/use-left-sidebar-layout";
@@ -105,10 +105,8 @@ export function AppShell({
 
   const {
     rightMobileOpen,
-    rightMobileExpanded,
     setRightMobileOpen,
     handleRightMobileOpenChange,
-    toggleRightMobileExpansion,
     toggleRight,
     openRightPanel,
     openChatSidebar,
@@ -264,16 +262,14 @@ export function AppShell({
         <Sheet open={rightMobileOpen} onOpenChange={handleRightMobileOpenChange}>
           <SheetContent
             side="right"
-            className="h-[100dvh] w-auto bg-transparent shadow-none border-none p-0 [&>button]:hidden"
-            style={{ "--sidebar-width": rightMobileExpanded ? "100vw" : "100vw" } as CSSProperties}
+            className="h-[100dvh] !w-[100vw] !max-w-[100vw] bg-transparent shadow-none border-none p-0 sm:!max-w-[100vw] [&>button]:hidden"
+            style={{ "--sidebar-width": "100vw" } as CSSProperties}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>{rightSidebarTitle}</SheetTitle>
             </SheetHeader>
             <div className={cn(
               "flex h-[100dvh] flex-col bg-background border-l shadow-lg transition-[width,max-width] duration-300 ease-in-out will-change-[transform,width]",
-              // Mobile: always full width (100vw). Desktop: respect expanded state
-              rightMobileExpanded ? "md:w-full md:max-w-full" : "md:w-1/2 md:max-w-md",
               "w-[100vw] max-w-[100vw]"
             )}>
               <div className="h-10 shrink-0 border-b border-solid border-border/40 flex items-center justify-between px-2.5">
@@ -300,16 +296,6 @@ export function AppShell({
                       <div className="h-4 w-px bg-border/60 mx-1.5" />
                     </>
                   ) : null}
-                  {/* Expand button - only on tablet (md) and above */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(ICON_BUTTON_BASE, "hidden md:inline-flex size-7")}
-                    onClick={toggleRightMobileExpansion}
-                    aria-label={rightMobileExpanded ? "Shrink panel" : "Expand panel"}
-                  >
-                    {rightMobileExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                  </Button>
                   {/* Close button - always visible */}
                   <Button
                     variant="ghost"

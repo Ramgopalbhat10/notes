@@ -18,7 +18,6 @@ export function AiAssistantSidebar() {
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const [instruction, setInstruction] = useState("");
   const [showRaw, setShowRaw] = useState(false);
-  const [allowSplitCompare, setAllowSplitCompare] = useState(false);
 
   const {
     session,
@@ -53,18 +52,6 @@ export function AiAssistantSidebar() {
     }
   }, [session.status]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const media = window.matchMedia("(min-width: 1024px)");
-    const update = () => setAllowSplitCompare(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
   const replaceLabel =
     session.contextMode === "selection" ? "Replace selection" : "Replace document";
   const insertLabel =
@@ -73,7 +60,7 @@ export function AiAssistantSidebar() {
     session.contextMode === "selection" ? "Original selection" : "Original note";
   const currentFileName = fileKey?.split("/").pop() ?? "current note";
   const disabled = editorStatus === "loading" || !hasDocumentContent || isStreaming;
-  const showComparePanel = allowSplitCompare && session.compareMode;
+  const showComparePanel = session.compareMode;
   const hasActionSelected = Boolean(session.action);
 
   // Primary status line. We keep this tight so the header stays one row tall
@@ -110,7 +97,7 @@ export function AiAssistantSidebar() {
         actionsDisabled={disabled}
         onSelectAction={handleSelectAction}
         showActionCluster={hasActionSelected}
-        compareAvailable={allowSplitCompare}
+        compareAvailable={true}
         compareMode={session.compareMode}
         canCompare={Boolean(session.result) || Boolean(originalText)}
         onToggleCompare={() => setCompareMode(!session.compareMode)}
