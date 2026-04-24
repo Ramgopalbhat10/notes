@@ -1,17 +1,17 @@
 # Progress
 
-Current issue: `docs/issues/issue-35.md`
+Current issue: `docs/issues/issue-36.md`
 
-Current section: Issue 35 — Tighten Assistant Refine Panel Chrome
+Current section: Issue 36 — Fix Assistant Sidebar Responsive Layout
 
 Previous tasks (latest completed batch only):
-- [x] Restored safe-area bottom padding to the assistant composer footer.
-- [x] Kept desktop footer alignment by using `min-h-11` with safe-area-aware bottom padding.
+- [x] Made assistant compare mode available below desktop widths.
+- [x] Fixed the right sheet width at tablet viewport sizes.
+- [x] Ran `pnpm lint` and `pnpm build`.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `fix/assistant-refine-panel-annotations`
-- Browser annotation request on `/files/welcome`: remove assistant context/status helper chrome, reduce input height, remove the bottom kbd shortcut hint, fill the draft card height, avoid focus border changes on the input, move draft actions out of the preview body's vertical flow, replace cramped side-by-side compare with a vertical resizable split, make the composer a single compact row, remove the composer's inner border frame, normalize compact compare typography, and restore mobile safe-area padding.
-- PR review follow-up: addressed Codex review thread requesting safe-area inset restoration for the assistant composer footer.
+- Branch: `fix/assistant-sidebar-responsive`.
+- User screenshots show the compare action missing at mobile width and the assistant sheet narrowed at tablet width.

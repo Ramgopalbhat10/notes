@@ -32,10 +32,8 @@ type AssistantDraftCardProps = {
   regenerateDisabled: boolean;
 };
 
-// Consolidates the AI draft panel. When compare mode is on (≥ lg only), we
-// render a matched pair of cards with identical chrome so the eye naturally
-// compares them. Compare mode keeps one draft card and stacks the original
-// below the draft behind a horizontal resize handle, avoiding cramped columns.
+// Compare mode keeps one draft card and stacks the original below the draft
+// behind a horizontal resize handle, avoiding cramped columns at every width.
 export function AssistantDraftCard({
   originalTitle,
   originalText,
