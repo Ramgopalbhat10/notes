@@ -4,13 +4,16 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   convertToModelMessages,
   streamText,
+  stepCountIs,
   type ModelMessage,
   type SystemModelMessage,
   type UIMessage,
+  type Tool,
 } from "ai";
 
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 import { clampText } from "@/lib/ai/text-utils";
+import { resolveServerTools, type EnabledTools } from "@/lib/ai/tools";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { s3BodyToString } from "@/lib/fs/s3-body";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
@@ -28,12 +31,14 @@ type ChatRequestBody = {
     excerpt?: string | null;
   } | null;
   model?: string | null;
+  tools?: EnabledTools | null;
 };
 
 type ParsedChatRequest = {
   messages: UIMessage[];
   file: ChatRequestBody["file"];
   model: string | null;
+  tools: EnabledTools | null;
 };
 
 type FileContext = {
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authRes.error }, { status: authRes.status });
     }
 
-    const { messages: rawMessages, file: rawFile, model: requestedModel } = await parseRequest(request);
+    const { messages: rawMessages, file: rawFile, model: requestedModel, tools: enabledTools } = await parseRequest(request);
 
     if (rawMessages.length === 0) {
       return NextResponse.json({ error: "At least one message is required" }, { status: 400 });
@@ -82,14 +87,21 @@ export async function POST(request: NextRequest) {
       ? [contextMessage, ...convertedMessages]
       : convertedMessages;
 
+    const resolvedTools = resolveServerTools(enabledTools);
+    const hasTools = resolvedTools && Object.keys(resolvedTools).length > 0;
+
     const result = await streamText({
       model: modelName,
       system: systemPrompt,
       messages: orderedMessages,
       temperature: 0.4,
+      tools: (resolvedTools ?? {}) as Record<string, Tool>,
+      ...(hasTools
+        ? { toolChoice: "auto" as const, stopWhen: stepCountIs(5) }
+        : {}),
     });
 
-    return result.toTextStreamResponse({
+    return result.toUIMessageStreamResponse({
       headers: {
         "x-ai-context-truncated": fileContext.truncated ? "1" : "0",
         "x-ai-context-source": fileContext.source,
@@ -111,7 +123,10 @@ async function parseRequest(request: NextRequest): Promise<ParsedChatRequest> {
   const file = requestBody.file ?? null;
   const rawModel = requestBody.model;
   const model: string | null = typeof rawModel === "string" ? rawModel : null;
-  return { messages, file, model } satisfies ParsedChatRequest;
+  const rawTools = requestBody.tools;
+  const tools: EnabledTools | null =
+    typeof rawTools === "object" && rawTools !== null && !Array.isArray(rawTools) ? rawTools : null;
+  return { messages, file, model, tools } satisfies ParsedChatRequest;
 }
 
 function clampMessages(messages: UIMessage[], max: number): UIMessage[] {

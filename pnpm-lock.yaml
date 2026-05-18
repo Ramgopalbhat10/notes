@@ -32,6 +32,9 @@ importers:
       '@mantine/hooks':
         specifier: ^8.3.18
         version: 8.3.18(react@19.2.5)
+      '@parallel-web/ai-sdk-tools':
+        specifier: ^0.2.1
+        version: 0.2.1(ai@6.0.168(zod@4.3.6))
       '@radix-ui/react-avatar':
         specifier: ^1.1.11
         version: 1.1.11(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -1619,6 +1622,11 @@ packages:
   '@opentelemetry/semantic-conventions@1.40.0':
     resolution: {integrity: sha512-cifvXDhcqMwwTlTK04GBNeIe7yyo28Mfby85QXFe1Yk8nmi36Ab/5UQwptOx84SsoGNRg+EVSjwzfSZMy6pmlw==}
     engines: {node: '>=14'}
+
+  '@parallel-web/ai-sdk-tools@0.2.1':
+    resolution: {integrity: sha512-eDlL2XO58EWspgLgpP9FomaaqLTjICvlOZV2wBLRsTkUQXwq2pSqysbAqz6NVJWXjoojHZp3J+n5Lk7jZH3exQ==}
+    peerDependencies:
+      ai: ^5.0.0
 
   '@prisma/client@5.22.0':
     resolution: {integrity: sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA==}
@@ -4855,6 +4863,7 @@ packages:
 
   libsql@0.5.29:
     resolution: {integrity: sha512-8lMP8iMgiBzzoNbAPQ59qdVcj6UaE/Vnm+fiwX4doX4Narook0a4GPKWBEv+CR8a1OwbfkgL18uBfBjWdF0Fzg==}
+    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.32.0:
@@ -5303,6 +5312,9 @@ packages:
 
   package-manager-detector@1.5.0:
     resolution: {integrity: sha512-uBj69dVlYe/+wxj8JOpr97XfsxH/eumMt6HqjNTmJDf/6NO9s+0uxeOneIz3AsPt2m6y9PqzDzd3ATcU17MNfw==}
+
+  parallel-web@0.3.2:
+    resolution: {integrity: sha512-PVCECmqn4cADf5LIWZJ+I6aeYG5/Endt3AbOJP/tWQK3Y+yobjMlmOJAhaUgJvNWXXcvqW75qapILWcEqCiMHw==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -8018,6 +8030,12 @@ snapshots:
   '@opentelemetry/api@1.9.0': {}
 
   '@opentelemetry/semantic-conventions@1.40.0': {}
+
+  '@parallel-web/ai-sdk-tools@0.2.1(ai@6.0.168(zod@4.3.6))':
+    dependencies:
+      ai: 6.0.168(zod@4.3.6)
+      parallel-web: 0.3.2
+      zod: 4.3.6
 
   '@prisma/client@5.22.0(prisma@5.22.0)':
     optionalDependencies:
@@ -12259,6 +12277,8 @@ snapshots:
       p-limit: 3.1.0
 
   package-manager-detector@1.5.0: {}
+
+  parallel-web@0.3.2: {}
 
   parent-module@1.0.1:
     dependencies:

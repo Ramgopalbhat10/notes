@@ -51,6 +51,8 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     setDraft,
     contextFile,
     setContextFile,
+    enabledTools,
+    toggleToolProvider,
   } = useChatSession(conversationRef);
 
   const [copyingId, setCopyingId] = useState<string | null>(null);
@@ -171,6 +173,8 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
         isStreaming={isStreaming}
         disabled={composerDisabled}
         portalContainer={portalContainer}
+        enabledTools={enabledTools}
+        onToggleToolProvider={toggleToolProvider}
       />
     </div>
   );
