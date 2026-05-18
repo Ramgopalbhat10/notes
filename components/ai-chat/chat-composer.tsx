@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ModelSelector } from "./model-selector";
+import { ToolsSelector } from "./tools-selector";
+import { CHAT_TOOLS, type EnabledTools } from "@/lib/ai/tools";
 
 type ChatComposerProps = {
   contextFile: string | null;
@@ -20,6 +22,8 @@ type ChatComposerProps = {
   isStreaming: boolean;
   disabled: boolean;
   portalContainer: HTMLElement | null;
+  enabledTools: EnabledTools;
+  onToggleToolProvider: (toolId: string, providerId: string, enabled: boolean) => void;
 };
 
 export function ChatComposer({
@@ -32,6 +36,8 @@ export function ChatComposer({
   isStreaming,
   disabled,
   portalContainer,
+  enabledTools,
+  onToggleToolProvider,
 }: ChatComposerProps) {
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -135,6 +141,13 @@ export function ChatComposer({
               </TooltipTrigger>
               <TooltipContent side="top">Attach file (coming soon)</TooltipContent>
             </Tooltip>
+
+            <ToolsSelector
+              tools={CHAT_TOOLS}
+              enabledTools={enabledTools}
+              onToggleProvider={onToggleToolProvider}
+              portalContainer={portalContainer}
+            />
 
             <ModelSelector portalContainer={portalContainer} />
           </div>

@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { Chat, useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import type { EnabledTools } from "@/lib/ai/tools";
 import { useEditorStore } from "@/stores/editor";
 import { useChatStore } from "@/stores/chat";
 import type { ConversationHandle } from "@/components/ai-elements/conversation";
@@ -13,11 +14,11 @@ import type { FilePayload } from "../types";
 
 // Module-level singletons — persist across component remounts
 
-const latestContextRef: { current: { file: FilePayload | null; model: string } } = {
-  current: { file: null, model: DEFAULT_CHAT_MODEL },
+const latestContextRef: { current: { file: FilePayload | null; model: string; tools: EnabledTools } } = {
+  current: { file: null, model: DEFAULT_CHAT_MODEL, tools: {} },
 };
 
-const globalTransport = new TextStreamChatTransport<UIMessage>({
+const globalTransport = new DefaultChatTransport<UIMessage>({
   api: "/api/ai/chat",
   credentials: "same-origin",
   prepareSendMessagesRequest: ({ body, messages }) => ({
@@ -26,6 +27,7 @@ const globalTransport = new TextStreamChatTransport<UIMessage>({
       messages,
       file: latestContextRef.current.file,
       model: latestContextRef.current.model,
+      tools: latestContextRef.current.tools,
     },
   }),
 });
@@ -83,6 +85,8 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
   const contextFile = useChatStore((state) => state.contextFile);
   const setContextFile = useChatStore((state) => state.setContextFile);
   const selectedModel = useChatStore((state) => state.selectedModel);
+  const enabledTools = useChatStore((state) => state.enabledTools);
+  const toggleToolProvider = useChatStore((state) => state.toggleToolProvider);
   const draft = useChatStore((state) => state.draft);
   const setDraft = useChatStore((state) => state.setDraft);
 
@@ -118,8 +122,9 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
     latestContextRef.current = {
       file: filePayload,
       model: selectedModel,
+      tools: enabledTools,
     };
-  }, [filePayload, selectedModel]);
+  }, [filePayload, selectedModel, enabledTools]);
 
   const { messages, sendMessage, stop, regenerate, status, error, clearError, setMessages } = useChat({
     chat: chatSession,
@@ -249,5 +254,7 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
     setDraft,
     contextFile,
     setContextFile,
+    enabledTools,
+    toggleToolProvider,
   };
 }
