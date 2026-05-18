@@ -90,13 +90,6 @@ export async function POST(request: NextRequest) {
     const resolvedTools = resolveServerTools(enabledTools);
     const hasTools = resolvedTools && Object.keys(resolvedTools).length > 0;
 
-    if (hasTools && !process.env.PARALLEL_API_KEY) {
-      return NextResponse.json(
-        { error: "PARALLEL_API_KEY is required for web search" },
-        { status: 500 },
-      );
-    }
-
     const result = await streamText({
       model: modelName,
       system: systemPrompt,
