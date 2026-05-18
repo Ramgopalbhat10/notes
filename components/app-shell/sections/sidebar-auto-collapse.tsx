@@ -7,7 +7,6 @@ type SidebarAutoCollapseProps = {
   rightWidthPx: number;
   minMainRatio: number;
   rightSidebarOpen: boolean;
-  rightSidebarExpanded: boolean;
 };
 
 export function SidebarAutoCollapse({
@@ -15,7 +14,6 @@ export function SidebarAutoCollapse({
   rightWidthPx,
   minMainRatio,
   rightSidebarOpen,
-  rightSidebarExpanded,
 }: SidebarAutoCollapseProps) {
   const { open, setOpen } = useSidebar();
 
@@ -34,8 +32,7 @@ export function SidebarAutoCollapse({
       }
 
       const leftWidth = open ? leftWidthPx : 0;
-      const effectiveRightWidth = rightSidebarExpanded ? viewportWidth * 0.5 : rightWidthPx;
-      const mainWidth = viewportWidth - leftWidth - effectiveRightWidth;
+      const mainWidth = viewportWidth - leftWidth - rightWidthPx;
       if (open && mainWidth / viewportWidth < minMainRatio) {
         setOpen(false);
       }
@@ -44,7 +41,7 @@ export function SidebarAutoCollapse({
     evaluate();
     window.addEventListener("resize", evaluate);
     return () => window.removeEventListener("resize", evaluate);
-  }, [leftWidthPx, minMainRatio, open, rightSidebarOpen, rightSidebarExpanded, rightWidthPx, setOpen]);
+  }, [leftWidthPx, minMainRatio, open, rightSidebarOpen, rightWidthPx, setOpen]);
 
   return null;
 }

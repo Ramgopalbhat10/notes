@@ -81,9 +81,10 @@ export function AppShell({
   const setRightSidebarOpen = useWorkspaceLayoutStore((state) => state.setRightSidebarOpen);
   const setRightSidebarExpanded = useWorkspaceLayoutStore((state) => state.setRightSidebarExpanded);
   const setRightSidebarPanel = useWorkspaceLayoutStore((state) => state.setRightSidebarPanel);
+  const setRightSidebarWidthPx = useWorkspaceLayoutStore((state) => state.setRightSidebarWidthPx);
+  const rightSidebarWidthPx = useWorkspaceLayoutStore((state) => state.rightSidebarWidthPx);
   const openRightSidebar = useWorkspaceLayoutStore((state) => state.openRightSidebar);
   const toggleRightSidebar = useWorkspaceLayoutStore((state) => state.toggleRightSidebar);
-  const toggleRightSidebarExpansion = useWorkspaceLayoutStore((state) => state.toggleRightSidebarExpansion);
 
   // Left sidebar state from global store (persists across route changes)
   const leftSidebarOpen = useWorkspaceLayoutStore((state) => state.leftSidebarOpen);
@@ -101,7 +102,17 @@ export function AppShell({
   // Mobile-specific state (doesn't need to persist)
   const [leftMobileOpen, setLeftMobileOpen] = useState(false);
   const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 0,
+  );
   const hasRight = Boolean(right);
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const {
     rightMobileOpen,
@@ -133,13 +144,22 @@ export function AppShell({
   });
 
   const toggleRightExpansion = useCallback(() => {
-    toggleRightSidebarExpansion();
-  }, [toggleRightSidebarExpansion]);
+    if (rightSidebarExpanded) {
+      setRightSidebarExpanded(false);
+      setRightSidebarWidthPx(null);
+    } else {
+      const leftWidth = leftSidebarOpen ? leftSidebarWidthPx : 0;
+      const equalSplit = Math.max(320, Math.round((window.innerWidth - leftWidth) / 2));
+      setRightSidebarExpanded(true);
+      setRightSidebarWidthPx(equalSplit);
+    }
+  }, [rightSidebarExpanded, leftSidebarOpen, leftSidebarWidthPx, setRightSidebarExpanded, setRightSidebarWidthPx]);
 
   const handleCloseRightSidebar = useCallback(() => {
     setRightSidebarOpen(false);
     setRightSidebarExpanded(false);
-  }, [setRightSidebarOpen, setRightSidebarExpanded]);
+    setRightSidebarWidthPx(null);
+  }, [setRightSidebarOpen, setRightSidebarExpanded, setRightSidebarWidthPx]);
 
   const openQuickSwitcher = useCallback(() => {
     setQuickSwitcherOpen(true);
@@ -192,11 +212,18 @@ export function AppShell({
     void loadFile(fileKey);
   }, [dirty, fileKey, loadFile]);
 
-  const rightSidebarWidthClass = !rightSidebarOpen
-    ? "w-0 border-transparent"
-    : rightSidebarExpanded
-      ? "w-1/2 border-border"
-      : "w-[30rem] border-border";
+  const { actualRightWidthPx, minRightWidthPx, maxRightWidthPx } = useMemo(() => {
+    const leftWidth = leftSidebarOpen ? leftSidebarWidthPx : 0;
+    const defaultRightWidthPx = RIGHT_SIDEBAR_WIDTH_REM * REM_IN_PX;
+    const equalSplitWidthPx = Math.max(320, Math.round((viewportWidth - leftWidth) / 2));
+    const actual = !rightSidebarOpen
+      ? 0
+      : (rightSidebarWidthPx ?? (rightSidebarExpanded ? equalSplitWidthPx : defaultRightWidthPx));
+    const min = 320;
+    const max = Math.round(viewportWidth - leftWidth - viewportWidth * MIN_MAIN_CONTENT_RATIO);
+    return { actualRightWidthPx: actual, minRightWidthPx: min, maxRightWidthPx: max };
+  }, [viewportWidth, leftSidebarOpen, leftSidebarWidthPx, rightSidebarOpen, rightSidebarWidthPx, rightSidebarExpanded]);
+
   const { rightSidebarTitle, showNewChatAction, renderedRight } = useRightSidebarPanel({
     right,
     rightSidebarPanel,
@@ -216,10 +243,9 @@ export function AppShell({
       />
       <SidebarAutoCollapse
         leftWidthPx={leftSidebarWidthPx}
-        rightWidthPx={RIGHT_SIDEBAR_WIDTH_REM * REM_IN_PX}
+        rightWidthPx={actualRightWidthPx}
         minMainRatio={MIN_MAIN_CONTENT_RATIO}
         rightSidebarOpen={rightSidebarOpen}
-        rightSidebarExpanded={rightSidebarExpanded}
       />
       {/* Left mobile sheet */}
       <Sheet open={leftMobileOpen} onOpenChange={setLeftMobileOpen}>
@@ -369,9 +395,11 @@ export function AppShell({
 
       {hasRight ? (
         <RightDesktopSidebar
-          rightSidebarWidthClass={rightSidebarWidthClass}
           rightSidebarOpen={rightSidebarOpen}
           rightSidebarExpanded={rightSidebarExpanded}
+          rightSidebarWidthPx={actualRightWidthPx}
+          minRightWidthPx={minRightWidthPx}
+          maxRightWidthPx={maxRightWidthPx}
           rightSidebarTitle={rightSidebarTitle}
           rightSidebarPanel={rightSidebarPanel}
           showNewChatAction={showNewChatAction}
@@ -379,7 +407,7 @@ export function AppShell({
           onToggleRightExpansion={toggleRightExpansion}
           onCloseRightSidebar={handleCloseRightSidebar}
           renderedRight={renderedRight}
-          rightSidebarWidthRem={RIGHT_SIDEBAR_WIDTH_REM}
+          onResizeRightSidebar={setRightSidebarWidthPx}
           iconButtonClassName={ICON_BUTTON_BASE}
         />
       ) : null}

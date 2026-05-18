@@ -14,9 +14,11 @@ type WorkspaceLayoutState = {
   rightSidebarOpen: boolean;
   rightSidebarExpanded: boolean;
   rightSidebarPanel: RightSidebarPanel;
+  rightSidebarWidthPx: number | null;
   setRightSidebarOpen: (open: boolean) => void;
   setRightSidebarExpanded: (expanded: boolean) => void;
   setRightSidebarPanel: (panel: RightSidebarPanel) => void;
+  setRightSidebarWidthPx: (width: number | null) => void;
   openRightSidebar: (panel: RightSidebarPanel) => void;
   toggleRightSidebar: (panel?: RightSidebarPanel) => void;
   toggleRightSidebarExpansion: () => void;
@@ -44,16 +46,18 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>((set) => ({
   rightSidebarOpen: false,
   rightSidebarExpanded: false,
   rightSidebarPanel: "chat",
-  setRightSidebarOpen: (open) => set({ rightSidebarOpen: open, ...(open ? {} : { rightSidebarExpanded: false }) }),
+  rightSidebarWidthPx: null,
+  setRightSidebarOpen: (open) => set({ rightSidebarOpen: open, ...(open ? {} : { rightSidebarExpanded: false, rightSidebarWidthPx: null }) }),
   setRightSidebarExpanded: (expanded) => set({ rightSidebarExpanded: expanded }),
   setRightSidebarPanel: (panel) => set({ rightSidebarPanel: panel }),
+  setRightSidebarWidthPx: (width) => set({ rightSidebarWidthPx: width }),
   openRightSidebar: (panel) => set({ rightSidebarOpen: true, rightSidebarPanel: panel }),
   toggleRightSidebar: (panel) =>
     set((state) => ({
       ...(state.rightSidebarOpen
         ? panel && panel !== state.rightSidebarPanel
           ? { rightSidebarOpen: true, rightSidebarPanel: panel }
-          : { rightSidebarOpen: false, rightSidebarExpanded: false }
+          : { rightSidebarOpen: false, rightSidebarExpanded: false, rightSidebarWidthPx: null }
         : {
           rightSidebarOpen: true,
           rightSidebarPanel: panel ?? state.rightSidebarPanel,
@@ -63,7 +67,7 @@ export const useWorkspaceLayoutStore = create<WorkspaceLayoutState>((set) => ({
     set((state) => ({
       rightSidebarExpanded: !state.rightSidebarExpanded,
     })),
-  closeRightSidebar: () => set({ rightSidebarOpen: false, rightSidebarExpanded: false }),
+  closeRightSidebar: () => set({ rightSidebarOpen: false, rightSidebarExpanded: false, rightSidebarWidthPx: null }),
   // Left sidebar state
   leftSidebarOpen: true,
   leftSidebarExpanded: false,
