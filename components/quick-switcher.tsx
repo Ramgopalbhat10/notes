@@ -76,8 +76,13 @@ export function QuickSwitcher({
 
   const recentItems = useMemo(() => {
     const items: FileEntry[] = [];
+    const seen = new Set<NodeId>();
 
     for (const id of [...viewHistory].reverse()) {
+      if (seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
       const entry = fileEntryById.get(id);
       if (!entry) {
         continue;
