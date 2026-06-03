@@ -43,6 +43,7 @@ Goal: Add web search capability to the chat sidebar with an extensible provider 
 
 | Issue | Title | Status | File |
 |---|---|---|---|
+| 37 | Tools Popup UX Polish | resolved | `components/ai-chat/tools-selector/tool-item.tsx` |
 
 ---
 

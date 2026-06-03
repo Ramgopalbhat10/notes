@@ -1,4 +1,4 @@
-# Issue 37 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
+# Issue 37 — Tools Popup UX Polish
 
 ## Type
 - bug
@@ -7,47 +7,43 @@
 - resolved
 
 ## Related Story
-- Story 5 — AI Chat (Right Sidebar)
+- Story 26 — Web Search Tools in AI Chat
 
 ## Description
-- The right sidebar, when expanded via the Maximize button, takes up half the screen (`50vw`). Because the left sidebar also occupies space, the main content area ends up narrower than the right sidebar. The user expects the main content and right sidebar to be equal in width after expansion.
-- Additionally, there is no way to resize the right sidebar interactively; width changes are only possible via the Expand/Shrink toggle.
+- The tools popup in the chat sidebar has two UX issues:
+  1. Opening the popup auto-triggers the nested HoverCard for the first tool (Web Search), showing the providers sub-popover immediately instead of requiring an explicit hover on the chevron.
+  2. Redundant description labels appear under the tool name ("Search the web for current information") and under each provider name ("LLM-optimized web search via Parallel AI"), plus a "Providers" header in the sub-popover. These add visual noise.
 
 ## Root Cause
-- The expanded width was hardcoded to `50vw` in both the Tailwind width class (`w-1/2`) and the inline style, without accounting for the left sidebar width.
-- No drag-to-resize handle existed on the sidebar.
+- The HoverCard component triggers on pointer-enter with a short delay. When the popover opens, the mouse cursor is already positioned over the tool row, immediately triggering the nested HoverCard.
+- Description text was included in the original implementation but is unnecessary given the straightforward tool/provider names.
 
 ## Fix / Approach
-- Replaced the discrete `w-0 / w-[30rem] / w-1/2` width model with a pixel-precise `rightSidebarWidthPx` state in the Zustand layout store.
-- The Expand button now computes `(viewportWidth - leftSidebarWidth) / 2` so the main content and right sidebar share the remaining space equally.
-- Added a 4px drag handle on the left edge of the right sidebar with min (320px) and dynamic max (viewport - left - 45% main) constraints.
-- Implemented a custom `useRightSidebarResize` hook that mutates DOM width directly during drag for 60fps, then commits the final width to the store on mouseup.
-- CSS transitions are disabled during drag to avoid jank.
+- Remove tool-level and provider-level description text from the UI.
+- Remove the "Providers" header from the sub-popover.
+- Prevent the HoverCard from auto-opening when the parent popover first opens.
 
 ## Files Changed
-- `stores/layout.ts`
-- `components/app-shell.tsx`
-- `components/app-shell/sections/right-desktop-sidebar.tsx`
-- `components/app-shell/sections/sidebar-auto-collapse.tsx`
-- `components/app-shell/hooks/use-right-sidebar-resize.ts`
+- `components/ai-chat/tools-selector/tool-item.tsx`
 
 ## Dev Log
 
 | Date | Unit | Summary |
 |---|---|---|
-| 2026-05-18 | fix | Added pixel-precise width state, equal-split expansion math, and draggable resize handle for the right sidebar |
+| 2026-05-28 | fix | Remove description labels and fix HoverCard auto-open |
 
 ## Test Plan
-- Open the right sidebar and click Expand — verify main content and sidebar are equal width.
-- Drag the left edge of the sidebar — verify smooth resizing with min/max limits.
-- Click Shrink — verify sidebar returns to default 30rem width.
-- Run `pnpm lint` and `pnpm build` — both must pass.
+- Open tools popup: nested providers sub-popover should NOT auto-open.
+- Hover over chevron: providers sub-popover should appear after hover delay.
+- Verify no description text under tool name or provider names.
+- Verify no "Providers" header in the sub-popover.
 
 ## Definition of Done
 - Fix verified (lint + build pass).
 - Status set to `resolved`.
 - Dev Log updated.
 - Progress updated in `docs/PROGRESS.md`.
+- Story 26 Issues section updated with resolved status.
 
 ## References
-- Story 5: `docs/stories/story-5.md`
+- `docs/stories/story-26.md`
