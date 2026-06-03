@@ -39,7 +39,7 @@ type CommandDialogProps = DialogProps & {
 function CommandDialog({ children, contentClassName, title, description, ...props }: CommandDialogProps) {
   return (
     <Dialog {...props}>
-      <DialogContent className={cn("overflow-hidden p-0 shadow-2xl", contentClassName)}>
+      <DialogContent className={cn("overflow-hidden p-0 shadow-2xl [&>button]:top-[10px]", contentClassName)}>
         <DialogHeader className="sr-only">
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}

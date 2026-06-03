@@ -44,3 +44,4 @@ Issue template: `docs/issues/template.md`
 | 36 | Fix Assistant Sidebar Responsive Layout | resolved | None | `components/ai-actions/*`, `components/app-shell.tsx` |
 | 37 | Tools Popup UX Polish | resolved | Story 26 | `components/ai-chat/tools-selector/tool-item.tsx` |
 | 38 | Right Sidebar Equal-Width Expansion and Resizable Drag Handle | in-progress | Story 5 | `components/app-shell/*`, `stores/layout.ts` |
+| 39 | Duplicate Recent Entries and Close Button Misalignment in Quick Switcher | resolved | Story 24 | `components/quick-switcher.tsx`, `components/ui/command.tsx` |

@@ -1,17 +1,16 @@
 # Progress
 
-Current issue: `docs/issues/issue-38.md`
+Current issue: `docs/issues/issue-39.md`
 
-Current section: Issue 38 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
+Current section: Issue 39 — Duplicate Recent Entries and Close Button Misalignment in Quick Switcher
 
 Previous tasks (latest completed batch only):
-- [x] Replaced discrete width model with pixel-precise `rightSidebarWidthPx` state
-- [x] Fixed Expand button to compute `(viewport - leftSidebar) / 2` for equal split
-- [x] Added draggable resize handle with 320px min and dynamic max constraints
-- [x] Ran `pnpm lint` and `pnpm build` — both passed
+- [x] Deduplicated recent items in quick-switcher.tsx
+- [x] Aligned close button vertically in command.tsx
+- [x] Ran pnpm lint and pnpm build - both passed
 
 Next tasks:
-- [ ] Manual smoke test after PR merge: expand/shrink, drag resize, close/reopen
+- - None - all tasks completed.
 
 Notes:
-- Branch: `fix/right-sidebar-resize`
+- Branch: `fix/quick-switcher-bugs`
