@@ -42,4 +42,6 @@ Issue template: `docs/issues/template.md`
 | 34 | Redesign Markdown Table Rendering Styles | in-progress | None | `app/globals.css` |
 | 35 | Tighten Assistant Refine Panel Chrome | resolved | None | `components/ai-actions/*` |
 | 36 | Fix Assistant Sidebar Responsive Layout | resolved | None | `components/ai-actions/*`, `components/app-shell.tsx` |
-| 37 | Right Sidebar Equal-Width Expansion and Resizable Drag Handle | in-progress | Story 5 | `components/app-shell/*`, `stores/layout.ts` |
+| 37 | Tools Popup UX Polish | resolved | Story 26 | `components/ai-chat/tools-selector/tool-item.tsx` |
+| 38 | Right Sidebar Equal-Width Expansion and Resizable Drag Handle | in-progress | Story 5 | `components/app-shell/*`, `stores/layout.ts` |
+| 39 | Duplicate Recent Entries and Close Button Misalignment in Quick Switcher | resolved | Story 24 | `components/quick-switcher.tsx`, `components/ui/command.tsx` |
