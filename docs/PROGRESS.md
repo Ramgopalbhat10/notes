@@ -1,17 +1,17 @@
 # Progress
 
-Current issue: `docs/issues/issue-37.md`
+Current issue: `docs/issues/issue-38.md`
 
-Current section: Issue 37 — Tools Popup UX Polish
+Current section: Issue 38 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
 
 Previous tasks (latest completed batch only):
-- [x] Replace HoverCard with click-triggered Popover for providers sub-menu
-- [x] Remove tool description text, provider descriptions, and "Providers" header
+- [x] Replaced discrete width model with pixel-precise `rightSidebarWidthPx` state
+- [x] Fixed Expand button to compute `(viewport - leftSidebar) / 2` for equal split
+- [x] Added draggable resize handle with 320px min and dynamic max constraints
+- [x] Ran `pnpm lint` and `pnpm build` — both passed
 
 Next tasks:
-- None - all tasks completed.
+- [ ] Manual smoke test after PR merge: expand/shrink, drag resize, close/reopen
 
 Notes:
-- Branch: `fix/tools-popup-ux`
-- Related to Story 26 — Web Search Tools in AI Chat
-- Switched from hover-triggered HoverCard to click-triggered Popover to prevent auto-opening
+- Branch: `fix/right-sidebar-resize`
