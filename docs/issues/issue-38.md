@@ -1,4 +1,4 @@
-# Issue 37 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
+# Issue 38 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
 
 ## Type
 - bug

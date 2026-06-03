@@ -1,8 +1,8 @@
 # Progress
 
-Current issue: `docs/issues/issue-37.md`
+Current issue: `docs/issues/issue-38.md`
 
-Current section: Issue 37 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
+Current section: Issue 38 — Right Sidebar Equal-Width Expansion and Resizable Drag Handle
 
 Previous tasks (latest completed batch only):
 - [x] Replaced discrete width model with pixel-precise `rightSidebarWidthPx` state
