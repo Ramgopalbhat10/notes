@@ -13,7 +13,7 @@ const base = baseArg ? baseArg.slice('--base='.length) : null
 const head = headArg ? headArg.slice('--head='.length) : 'HEAD'
 const branchFromArg = branchArg ? branchArg.slice('--branch='.length) : ''
 
-const ALLOWED_BRANCH_PREFIXES = ['feature/', 'fix/', 'refactor/', 'chore/', 'docs/']
+const ALLOWED_BRANCH_PREFIXES = ['feat/', 'feature/', 'fix/', 'refactor/', 'chore/', 'docs/']
 
 function run(command) {
   return execSync(command, { encoding: 'utf8' }).trim()
@@ -207,7 +207,7 @@ if (!currentBranch) {
 } else if (!ALLOWED_BRANCH_PREFIXES.some((prefix) => currentBranch.startsWith(prefix))) {
   fail('Current branch prefix is invalid for implementation work.', [
     `branch=${currentBranch}`,
-    'Allowed prefixes: feature/, fix/, refactor/, chore/, docs/',
+    `Allowed prefixes: ${ALLOWED_BRANCH_PREFIXES.join(', ')}`,
   ])
 }
 
