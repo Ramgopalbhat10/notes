@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { PwaRegister } from "@/components/pwa/pwa-register";
 import { AUTH_BYPASS_ENABLED } from "@/lib/auth/config";
 import { siteMetadata } from "@/lib/platform/site-metadata";
+
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-family-sans",
+});
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -68,7 +73,7 @@ export default function RootLayout({
   return (
     <html className="dark" lang="en" suppressHydrationWarning>
       <body
-        className={`${jetbrainsMono.variable} antialiased`}
+        className={`${geist.variable} ${jetbrainsMono.variable} antialiased`}
         data-auth-bypass={AUTH_BYPASS_ENABLED ? "true" : "false"}
       >
         {children}
