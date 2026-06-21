@@ -1,14 +1,70 @@
 "use client";
 
-import { forwardRef } from "react";
-import { ArrowDownLeft, Copy, Loader2, RefreshCcw } from "lucide-react";
+import { forwardRef, useEffect, useState } from "react";
+import {
+  ArrowDownLeft,
+  BrainCircuit,
+  ChevronRight,
+  Copy,
+  Loader2,
+  RefreshCcw,
+} from "lucide-react";
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { ChatMessageRowProps } from "./types";
-import { messageToPlainText } from "./utils";
+import { messageToPlainText, messageToReasoning } from "./utils";
+
+function ChatReasoning({
+  reasoning,
+  streaming,
+}: {
+  reasoning: string;
+  streaming: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(streaming);
+  }, [streaming]);
+
+  if (!reasoning.trim()) return null;
+
+  return (
+    <CollapsiblePrimitive.Root
+      open={open}
+      onOpenChange={setOpen}
+      className="mb-2"
+    >
+      <CollapsiblePrimitive.CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+        >
+          <ChevronRight
+            className={cn(
+              "h-3.5 w-3.5 transition-transform",
+              open && "rotate-90"
+            )}
+          />
+          <BrainCircuit className="h-3.5 w-3.5" />
+          {streaming ? "Thinking…" : "Reasoning"}
+        </button>
+      </CollapsiblePrimitive.CollapsibleTrigger>
+      <CollapsiblePrimitive.CollapsibleContent>
+        <div className="mt-1 max-h-60 overflow-y-auto rounded-md border border-border/50 bg-muted/30 px-3 py-2">
+          <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground">
+            {reasoning}
+          </p>
+        </div>
+      </CollapsiblePrimitive.CollapsibleContent>
+    </CollapsiblePrimitive.Root>
+  );
+}
 
 export const ChatMessageRow = forwardRef<HTMLDivElement, ChatMessageRowProps>(
   function ChatMessageRow(
@@ -17,7 +73,9 @@ export const ChatMessageRow = forwardRef<HTMLDivElement, ChatMessageRowProps>(
   ) {
     const isAssistant = message.role === "assistant";
     const text = messageToPlainText(message);
+    const reasoning = messageToReasoning(message);
     const hasContent = Boolean(text.trim());
+    const hasReasoning = Boolean(reasoning.trim());
 
     const contentClasses = isAssistant ? "w-full" : "ml-auto max-w-[65%]";
 
@@ -29,7 +87,18 @@ export const ChatMessageRow = forwardRef<HTMLDivElement, ChatMessageRowProps>(
             className={contentClasses}
           >
             {isAssistant ? (
-              hasContent ? <Response compact>{text}</Response> : <span className="text-muted-foreground">Waiting for response…</span>
+              <>
+                {hasReasoning ? (
+                  <ChatReasoning reasoning={reasoning} streaming={streaming} />
+                ) : null}
+                {hasContent ? (
+                  <Response compact>{text}</Response>
+                ) : hasReasoning ? null : (
+                  <span className="text-muted-foreground">
+                    Waiting for response…
+                  </span>
+                )}
+              </>
             ) : (
               <span className="whitespace-pre-wrap break-words">{text}</span>
             )}

@@ -53,6 +53,15 @@ export function messageToPlainText(message: UIMessage): string {
       if (part.type === "text") {
         return part.text;
       }
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function messageToReasoning(message: UIMessage): string {
+  return message.parts
+    .map((part) => {
       if (part.type === "reasoning" && part.text) {
         return part.text;
       }

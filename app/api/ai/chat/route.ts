@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
     });
 
     return result.toUIMessageStreamResponse({
+      sendReasoning: true,
       headers: {
         "x-ai-context-truncated": fileContext.truncated ? "1" : "0",
         "x-ai-context-source": fileContext.source,
