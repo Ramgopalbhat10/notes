@@ -194,7 +194,7 @@ export function QuickSwitcher({
       onOpenChange={onOpenChange}
       title="Quick switcher"
       description="Search for a note or create a new file or folder."
-      contentClassName="max-w-2xl border-border/70 bg-popover/95 p-0 backdrop-blur"
+      contentClassName="max-w-2xl gap-0 overflow-hidden border-border bg-background p-0"
     >
       <CommandInput
         value={query}

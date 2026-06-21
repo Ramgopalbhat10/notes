@@ -1,18 +1,17 @@
 # Progress
 
-Current story: `docs/stories/story-27.md`
+Current issue: `docs/issues/issue-41.md`
 
-Current section: Story 27 — Reasoning/Thinking Collapsible in AI Chat
+Current section: Issue 41 — Quick Switcher Uses Lighter Translucent Styling Instead of Shortcuts Dialog
 
 Previous tasks (latest completed batch only):
-- [x] Add `messageToReasoning` helper; remove reasoning from `messageToPlainText`
-- [x] Add `ChatReasoning` collapsible component
-- [x] Wire `ChatReasoning` into assistant message row above `Response`
-- [x] Add `sendReasoning: true` to `toUIMessageStreamResponse`
+- [x] Align Quick Switcher `contentClassName` with Shortcuts dialog styling
+- [x] Create issue-41 doc and update indexes/cross-references
 - [x] Run `pnpm lint` and `pnpm build`
+- [x] Commit, push, and create PR
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `feature/reasoning-collapsible`
+- Branch: `fix/quick-switcher-shortcuts-styling`
