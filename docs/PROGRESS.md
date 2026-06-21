@@ -1,16 +1,18 @@
 # Progress
 
-Current issue: `docs/issues/issue-40.md`
+Current story: `docs/stories/story-27.md`
 
-Current section: Issue 40 — Add Geist Sans Font as Primary UI Font
+Current section: Story 27 — Reasoning/Thinking Collapsible in AI Chat
 
 Previous tasks (latest completed batch only):
-- [x] Added Geist font via next/font/google and exposed --font-family-sans CSS variable
-- [x] Applied geist.variable alongside jetbrainsMono.variable to body element
-- [x] Ran pnpm lint and pnpm build - both passed
+- [x] Add `messageToReasoning` helper; remove reasoning from `messageToPlainText`
+- [x] Add `ChatReasoning` collapsible component
+- [x] Wire `ChatReasoning` into assistant message row above `Response`
+- [x] Add `sendReasoning: true` to `toUIMessageStreamResponse`
+- [x] Run `pnpm lint` and `pnpm build`
 
 Next tasks:
-- - None - all tasks completed.
+- None - all tasks completed.
 
 Notes:
-- Branch: `feat/geist-font`
+- Branch: `feature/reasoning-collapsible`
