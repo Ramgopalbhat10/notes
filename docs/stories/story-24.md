@@ -35,6 +35,7 @@ Goal: Add a global quick switcher for the authenticated `/files` workspace so us
 | Issue | Title | Status | File |
 |---|---|---|---|
 | 26 | CommandEmpty unreachable in Quick Switcher | resolved | `components/quick-switcher.tsx` |
+| 41 | Quick Switcher Uses Lighter Translucent Styling Instead of Shortcuts Dialog | resolved | `components/quick-switcher.tsx` |
 
 ---
 
