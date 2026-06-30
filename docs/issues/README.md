@@ -46,3 +46,4 @@ Issue template: `docs/issues/template.md`
 | 38 | Right Sidebar Equal-Width Expansion and Resizable Drag Handle | in-progress | Story 5 | `components/app-shell/*`, `stores/layout.ts` |
 | 39 | Duplicate Recent Entries and Close Button Misalignment in Quick Switcher | resolved | Story 24 | `components/quick-switcher.tsx`, `components/ui/command.tsx` |
 | 40 | Add Geist Sans Font as Primary UI Font | resolved | None | `app/layout.tsx` |
+| 41 | Next.js 16.3 Instant Navigations Adaptation | resolved | None | `package.json`, `pnpm-lock.yaml`, `next.config.ts`, `app/page.tsx`, `app/auth/sign-in/page.tsx` |

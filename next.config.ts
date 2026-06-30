@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     // Enable future Turbopack options here (e.g., resolveAlias, filesystem cache)
   },
   cacheComponents: process.env.NEXT_CACHE_COMPONENTS !== "false",
+  partialPrefetching: true,
   images: {
     remotePatterns: [
       {

@@ -1,18 +1,20 @@
 # Progress
 
-Current story: `docs/stories/story-27.md`
+Current issue: `docs/issues/issue-41.md`
 
-Current section: Story 27 — Reasoning/Thinking Collapsible in AI Chat
+Current section: Issue 41 — Next.js 16.3 Instant Navigations Adaptation
 
 Previous tasks (latest completed batch only):
-- [x] Add `messageToReasoning` helper; remove reasoning from `messageToPlainText`
-- [x] Add `ChatReasoning` collapsible component
-- [x] Wire `ChatReasoning` into assistant message row above `Response`
-- [x] Add `sendReasoning: true` to `toUIMessageStreamResponse`
+- [x] Bump `next` + ESLint packages to `16.3.0-preview.5` in `package.json`
+- [x] Enable `partialPrefetching` in `next.config.ts`
+- [x] Add `export const instant = false` to redirect pages
+- [x] Run `pnpm install` to update lockfile
 - [x] Run `pnpm lint` and `pnpm build`
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
-- Branch: `feature/reasoning-collapsible`
+- Branch: `chore/next-16-3-instant-navigations`
+- 16.3 is currently a Preview release (`preview` dist-tag = `16.3.0-preview.5`); stable not yet published.
+- Lint + build pass on 16.3.0-preview.5. Both redirect pages prerender as Static (○); `/files` and `/p` routes remain Partial Prerender (◐).
