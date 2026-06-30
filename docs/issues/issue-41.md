@@ -4,7 +4,7 @@
 - chore
 
 ## Status
-- resolved
+- resolved — PR [#116](https://github.com/Ramgopalbhat10/notes/pull/116)
 
 ## Related Story
 - None
