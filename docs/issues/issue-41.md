@@ -1,51 +1,47 @@
-# Issue 41 — Next.js 16.3 Instant Navigations Adaptation
+# Issue 41 — Quick Switcher Uses Lighter Translucent Styling Instead of Shortcuts Dialog
 
 ## Type
-- chore
+- bug
 
 ## Status
-- resolved — PR [#116](https://github.com/Ramgopalbhat10/notes/pull/116)
+- resolved
 
 ## Related Story
-- None
+- Story 24 — Quick Switcher & Command Palette
 
 ## Description
-- Adopt the Next.js 16.3 "Instant Navigations" feature set: enable Partial Prefetching, opt redirect-only routes into the Block strategy with `export const instant = false`, and bump the Next.js + ESLint packages to the 16.3 preview release so the new route config and config flag are recognized.
+- The Quick Switcher dialog uses a translucent `bg-popover/95` background with `backdrop-blur`, while the Shortcuts dialog uses a solid `bg-background` with a full `border-border`. The Quick Switcher therefore appears visually lighter/duller and inconsistent with the rest of the app's modal chrome.
 
 ## Root Cause
-- Next.js 16.3 introduces Instant Navigations (Stream / Cache / Block), Partial Prefetching, and Instant Insights (slow/blocking navigations become dev errors when `cacheComponents` is enabled). The repo already has `cacheComponents` enabled with `'use cache'` and `<Suspense>` boundaries, so most routes are instant-ready. However, the two redirect-only pages (`app/page.tsx`, `app/auth/sign-in/page.tsx`) await nothing meaningful and have no loading shell — they would trigger Instant Insights dev errors without an explicit Block opt-out. Partial Prefetching is also not yet enabled, leaving the prefetch-request fan-out from 16.2 behavior in place.
+- The `CommandDialog` wrapper in `components/quick-switcher.tsx` sets `contentClassName="max-w-2xl border-border/70 bg-popover/95 p-0 backdrop-blur"`. The Shortcuts component (`components/app-shortcuts.tsx`) uses a solid background (`bg-background`) and full border (`border-border`) via `DialogContent`.
 
 ## Fix / Approach
-1. Bump `next`, `@next/eslint-plugin-next`, and `eslint-config-next` from `^16.2.4` to `16.3.0-preview.5` (exact pin; 16.3 is currently a Preview release).
-2. Enable `partialPrefetching: true` in `next.config.ts` (top-level, alongside `cacheComponents`).
-3. Add `export const instant = false` to `app/page.tsx` and `app/auth/sign-in/page.tsx` to opt redirect-only routes into the Block strategy and satisfy Instant Insights.
-4. Run `pnpm install` to update the lockfile, then verify with `pnpm lint` and `pnpm build`.
+- Update the Quick Switcher `contentClassName` to match the solid styling of the Shortcuts dialog:
+  - `bg-popover/95` → `bg-background`
+  - `border-border/70` → `border-border`
+  - Remove `backdrop-blur`
+  - Add `gap-0 overflow-hidden` for layout parity.
 
 ## Files Changed
-- `package.json`
-- `pnpm-lock.yaml`
-- `next.config.ts`
-- `app/page.tsx`
-- `app/auth/sign-in/page.tsx`
+- `components/quick-switcher.tsx`
 
 ## Dev Log
 
 | Date | Unit | Summary |
 |---|---|---|
-| 2026-06-30 | chore | Bumped Next.js + ESLint packages to 16.3.0-preview.5, enabled partialPrefetching, added instant=false to redirect pages |
+| 2026-06-21 | fix | Align Quick Switcher dialog background/border with Shortcuts dialog |
 
 ## Test Plan
-- `pnpm lint` passes.
-- `pnpm build` passes with Turbopack.
-- Manual: navigate to `/` and `/auth/sign-in` (with auth bypass) — both redirect to `/files` without Instant Insights dev errors.
-- Manual: verify prefetch request fan-out is reduced when scrolling the file tree (Partial Prefetching active).
+- Open Quick Switcher (`Cmd/Ctrl + K`) and Shortcuts dialog (`Cmd/Ctrl + ?`) side-by-side; confirm matching solid background and border.
+- Verify no visual regression in Quick Switcher item list or scroll behavior.
+- Run `pnpm lint` and `pnpm build`.
 
 ## Definition of Done
 - Fix verified (lint + build pass).
 - Status set to `resolved`.
 - Dev Log updated.
 - Progress updated in `docs/PROGRESS.md`.
+- If related to a story, story's Issues section updated with resolved status.
 
 ## References
-- [Next.js 16.3 — Instant Navigations](https://nextjs.org/blog/next-16-3-instant-navigations)
-- `docs/decisions/next16-upgrade.md`
+- Story 24 — Quick Switcher & Command Palette
