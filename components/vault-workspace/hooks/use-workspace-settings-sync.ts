@@ -10,11 +10,11 @@ type UseWorkspaceSettingsSyncOptions = {
  * Bootstraps the workspace layout store from persisted user settings.
  *
  * Runs at most once per page load. Uses a module-scoped flag rather than a
- * `useRef`/component-scoped state so it survives `VaultWorkspace` remounts —
- * the `files/[[...path]]/layout.tsx` `Suspense` + `connection()` boundary
- * re-mounts the workspace tree on every file switch, which would otherwise
- * re-run the effect and clobber in-session layout state (e.g. the header
- * centered-layout toggle) with the stale server value.
+ * `useRef`/component-scoped state so it survives `VaultWorkspace` remounts.
+ * Previously the `files/[[...path]]/layout.tsx` `Suspense` + `connection()`
+ * boundary re-mounted the workspace tree on every file switch; that boundary
+ * has been removed, but the module-scoped guard is retained to protect
+ * against any future remount scenarios and full page reloads.
  *
  * Header affordances mutate the layout store directly, and the settings
  * modal's save/reset paths call `setCentered` themselves after persisting,

@@ -41,23 +41,18 @@ export async function generateMetadata({
   };
 }
 
-async function FilesConnectionGate({ children }: { children: ReactNode }) {
+async function DynamicMarker() {
   await connection();
-  return <>{children}</>;
-}
-
-function FilesSuspenseFallback() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
-      Loading workspace…
-    </div>
-  );
+  return null;
 }
 
 export default function FilesLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<FilesSuspenseFallback />}>
-      <FilesConnectionGate>{children}</FilesConnectionGate>
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <DynamicMarker />
+      </Suspense>
+      {children}
+    </>
   );
 }

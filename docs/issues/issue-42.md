@@ -4,7 +4,7 @@
 - chore
 
 ## Status
-- resolved — PR [#116](https://github.com/Ramgopalbhat10/notes/pull/116)
+- resolved — PR [#116](https://github.com/Ramgopalbhat10/notes/pull/116) (merged), PR [#117](https://github.com/Ramgopalbhat10/notes/pull/117) (DynamicMarker fix)
 
 ## Related Story
 - None
@@ -27,12 +27,15 @@
 - `next.config.ts`
 - `app/page.tsx`
 - `app/auth/sign-in/page.tsx`
+- `app/files/[[...path]]/layout.tsx` (PR #117)
+- `components/vault-workspace/hooks/use-workspace-settings-sync.ts` (PR #117)
 
 ## Dev Log
 
 | Date | Unit | Summary |
 |---|---|---|
 | 2026-06-30 | chore | Bumped Next.js + ESLint packages to 16.3.0-preview.5, enabled partialPrefetching, added instant=false to redirect pages |
+| 2026-07-01 | fix | Isolated connection() in DynamicMarker with own Suspense(null) boundary to prevent workspace remount on file navigation (PR #117) |
 
 ## Test Plan
 - `pnpm lint` passes.
