@@ -48,3 +48,4 @@ Issue template: `docs/issues/template.md`
 | 40 | Add Geist Sans Font as Primary UI Font | resolved | None | `app/layout.tsx` |
 | 41 | Quick Switcher Uses Lighter Translucent Styling Instead of Shortcuts Dialog | resolved | Story 24 | `components/quick-switcher.tsx` |
 | 42 | Next.js 16.3 Instant Navigations Adaptation | resolved | None | `package.json`, `pnpm-lock.yaml`, `next.config.ts`, `app/page.tsx`, `app/auth/sign-in/page.tsx` |
+| 43 | @libsql/client fails to load in Turbopack serverless bundles (500 on save) | resolved | Story 28 | `next.config.ts` |
