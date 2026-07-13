@@ -6,10 +6,13 @@ Current section: Issue 43 — @libsql/client Turbopack bundling fix (resolved)
 
 Previous tasks (latest completed batch only):
 - [x] Identified root cause: Turbopack mangles `@libsql/client` module name in serverless bundles
-- [x] Added `serverExternalPackages: ["@libsql/client"]` to `next.config.ts`
+- [x] Added `serverExternalPackages: ["@libsql/client"]` to `next.config.ts` (defense in depth)
+- [x] Review confirmed `serverExternalPackages` alone insufficient — Turbopack still emits hashed module specifier
+- [x] Replaced static `@libsql/client` import with `createRequire` in `lib/platform/db.ts` (actual fix)
 - [x] Cherry-picked fix onto `fix/libsql-server-external-package` branch from latest `main`
-- [x] Created issue-43.md and learning entry
+- [x] Created issue-43.md and learning entry (updated to reflect both attempts)
 - [x] `pnpm lint` passes
+- [x] `npx tsc --noEmit` passes
 - [x] `pnpm build` passes
 
 Next tasks:
