@@ -23,6 +23,7 @@ type UseWorkspaceHeaderOptions = {
   hasFile: boolean;
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;
+  onOpenVersionHistorySidebar?: () => void;
   onOpenQuickSwitcher?: () => void;
   sharingState?: SharingState;
   onTogglePublic?: () => void;
@@ -51,6 +52,7 @@ export function useWorkspaceHeader(options: UseWorkspaceHeaderOptions): ReactNod
     hasFile,
     onOpenChatSidebar,
     onOpenOutlineSidebar,
+    onOpenVersionHistorySidebar,
     onOpenQuickSwitcher,
     sharingState,
     onTogglePublic,
@@ -80,6 +82,7 @@ export function useWorkspaceHeader(options: UseWorkspaceHeaderOptions): ReactNod
         hasFile={hasFile}
         onOpenChatSidebar={onOpenChatSidebar}
         onOpenOutlineSidebar={onOpenOutlineSidebar}
+        onOpenVersionHistorySidebar={onOpenVersionHistorySidebar}
         onOpenQuickSwitcher={onOpenQuickSwitcher}
         sharingState={hasFile ? sharingState : undefined}
         onTogglePublic={hasFile ? onTogglePublic : undefined}
@@ -107,6 +110,7 @@ export function useWorkspaceHeader(options: UseWorkspaceHeaderOptions): ReactNod
       hasFile,
       onOpenChatSidebar,
       onOpenOutlineSidebar,
+      onOpenVersionHistorySidebar,
       onOpenQuickSwitcher,
       sharingState,
       onTogglePublic,

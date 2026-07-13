@@ -12,6 +12,7 @@ import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
 import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
 import { deleteFileMetas } from "@/lib/fs/file-meta";
+import { deleteFileVersionsByPrefix } from "@/lib/fs/file-versions";
 import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 const DELETE_CHUNK_CONCURRENCY = 4;
@@ -116,6 +117,7 @@ export async function DELETE(request: NextRequest) {
       await revalidateFileTags(relativeKeys);
       void deleteFileMetas(relativeKeys);
     }
+    void deleteFileVersionsByPrefix(prefix);
 
     // Incrementally update manifest instead of invalidating
     const { deleteFolder } = await import("@/lib/manifest-updater");

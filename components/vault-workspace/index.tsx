@@ -27,6 +27,7 @@ export function VaultWorkspace({
   onOpenChatSidebar,
   onOpenOutlineSidebar,
   onOpenAssistantSidebar,
+  onOpenVersionHistorySidebar,
   onOpenQuickSwitcher,
 }: {
   className?: string;
@@ -34,6 +35,7 @@ export function VaultWorkspace({
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;
   onOpenAssistantSidebar?: () => void;
+  onOpenVersionHistorySidebar?: () => void;
   onOpenQuickSwitcher?: () => void;
 }) {
   const selectedPath = useTreeStore((state) => {
@@ -62,6 +64,8 @@ export function VaultWorkspace({
   const dirty = useEditorStore((state) => state.dirty);
   const loadFile = useEditorStore((state) => state.loadFile);
   const reset = useEditorStore((state) => state.reset);
+  const viewingVersion = useEditorStore((state) => state.viewingVersion);
+  const setViewingVersion = useEditorStore((state) => state.setViewingVersion);
   const save = useEditorStore((state) => state.save);
   const { toast } = useToast();
   const centered = useWorkspaceLayoutStore((state) => state.centered);
@@ -217,6 +221,7 @@ export function VaultWorkspace({
     hasFile,
     onOpenChatSidebar,
     onOpenOutlineSidebar,
+    onOpenVersionHistorySidebar,
     onOpenQuickSwitcher,
     sharingState,
     onTogglePublic: handleTogglePublic,
@@ -251,6 +256,8 @@ export function VaultWorkspace({
       setContent={setContent}
       onSelectionAction={(action, source) => handleTriggerAction(action, "selection", source)}
       selectionAiBusy={aiStreaming}
+      viewingVersion={viewingVersion}
+      onCloseVersionPreview={() => setViewingVersion(null)}
     />
   );
 

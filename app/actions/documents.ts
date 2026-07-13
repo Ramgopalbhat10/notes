@@ -4,8 +4,9 @@ import { revalidateTag, updateTag } from "next/cache";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getServerSession, isAllowedUser } from "@/lib/auth";
 import { writeMarkdownFile } from "@/lib/fs/file-writer";
+import { captureFileVersion } from "@/lib/fs/file-versions";
 import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
-import { getFileCacheTag, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
+import { getFileCacheTag, readFileContent, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
 import { getErrorMessage, getErrorStatus } from "@/lib/http/errors";
 
 export type SaveDocumentInput = {
@@ -34,6 +35,20 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Save
   const content = typeof input.content === "string" ? input.content : "";
   const ifMatchEtag = typeof input.ifMatchEtag === "string" ? input.ifMatchEtag : undefined;
 
+  // Read the current (soon-to-be-previous) content for version history.
+  // Done before the write so we capture the state that's about to be replaced.
+  let previousContent: string | null = null;
+  let previousEtag: string | null = null;
+  try {
+    const previous = await readFileContent(key);
+    if (previous) {
+      previousContent = previous.content;
+      previousEtag = previous.etag ?? null;
+    }
+  } catch {
+    // Non-critical: don't block the save if we can't read the previous content
+  }
+
   try {
     const { etag, lastModified } = await writeMarkdownFile({ key, content, ifMatchEtag });
 
@@ -58,6 +73,22 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Save
     } catch (error) {
       console.error("Failed to hot-update manifest after save", error);
       revalidateTag(MANIFEST_CACHE_TAG, "max");
+    }
+
+    // Capture a version snapshot of the previous state (after successful save).
+    // The live S3 object is now the new content; versions store what it was before.
+    if (previousContent !== null && previousContent !== content) {
+      const authorId = (session?.user as { id?: string } | null)?.id ?? null;
+      try {
+        await captureFileVersion({
+          fileKey: key,
+          content: previousContent,
+          etag: previousEtag,
+          authorId,
+        });
+      } catch (error) {
+        console.error("Failed to capture file version", error);
+      }
     }
 
     return { ok: true, etag, lastModified };

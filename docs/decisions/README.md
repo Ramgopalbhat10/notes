@@ -19,4 +19,5 @@ Suggested structure:
 |---|---|
 | Caching strategy | `docs/decisions/ADR-caching-strategy.md` |
 | Next.js 16 upgrade | `docs/decisions/next16-upgrade.md` |
+| File version history storage | `docs/decisions/ADR-file-version-history-storage.md` |
 

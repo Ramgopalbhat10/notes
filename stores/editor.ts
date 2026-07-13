@@ -30,6 +30,12 @@ type SelectionRange = {
   to: number;
 };
 
+type ViewingVersion = {
+  id: string;
+  content: string;
+  createdAt: string;
+};
+
 type EditorSelectionBlock<T = unknown> = {
   id: string;
   children?: T[];
@@ -57,6 +63,8 @@ type EditorState = {
   selection: SelectionRange | null;
   selectedText: string;
   selectedBlockIds: string[];
+  viewingVersion: ViewingVersion | null;
+  setViewingVersion: (version: ViewingVersion | null) => void;
   loadFile: (key: string | null) => Promise<void>;
   setMode: (mode: EditorMode) => void;
   setContent: (value: string) => void;
@@ -77,7 +85,7 @@ type EditorState = {
 
 const initialState: Omit<
   EditorState,
-  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "setSelectedBlockIds" | "registerEditorView" | "applyAiResult"
+  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "setSelectedBlockIds" | "setViewingVersion" | "registerEditorView" | "applyAiResult"
 > = {
   fileKey: null,
   content: "",
@@ -94,6 +102,7 @@ const initialState: Omit<
   selection: null,
   selectedText: "",
   selectedBlockIds: [],
+  viewingVersion: null,
 };
 
 let currentAbort: AbortController | null = null;
@@ -250,6 +259,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         selection: null,
         selectedText: "",
         selectedBlockIds: [],
+        viewingVersion: null,
       });
     } else {
       set({
@@ -267,6 +277,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         selection: null,
         selectedText: "",
         selectedBlockIds: [],
+        viewingVersion: null,
       });
     }
 
@@ -323,6 +334,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           selection: null,
           selectedText: "",
           selectedBlockIds: [],
+          viewingVersion: null,
         }));
 
         if (responseEtag || responseLastModifiedIso) {
@@ -385,6 +397,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         selection: null,
         selectedText: "",
         selectedBlockIds: [],
+        viewingVersion: null,
       });
 
       firstOpenValidatedKeys.add(key);
@@ -454,6 +467,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setSelectedBlockIds(selectedBlockIds) {
     set({ selectedBlockIds });
+  },
+
+  setViewingVersion(version) {
+    set({ viewingVersion: version ?? null });
   },
 
   registerEditorView(view) {

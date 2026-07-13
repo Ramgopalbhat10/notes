@@ -12,6 +12,7 @@ import {
   Eye,
   FilePenLine,
   Globe,
+  History,
   Link as LinkIcon,
   ListTree,
   Loader2,
@@ -59,6 +60,7 @@ export type WorkspaceHeaderProps = {
   hasFile: boolean;
   onOpenChatSidebar?: () => void;
   onOpenOutlineSidebar?: () => void;
+  onOpenVersionHistorySidebar?: () => void;
   onOpenQuickSwitcher?: () => void;
   sharingState?: SharingState;
   onTogglePublic?: () => void;
@@ -86,6 +88,7 @@ export function WorkspaceHeader({
   hasFile,
   onOpenChatSidebar,
   onOpenOutlineSidebar,
+  onOpenVersionHistorySidebar,
   onOpenQuickSwitcher,
   sharingState,
   onTogglePublic,
@@ -311,6 +314,22 @@ export function WorkspaceHeader({
                     variant="ghost"
                     size="icon"
                     className={cn(iconButtonClass, "hidden md:inline-flex")}
+                    onClick={onOpenVersionHistorySidebar}
+                    disabled={!onOpenVersionHistorySidebar}
+                    aria-label="Version history"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Version history</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(iconButtonClass, "hidden md:inline-flex")}
                     onClick={() => setShortcutsOpen(true)}
                     aria-label="Keyboard shortcuts"
                   >
@@ -468,6 +487,15 @@ export function WorkspaceHeader({
                     <MessageSquare className="h-4 w-4" />
                     <span className="text-sm">Chat</span>
                     <Kbd className="ml-auto">⌘J</Kbd>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    className="flex items-center gap-2"
+                    onClick={onOpenVersionHistorySidebar}
+                    disabled={!onOpenVersionHistorySidebar}
+                  >
+                    <History className="h-4 w-4" />
+                    <span className="text-sm">Version history</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />

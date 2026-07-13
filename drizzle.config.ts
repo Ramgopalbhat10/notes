@@ -15,7 +15,7 @@ if (!tursoAuthToken) {
 }
 
 export default defineConfig({
-  schema: "./drizzle/schema.ts",
+  schema: ["./drizzle/schema.ts", "./drizzle/app-schema.ts"],
   out: "./drizzle/migrations",
   dialect: "turso",
   dbCredentials: {
