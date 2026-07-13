@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const cacheComponents = process.env.NEXT_CACHE_COMPONENTS !== "false";
 
 const nextConfig: NextConfig = {
+  // @libsql/client ships native bindings that Turbopack cannot bundle for
+  // serverless runtimes. Keep it external so Node resolves it from node_modules.
+  serverExternalPackages: ["@libsql/client"],
   turbopack: {
     // Pin the repo root explicitly so Turbopack does not walk up to unrelated lockfiles.
     root: process.cwd(),
