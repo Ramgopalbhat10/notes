@@ -1,15 +1,14 @@
-import { createRequire } from "node:module";
-import type { Client } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { createClient, type Client } from "@libsql/client/web";
+import { drizzle } from "drizzle-orm/libsql/web";
 
 /**
- * Use createRequire instead of a static ESM import so that Turbopack does
- * not bundle @libsql/client into a hashed server chunk (e.g.
- * "@libsql/client-bc2a1f2e4d569585") that Node cannot resolve at runtime.
- * Node resolves the package from node_modules at call time instead.
+ * Shared Turso/Drizzle client used by auth and app tables (same `db` export).
+ *
+ * On Vercel we use the HTTP `/web` entries — Turso's serverless client — not
+ * the Node entry with native bindings. Pair with `transpilePackages` for
+ * `@libsql/client` in next.config.ts so Turbopack bundles it instead of
+ * emitting a broken hashed external (`@libsql/client-<hash>`).
  */
-const require = createRequire(import.meta.url);
-
 function requireEnv(...names: string[]): string {
   for (const name of names) {
     const value = process.env[name];
@@ -38,8 +37,6 @@ let client: Client | null = null;
 
 export function getTursoClient(): Client {
   if (!client) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createClient } = require("@libsql/client") as typeof import("@libsql/client");
     client = createClient({
       url: tursoUrl,
       authToken: tursoAuthToken,

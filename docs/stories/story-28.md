@@ -60,6 +60,8 @@ Goal: Let users view the latest 5 saved versions of any markdown file (plus the 
 
 | Issue | Title | Status | File |
 |---|---|---|---|
+| 43 | @libsql/client fails to load in Turbopack serverless bundles (500 on save) | resolved | `docs/issues/issue-43.md` |
+| 44 | @libsql/client hashed Turbopack external still 500s after createRequire fix | resolved | `docs/issues/issue-44.md` |
 
 ---
 

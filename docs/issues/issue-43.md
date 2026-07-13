@@ -64,3 +64,4 @@
 - PR #118 (merged — file version history feature)
 - Story: `docs/stories/story-28.md`
 - Learning: `docs/learnings/2026-07-13-turbopack-native-package-bundling.md`
+- Follow-up: Issue 44 (`docs/issues/issue-44.md`) — createRequire fix was insufficient; production still emitted hashed `@libsql/client-*` via `drizzle-orm/libsql`.
