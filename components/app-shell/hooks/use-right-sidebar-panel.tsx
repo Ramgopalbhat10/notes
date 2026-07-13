@@ -23,7 +23,9 @@ export function useRightSidebarPanel({
     ? "Outline"
     : rightSidebarPanel === "assistant"
       ? "Assistant"
-      : "Chat";
+      : rightSidebarPanel === "versions"
+        ? "History"
+        : "Chat";
   const showNewChatAction = rightSidebarPanel === "chat";
 
   const renderedRight = useMemo(() => {

@@ -12,6 +12,7 @@ import { applyVaultPrefix, getBucket, getS3Client, stripVaultPrefix } from "@/li
 import { normalizeFileKey, normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { revalidateFileTags, toRelativeKeys } from "@/lib/fs/file-cache";
 import { renameFileMeta } from "@/lib/fs/file-meta";
+import { renameFileVersions } from "@/lib/fs/file-versions";
 import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 const FOLDER_COPY_CONCURRENCY = 8;
@@ -152,6 +153,7 @@ async function moveFolderInS3(
     const targetKey = stripVaultPrefix(copyResults[index] ?? "");
     if (sourceKey && targetKey && !sourceKey.endsWith("/") && !targetKey.endsWith("/")) {
       void renameFileMeta(sourceKey, targetKey);
+      void renameFileVersions(sourceKey, targetKey);
     }
   }
 
@@ -206,6 +208,7 @@ async function moveFileInS3(
 
   await revalidateFileTags([fromKey, toKey]);
   void renameFileMeta(fromKey, toKey);
+  void renameFileVersions(fromKey, toKey);
 
   // Incrementally update manifest instead of invalidating
   const { moveFile } = await import("@/lib/manifest-updater");

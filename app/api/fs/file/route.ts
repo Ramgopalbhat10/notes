@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
-import { getCachedFile, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
+import { getCachedFile, readFileContent, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
 import { deleteFileMeta } from "@/lib/fs/file-meta";
 import { parseIfNoneMatch } from "@/lib/etag";
 import { writeMarkdownFile } from "@/lib/fs/file-writer";
+import { captureFileVersion, deleteFileVersions } from "@/lib/fs/file-versions";
 import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
 
 const CACHE_CONTROL_HEADER = "private, no-cache, must-revalidate";
@@ -126,6 +127,20 @@ export async function PUT(request: NextRequest) {
     const key = normalizeFileKey(body?.key);
     const content = typeof body?.content === "string" ? body.content : "";
     const ifMatchEtag = typeof body?.ifMatchEtag === "string" ? body.ifMatchEtag : undefined;
+
+    // Read the current (soon-to-be-previous) content for version history.
+    let previousContent: string | null = null;
+    let previousEtag: string | null = null;
+    try {
+      const previous = await readFileContent(key);
+      if (previous) {
+        previousContent = previous.content;
+        previousEtag = previous.etag ?? null;
+      }
+    } catch {
+      // Non-critical: don't block the save if we can't read the previous content
+    }
+
     const { etag: newEtag, lastModified } = await writeMarkdownFile({ key, content, ifMatchEtag });
 
     await revalidateFileTags([key]);
@@ -146,6 +161,21 @@ export async function PUT(request: NextRequest) {
       lastModified,
       size: Buffer.byteLength(content, "utf-8"),
     });
+
+    // Capture a version snapshot of the previous state (after successful save).
+    if (previousContent !== null && previousContent !== content) {
+      const authorId = (authRes.session?.user as { id?: string } | null)?.id ?? null;
+      try {
+        await captureFileVersion({
+          fileKey: key,
+          content: previousContent,
+          etag: previousEtag,
+          authorId,
+        });
+      } catch (error) {
+        console.error("Failed to capture file version", error);
+      }
+    }
 
     return NextResponse.json({
       etag: newEtag,
@@ -182,6 +212,7 @@ export async function DELETE(request: NextRequest) {
 
     await revalidateFileTags([key]);
     void deleteFileMeta(key);
+    void deleteFileVersions(key);
 
     // Incrementally update manifest instead of invalidating
     const { deleteFile } = await import("@/lib/manifest-updater");

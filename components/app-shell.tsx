@@ -46,6 +46,7 @@ type AppShellChildren = React.ReactNode | ((helpers: {
   openChatSidebar: () => void;
   openOutlineSidebar: () => void;
   openAssistantSidebar: () => void;
+  openVersionHistorySidebar: () => void;
   openQuickSwitcher: () => void;
 }) => React.ReactNode);
 
@@ -123,6 +124,7 @@ export function AppShell({
     openChatSidebar,
     openOutlineSidebar,
     openAssistantSidebar,
+    openVersionHistorySidebar,
     handleOutlineNavigateOnMobile,
   } = useRightMobileSheet({
     hasRight,
@@ -172,6 +174,7 @@ export function AppShell({
       openChatSidebar,
       openOutlineSidebar,
       openAssistantSidebar,
+      openVersionHistorySidebar,
       openQuickSwitcher,
     })
     : children;

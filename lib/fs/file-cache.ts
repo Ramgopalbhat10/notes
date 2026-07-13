@@ -142,6 +142,32 @@ export async function getCachedFile(key: string): Promise<CachedFileRecord> {
   };
 }
 
+/**
+ * Read the current file content from Redis cache (fast path) or S3 (fallback).
+ *
+ * Unlike {@link getCachedFile}, this is a plain async function (no `"use cache"`)
+ * so it can be safely called from server actions / mutations where we need
+ * fresh, non-Next-cached data (e.g. capturing the "before" snapshot on save,
+ * or preserving current content before a rollback).
+ *
+ * @returns The file record, or `null` if the file does not exist.
+ */
+export async function readFileContent(
+  key: string,
+): Promise<Omit<CachedFileRecord, "cacheStatus"> | null> {
+  const fromRedis = await readFromRedis(key);
+  if (fromRedis) {
+    return fromRedis;
+  }
+  try {
+    const result = await fetchFileFromS3(key);
+    await writeToRedis(key, result);
+    return result;
+  } catch {
+    return null;
+  }
+}
+
 export async function revalidateFileTags(keys: string[]): Promise<void> {
   const normalized = keys.map((key) => key.trim()).filter((key) => key.length > 0);
   if (normalized.length === 0) {

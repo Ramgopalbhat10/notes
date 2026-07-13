@@ -6,8 +6,16 @@ import { PreviewSelectionSurface } from "@/components/ai-actions/preview-selecti
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectedFilePlaceholder } from "@/components/selected-file-placeholder";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { MarkdownPreview } from "@/components/markdown-preview";
+import { History, X } from "lucide-react";
 import type { RouteTargetState } from "@/lib/tree/types";
 import type { AiActionType } from "../types";
+
+type ViewingVersion = {
+  id: string;
+  content: string;
+  createdAt: string;
+};
 
 type WorkspaceBodyProps = {
   selectedPath: string | null;
@@ -23,6 +31,8 @@ type WorkspaceBodyProps = {
   setContent: (value: string) => void;
   onSelectionAction?: (action: AiActionType, source?: AiActionSelectionSource) => void;
   selectionAiBusy?: boolean;
+  viewingVersion?: ViewingVersion | null;
+  onCloseVersionPreview?: () => void;
 };
 
 export function WorkspaceBody({
@@ -39,6 +49,8 @@ export function WorkspaceBody({
   setContent,
   onSelectionAction,
   selectionAiBusy,
+  viewingVersion,
+  onCloseVersionPreview,
 }: WorkspaceBodyProps) {
   if (!selectedPath) {
     if (routeTarget) {
@@ -79,6 +91,43 @@ export function WorkspaceBody({
         <Skeleton className="h-4 w-11/12" />
         <Skeleton className="h-4 w-10/12" />
         <Skeleton className="h-4 w-9/12" />
+      </div>
+    );
+  }
+
+  // Version preview mode: read-only render of a historical snapshot
+  if (viewingVersion) {
+    const versionDate = new Date(viewingVersion.createdAt);
+    const formattedDate = Number.isNaN(versionDate.getTime())
+      ? ""
+      : versionDate.toLocaleString([], {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm">
+          <History className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <span className="text-muted-foreground">
+            Viewing version from <span className="font-medium text-foreground">{formattedDate}</span> — this is a historical snapshot.
+          </span>
+          {onCloseVersionPreview && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={onCloseVersionPreview}
+              aria-label="Close version preview"
+            >
+              <X className="h-3.5 w-3.5" />
+              Close
+            </Button>
+          )}
+        </div>
+        <MarkdownPreview content={viewingVersion.content} />
       </div>
     );
   }

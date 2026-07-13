@@ -21,6 +21,7 @@ type UseRightMobileSheetResult = {
   openChatSidebar: () => void;
   openOutlineSidebar: () => void;
   openAssistantSidebar: () => void;
+  openVersionHistorySidebar: () => void;
   handleOutlineNavigateOnMobile: () => void;
 };
 
@@ -90,6 +91,10 @@ export function useRightMobileSheet({
     openRightPanel("assistant");
   }, [openRightPanel]);
 
+  const openVersionHistorySidebar = useCallback(() => {
+    openRightPanel("versions");
+  }, [openRightPanel]);
+
   const handleOutlineNavigateOnMobile = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -113,6 +118,7 @@ export function useRightMobileSheet({
     openChatSidebar,
     openOutlineSidebar,
     openAssistantSidebar,
+    openVersionHistorySidebar,
     handleOutlineNavigateOnMobile,
   };
 }

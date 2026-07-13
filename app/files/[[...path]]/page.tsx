@@ -9,6 +9,7 @@ import { SidebarChat, type SidebarChatHandle } from "@/components/ai-chat/sideba
 import { FileTree } from "@/components/file-tree";
 import type { ExternalTreeActionRequest } from "@/components/file-tree/types";
 import { OutlineSidebar } from "@/components/vault-workspace/sections/outline-sidebar";
+import { VersionHistorySidebar } from "@/components/version-history/version-history-sidebar";
 import { VaultWorkspace } from "@/components/vault-workspace";
 import { useToast } from "@/hooks/use-toast";
 import { authClient } from "@/lib/auth/client";
@@ -236,11 +237,14 @@ export default function FilesPage() {
   );
   const outlineSidebar = useMemo(() => <OutlineSidebar />, []);
   const assistantSidebar = useMemo(() => <AiAssistantSidebar />, []);
+  const versionHistorySidebar = useMemo(() => <VersionHistorySidebar />, []);
   const rightSidebar = rightSidebarPanel === "outline"
     ? outlineSidebar
     : rightSidebarPanel === "assistant"
       ? assistantSidebar
-      : chatSidebar;
+      : rightSidebarPanel === "versions"
+        ? versionHistorySidebar
+        : chatSidebar;
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -268,12 +272,13 @@ export default function FilesPage() {
         onQuickCreateFile={(parentId) => handleQuickTreeAction("create-file", parentId)}
         onQuickCreateFolder={(parentId) => handleQuickTreeAction("create-folder", parentId)}
       >
-        {({ openChatSidebar, openOutlineSidebar, openAssistantSidebar, openQuickSwitcher }) => (
+        {({ openChatSidebar, openOutlineSidebar, openAssistantSidebar, openVersionHistorySidebar, openQuickSwitcher }) => (
           <VaultWorkspace
             onHeaderChange={setHeader}
             onOpenChatSidebar={openChatSidebar}
             onOpenOutlineSidebar={openOutlineSidebar}
             onOpenAssistantSidebar={openAssistantSidebar}
+            onOpenVersionHistorySidebar={openVersionHistorySidebar}
             onOpenQuickSwitcher={openQuickSwitcher}
           />
         )}

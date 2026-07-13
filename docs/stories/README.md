@@ -33,3 +33,4 @@ Story template: `docs/stories/template.md`
 | 25 | Configurable Default Chat Model + Assistant Sidebar Redesign | `docs/stories/story-25.md` |
 | 26 | Web Search Tools in AI Chat | `docs/stories/story-26.md` |
 | 27 | Reasoning/Thinking Collapsible in AI Chat | `docs/stories/story-27.md` |
+| 28 | Markdown File Version History & Rollback | `docs/stories/story-28.md` |
