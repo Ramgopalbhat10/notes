@@ -65,6 +65,12 @@ type EditorState = {
   selectedBlockIds: string[];
   viewingVersion: ViewingVersion | null;
   setViewingVersion: (version: ViewingVersion | null) => void;
+  applyRollbackResult: (result: {
+    key: string;
+    content: string;
+    etag: string | null;
+    lastModified: string;
+  }) => Promise<void>;
   loadFile: (key: string | null) => Promise<void>;
   setMode: (mode: EditorMode) => void;
   setContent: (value: string) => void;
@@ -85,7 +91,7 @@ type EditorState = {
 
 const initialState: Omit<
   EditorState,
-  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "setSelectedBlockIds" | "setViewingVersion" | "registerEditorView" | "applyAiResult"
+  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "setSelectedBlockIds" | "setViewingVersion" | "applyRollbackResult" | "registerEditorView" | "applyAiResult"
 > = {
   fileKey: null,
   content: "",
@@ -471,6 +477,60 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setViewingVersion(version) {
     set({ viewingVersion: version ?? null });
+  },
+
+  async applyRollbackResult(result) {
+    const { key, content, etag, lastModified } = result;
+
+    // Update the BlockNote editor if it is mounted (edit mode)
+    if (activeEditorView) {
+      await replaceActiveEditorDocument(content);
+    }
+
+    // Bail out if the user navigated to a different file during the rollback
+    if (get().fileKey !== key) {
+      return;
+    }
+
+    set({
+      content,
+      originalContent: content,
+      etag,
+      lastModified,
+      lastSavedAt: lastModified,
+      dirty: false,
+      status: "idle",
+      error: null,
+      conflictMessage: null,
+      errorSource: null,
+      viewingVersion: null,
+      selection: null,
+      selectedText: "",
+      selectedBlockIds: [],
+    });
+
+    // Update the document cache so the next loadFile doesn't short-circuit
+    // with stale content
+    rememberDocument(key, { content, etag, lastModified });
+
+    // Sync the tree node etag/lastModified
+    useTreeStore.setState((treeState) => {
+      const target = treeState.nodes[key];
+      if (!target || target.type !== "file") {
+        return treeState;
+      }
+      return {
+        ...treeState,
+        nodes: {
+          ...treeState.nodes,
+          [key]: {
+            ...target,
+            etag: etag ?? target.etag,
+            lastModified,
+          },
+        },
+      };
+    });
   },
 
   registerEditorView(view) {

@@ -73,7 +73,7 @@ export function VersionHistorySidebar() {
   const dirty = useEditorStore((state) => state.dirty);
   const viewingVersion = useEditorStore((state) => state.viewingVersion);
   const setViewingVersion = useEditorStore((state) => state.setViewingVersion);
-  const loadFile = useEditorStore((state) => state.loadFile);
+  const applyRollbackResult = useEditorStore((state) => state.applyRollbackResult);
   const { toast } = useToast();
 
   const [versions, setVersions] = useState<FileVersionListItem[]>([]);
@@ -173,8 +173,12 @@ export function VersionHistorySidebar() {
           versionId: version.id,
         });
         if (result.ok) {
-          setViewingVersion(null);
-          await loadFile(fileKey);
+          await applyRollbackResult({
+            key: fileKey,
+            content: result.content,
+            etag: result.etag ?? null,
+            lastModified: result.lastModified,
+          });
           toast({
             title: "Rolled back",
             description: `Restored to version from ${formatAbsoluteTime(version.createdAt)}.`,
@@ -202,7 +206,7 @@ export function VersionHistorySidebar() {
         setRollingBack(false);
       }
     },
-    [fileKey, loadFile, setViewingVersion, toast],
+    [fileKey, applyRollbackResult, setViewingVersion, toast],
   );
 
   if (!fileKey) {

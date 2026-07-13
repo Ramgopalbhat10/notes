@@ -42,7 +42,7 @@ export type GetVersionContentResult =
     };
 
 export type RollbackVersionResult =
-  | { ok: true; etag?: string; lastModified: string }
+  | { ok: true; content: string; etag?: string; lastModified: string }
   | {
       ok: false;
       reason: "unauthorized" | "invalid" | "not_found" | "unknown";
@@ -228,7 +228,7 @@ export async function rollbackToVersionAction(input: {
       revalidateTag(MANIFEST_CACHE_TAG, "max");
     }
 
-    return { ok: true, etag, lastModified };
+    return { ok: true, content: targetVersion.content, etag, lastModified };
   } catch {
     return { ok: false, reason: "unknown", message: "Failed to rollback to version" };
   }

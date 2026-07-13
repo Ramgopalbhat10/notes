@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, like } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/platform/db";
 import { fileVersions } from "@/drizzle/app-schema";
@@ -176,12 +176,19 @@ export async function deleteFileVersions(fileKey: string): Promise<void> {
 /**
  * Delete all version snapshots under a folder prefix.
  * Called on folder deletion.
+ *
+ * The prefix is escaped so that folder names containing SQL LIKE wildcards
+ * (`_` or `%`) are matched literally rather than as pattern characters.
  */
 export async function deleteFileVersionsByPrefix(prefix: string): Promise<void> {
   const normalized = prefix.endsWith("/") ? prefix : `${prefix}/`;
+  const escaped = normalized
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
   await db
     .delete(fileVersions)
-    .where(like(fileVersions.fileKey, `${normalized}%`));
+    .where(sql`${fileVersions.fileKey} LIKE ${`${escaped}%`} ESCAPE '\\'`);
 }
 
 /**
