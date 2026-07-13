@@ -3,13 +3,14 @@ import type { NextConfig } from "next";
 const cacheComponents = process.env.NEXT_CACHE_COMPONENTS !== "false";
 
 const nextConfig: NextConfig = {
-  // @libsql/client ships native bindings that Turbopack cannot bundle for
-  // serverless runtimes. Keep it external so Node resolves it from node_modules.
-  serverExternalPackages: ["@libsql/client"],
+  // @libsql/client is on Next's default serverExternalPackages list. Turbopack
+  // rewrites it to a hashed alias (@libsql/client-<hash>) that often fails to
+  // resolve in Vercel serverless artifacts. transpilePackages forces bundling
+  // and overrides that default externalization for this package.
+  transpilePackages: ["@libsql/client"],
   turbopack: {
     // Pin the repo root explicitly so Turbopack does not walk up to unrelated lockfiles.
     root: process.cwd(),
-    // Enable future Turbopack options here (e.g., resolveAlias, filesystem cache)
   },
   // partialPrefetching requires cacheComponents (Next.js validates this at build time).
   // Derive both from the same env guard so the NEXT_CACHE_COMPONENTS=false rollback
