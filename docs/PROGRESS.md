@@ -9,11 +9,13 @@ Previous tasks (latest completed batch only):
 - [x] Confirm qualitative design language with the user
 - [x] Write `DESIGN.md` and `.impeccable/design.json`
 - [x] Run `pnpm lint` and `pnpm build`
+- [x] Commit and open PR #122
 
 Next tasks:
-- [ ] Commit and open PR
+- [ ] None - all tasks completed. Waiting on user to merge or request follow-up.
 
 Notes:
 - Branch: `chore/impeccable-document`
+- PR: https://github.com/Ramgopalbhat10/notes/pull/122
 - `PRODUCT.md` brand: calm, focused, trustworthy
-- `pnpm lint` and `pnpm build` passed
+- All PR checks green
