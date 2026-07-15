@@ -44,10 +44,10 @@
 ## Test Plan
 - Confirm the skill files are written under a supported Devin skill directory.
 - Confirm `PRODUCT.md` is generated and contains the product type, audience, lane, voice, and anti-references.
-- Run `pnpm lint` and `pnpm build` if they are affected by the new files; otherwise verify no forbidden test files were created.
+- Run `pnpm lint` and `pnpm build`; both passed.
 
 ## Definition of Done
-- Fix verified (`pnpm lint` passed; `pnpm build` not required because no app source changed).
+- Fix verified (`pnpm lint` and `pnpm build` passed).
 - Status set to `resolved`.
 - Dev Log updated.
 - Progress updated in `docs/PROGRESS.md`.
