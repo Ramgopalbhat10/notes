@@ -50,3 +50,4 @@ Issue template: `docs/issues/template.md`
 | 42 | Next.js 16.3 Instant Navigations Adaptation | resolved | None | `package.json`, `pnpm-lock.yaml`, `next.config.ts`, `app/page.tsx`, `app/auth/sign-in/page.tsx` |
 | 43 | @libsql/client fails to load in Turbopack serverless bundles (500 on save) | resolved | Story 28 | `next.config.ts` |
 | 44 | @libsql/client hashed Turbopack external still 500s after createRequire fix | resolved | Story 28 | `lib/platform/db.ts`, `next.config.ts` |
+| 45 | Install Impeccable design skill and run init | in-progress | None | `.agents/skills/impeccable/`, `PRODUCT.md`, `DESIGN.md` |
