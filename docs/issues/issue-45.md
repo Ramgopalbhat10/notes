@@ -16,18 +16,15 @@
 - The repo did not have the Impeccable design skill installed, so AI-assisted UI polish lacked the project's audience, brand lane, voice, and anti-reference context.
 
 ## Fix / Approach
-- Ran `npx impeccable install` from the project root; it installed skill files for the detected harnesses (`.agents`, `.github`, `.gemini`) plus hook manifests for `.agents`, `.codex`, and `.github`.
+- Ran `npx impeccable install` from the project root; it installed skill files for the detected harnesses (`.agents`, `.github`, `.gemini`) plus hook manifests for `.codex` and `.github`.
+- Kept only the Devin-facing `.agents/skills/impeccable/` copy and removed the `.github/skills/`, `.gemini/`, `.codex/`, and `.github/hooks/impeccable.json` copies per project preference.
 - Invoked `/impeccable init` and wrote `PRODUCT.md` treating the surface as a web product with a calm, focused, trustworthy personality.
 - Configured live mode by writing `.impeccable/live/config.json` and running CSP detection (no CSP present).
 - Added `.impeccable/live/sessions/` to `.gitignore` so live-mode recovery state is not committed.
-- Ran `pnpm install` and `pnpm lint`; both passed.
+- Ran `pnpm install`, `pnpm lint`, and `pnpm build`; all passed.
 
 ## Files Changed
 - `.agents/skills/impeccable/`
-- `.github/hooks/impeccable.json`
-- `.github/skills/impeccable/`
-- `.gemini/skills/impeccable/`
-- `.codex/hooks.json`
 - `.impeccable/live/config.json`
 - `.gitignore`
 - `PRODUCT.md`
@@ -47,7 +44,7 @@
 - Run `pnpm lint` and `pnpm build`; both passed.
 
 ## Definition of Done
-- Fix verified (`pnpm lint` and `pnpm build` passed).
+- Fix verified (`pnpm lint` and `pnpm build` passed; all PR checks green).
 - Status set to `resolved`.
 - Dev Log updated.
 - Progress updated in `docs/PROGRESS.md`.
