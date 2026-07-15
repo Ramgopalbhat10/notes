@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-15T07:31:40Z",
+  "title": "Design System: Markdown Vault",
+  "extensions": {
+    "colorMeta": {
+      "muted-sage": {
+        "role": "primary",
+        "displayName": "Muted Sage",
+        "canonical": "oklch(0.8348 0.1302 160.9080)",
+        "darkCanonical": "oklch(0.4365 0.1044 156.7556)",
+        "tonalRamp": [
+          "oklch(0.15 0.1302 160.908)",
+          "oklch(0.2643 0.1302 160.908)",
+          "oklch(0.3786 0.1302 160.908)",
+          "oklch(0.4929 0.1302 160.908)",
+          "oklch(0.6071 0.1302 160.908)",
+          "oklch(0.7214 0.1302 160.908)",
+          "oklch(0.8357 0.1302 160.908)",
+          "oklch(0.95 0.1302 160.908)"
+        ]
+      },
+      "sage-ink": {
+        "role": "primary-foreground",
+        "displayName": "Sage Ink",
+        "canonical": "oklch(0.2626 0.0147 166.4589)",
+        "darkCanonical": "oklch(0.9213 0.0135 167.1556)",
+        "tonalRamp": [
+          "oklch(0.15 0.0147 166.4589)",
+          "oklch(0.2643 0.0147 166.4589)",
+          "oklch(0.3786 0.0147 166.4589)",
+          "oklch(0.4929 0.0147 166.4589)",
+          "oklch(0.6071 0.0147 166.4589)",
+          "oklch(0.7214 0.0147 166.4589)",
+          "oklch(0.8357 0.0147 166.4589)",
+          "oklch(0.95 0.0147 166.4589)"
+        ]
+      },
+      "warm-paper": {
+        "role": "background",
+        "displayName": "Warm Paper",
+        "canonical": "oklch(0.9911 0 0)",
+        "darkCanonical": "oklch(0.175 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.2643 0 0)",
+          "oklch(0.3786 0 0)",
+          "oklch(0.4929 0 0)",
+          "oklch(0.6071 0 0)",
+          "oklch(0.7214 0 0)",
+          "oklch(0.8357 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "soft-stone": {
+        "role": "muted",
+        "displayName": "Soft Stone",
+        "canonical": "oklch(0.9461 0 0)",
+        "darkCanonical": "oklch(0.215 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.2643 0 0)",
+          "oklch(0.3786 0 0)",
+          "oklch(0.4929 0 0)",
+          "oklch(0.6071 0 0)",
+          "oklch(0.7214 0 0)",
+          "oklch(0.8357 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "deep-ink": {
+        "role": "foreground",
+        "displayName": "Deep Ink",
+        "canonical": "oklch(0.2046 0 0)",
+        "darkCanonical": "oklch(0.9288 0.0126 255.5078)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.2643 0 0)",
+          "oklch(0.3786 0 0)",
+          "oklch(0.4929 0 0)",
+          "oklch(0.6071 0 0)",
+          "oklch(0.7214 0 0)",
+          "oklch(0.8357 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "mid-ink": {
+        "role": "muted-foreground",
+        "displayName": "Mid Ink",
+        "canonical": "oklch(0.4386 0 0)",
+        "darkCanonical": "oklch(0.7122 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.2643 0 0)",
+          "oklch(0.3786 0 0)",
+          "oklch(0.4929 0 0)",
+          "oklch(0.6071 0 0)",
+          "oklch(0.7214 0 0)",
+          "oklch(0.8357 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "caution-red": {
+        "role": "destructive",
+        "displayName": "Caution Red",
+        "canonical": "oklch(0.5523 0.1927 32.7272)",
+        "darkCanonical": "oklch(0.3123 0.0852 29.7877)",
+        "tonalRamp": [
+          "oklch(0.15 0.1927 32.7272)",
+          "oklch(0.2643 0.1927 32.7272)",
+          "oklch(0.3786 0.1927 32.7272)",
+          "oklch(0.4929 0.1927 32.7272)",
+          "oklch(0.6071 0.1927 32.7272)",
+          "oklch(0.7214 0.1927 32.7272)",
+          "oklch(0.8357 0.1927 32.7272)",
+          "oklch(0.95 0.1927 32.7272)"
+        ]
+      },
+      "hairline": {
+        "role": "border",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.9037 0 0)",
+        "darkCanonical": "oklch(0.305 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.2643 0 0)",
+          "oklch(0.3786 0 0)",
+          "oklch(0.4929 0 0)",
+          "oklch(0.6071 0 0)",
+          "oklch(0.7214 0 0)",
+          "oklch(0.8357 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default UI copy, file lists, button labels, metadata."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase metadata, shortcuts, status pills, table headers."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Dialog titles, panel headers, section labels."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Sign-in headings and major empty-state titles."
+      }
+    },
+    "shadows": [
+      {
+        "name": "2xs",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.09)",
+        "purpose": "Subtle resting shadow for inputs and small buttons."
+      },
+      {
+        "name": "xs",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.09)",
+        "purpose": "Same as 2xs; tiny surface lift."
+      },
+      {
+        "name": "sm",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17)",
+        "purpose": "Primary buttons, small cards, sidebar panels."
+      },
+      {
+        "name": "md",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 2px 4px -1px hsl(0 0% 0% / 0.17)",
+        "purpose": "Hover lifts and dropdown menus."
+      },
+      {
+        "name": "lg",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17)",
+        "purpose": "Dialogs, sidebars, and elevated cards."
+      },
+      {
+        "name": "xl",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17)",
+        "purpose": "Command palettes and modal overlays."
+      },
+      {
+        "name": "2xl",
+        "value": "0px 1px 3px 0px hsl(0 0% 0% / 0.43)",
+        "purpose": "Toasts and critical floating surfaces."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions."
+      },
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0, 0, 0.2, 1)",
+        "purpose": "Elements entering the viewport."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Hover and micro-feedback."
+      },
+      {
+        "name": "duration-normal",
+        "value": "200ms",
+        "purpose": "State changes and panel transitions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The default call-to-action: compact, sage-filled, with a subtle border and shadow.",
+      "html": "<button class=\"ds-btn-primary\">Save note</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0 1rem; background: var(--primary); color: var(--primary-foreground); border: 1px solid oklch(1 0 0 / 0.1); border-radius: 0.375rem; font-family: var(--font-family-sans, system-ui, sans-serif); font-size: 0.8125rem; font-weight: 500; line-height: 1; letter-spacing: -0.01em; box-shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17); transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: color-mix(in oklch, var(--primary) 90%, transparent); box-shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 2px 4px -1px hsl(0 0% 0% / 0.17); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 50%, transparent); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A quiet alternative to the primary action, used for cancelling or auxiliary choices.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0 1rem; background: var(--secondary); color: var(--secondary-foreground); border: 1px solid var(--border); border-radius: 0.375rem; font-family: var(--font-family-sans, system-ui, sans-serif); font-size: 0.8125rem; font-weight: 500; line-height: 1; box-shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17); transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: var(--accent); color: var(--accent-foreground); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 50%, transparent); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent background; used for icon-only toolbar actions and subtle toggles.",
+      "html": "<button class=\"ds-btn-ghost\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16\"/><path d=\"M4 12h16\"/><path d=\"M4 18h16\"/></svg></button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; background: transparent; color: var(--foreground); border: 1px solid transparent; border-radius: 0.375rem; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { background: var(--accent); color: var(--accent-foreground); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 50%, transparent); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A compact field with a transparent fill and hairline border.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search notes...\" />",
+      "css": ".ds-input { display: flex; width: 100%; height: 2.25rem; padding: 0.25rem 0.75rem; background: transparent; color: var(--foreground); border: 1px solid var(--border); border-radius: 0.375rem; font-family: var(--font-family-sans, system-ui, sans-serif); font-size: 0.8125rem; line-height: 1.5; letter-spacing: -0.01em; outline: none; transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-input::placeholder { color: var(--muted-foreground); } .ds-input:focus-visible { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 50%, transparent); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "An understated structural frame for content sections.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-title\">Untitled note</p><p class=\"ds-card-meta\">Last edited just now</p></div>",
+      "css": ".ds-card { padding: 1rem; background: color-mix(in oklch, var(--muted) 20%, transparent); border: 1px solid color-mix(in oklch, var(--border) 60%, transparent); border-radius: 0.5rem; font-family: var(--font-family-sans, system-ui, sans-serif); } .ds-card-title { margin: 0 0 0.25rem; font-size: 0.875rem; font-weight: 600; color: var(--foreground); letter-spacing: -0.025em; } .ds-card-meta { margin: 0; font-size: 0.75rem; color: var(--muted-foreground); }"
+    },
+    {
+      "name": "Command Palette",
+      "kind": "custom",
+      "refersTo": "command-list",
+      "description": "A floating search-and-action surface with compact rows and a visible search field.",
+      "html": "<div class=\"ds-command\"><input class=\"ds-command-input\" placeholder=\"Type a command...\" /><ul class=\"ds-command-list\"><li class=\"ds-command-item\">Open file</li><li class=\"ds-command-item ds-command-item-active\">New folder</li></ul></div>",
+      "css": ".ds-command { display: flex; flex-direction: column; width: 28rem; max-width: 100%; background: var(--background); border: 1px solid var(--border); border-radius: 0.5rem; box-shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17); overflow: hidden; font-family: var(--font-family-sans, system-ui, sans-serif); } .ds-command-input { width: 100%; height: 2.75rem; padding: 0 1rem; background: transparent; color: var(--foreground); border: 0; border-bottom: 1px solid var(--border); font-size: 0.8125rem; outline: none; } .ds-command-input::placeholder { color: var(--muted-foreground); } .ds-command-list { list-style: none; margin: 0; padding: 0.25rem; max-height: 26rem; overflow: auto; } .ds-command-item { padding: 0.5rem 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; color: var(--foreground); cursor: pointer; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-command-item:hover { background: var(--accent); color: var(--accent-foreground); } .ds-command-item-active { background: var(--primary); color: var(--primary-foreground); }"
+    },
+    {
+      "name": "Dialog",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "A centered modal card for confirmations and focused tasks.",
+      "html": "<div class=\"ds-dialog\"><h2 class=\"ds-dialog-title\">Delete note?</h2><p class=\"ds-dialog-body\">This cannot be undone.</p><div class=\"ds-dialog-actions\"><button class=\"ds-btn-secondary\">Cancel</button><button class=\"ds-btn-danger\">Delete</button></div></div>",
+      "css": ".ds-dialog { width: 100%; max-width: 32rem; padding: 1.5rem; background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 0.5rem; box-shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17); font-family: var(--font-family-sans, system-ui, sans-serif); } .ds-dialog-title { margin: 0 0 0.5rem; font-size: 1.125rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; } .ds-dialog-body { margin: 0 0 1.5rem; font-size: 0.8125rem; line-height: 1.5; color: var(--muted-foreground); } .ds-dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; } .ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 2.25rem; padding: 0 1rem; background: var(--secondary); color: var(--secondary-foreground); border: 1px solid var(--border); border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500; } .ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; height: 2.25rem; padding: 0 1rem; background: var(--destructive); color: var(--destructive-foreground); border: 1px solid transparent; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 500; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "toast",
+      "description": "A brief, raised status message that enters from the edge.",
+      "html": "<div class=\"ds-toast\"><span class=\"ds-toast-title\">Saved</span><span class=\"ds-toast-body\">Your note has been updated.</span></div>",
+      "css": ".ds-toast { display: flex; flex-direction: column; gap: 0.125rem; width: 20rem; padding: 1rem; background: var(--background); color: var(--foreground); border: 1px solid var(--border); border-radius: 0.375rem; box-shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17); font-family: var(--font-family-sans, system-ui, sans-serif); } .ds-toast-title { font-size: 0.8125rem; font-weight: 600; } .ds-toast-body { font-size: 0.8125rem; opacity: 0.8; color: var(--muted-foreground); }"
+    },
+    {
+      "name": "Sidebar Item",
+      "kind": "nav",
+      "refersTo": "sidebar",
+      "description": "A collapsible rail item with an icon and a text label.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\"><span class=\"ds-nav-icon\">&#128196;</span><span class=\"ds-nav-label\">Notes</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; color: var(--sidebar-foreground); border-radius: 0.375rem; font-family: var(--font-family-sans, system-ui, sans-serif); font-size: 0.8125rem; text-decoration: none; transition: background 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-item:hover { background: var(--sidebar-accent); color: var(--sidebar-accent-foreground); } .ds-nav-item-active { background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); } .ds-nav-icon { width: 1rem; height: 1rem; display: inline-flex; align-items: center; justify-content: center; } .ds-nav-label { font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Focused Workshop",
+    "overview": "Markdown Vault is a quiet craftsman's bench for writing: the tools sit within reach, the surfaces are kept clear, and the material itself gets the light. The interface does not announce itself; it recedes until a gesture, a save state, or an AI suggestion needs attention. Calm is the default posture. Focus is the outcome.\\n\\nThis system trusts restraint. One green accent does the navigational work. Neutrals carry the structure. Type is compact and legible. Motion is quick and functional. The design explicitly rejects the density war of cluttered note apps and the choreographed theater of over-animated SaaS dashboards. Every surface should feel like a clean sheet on a stable desk.",
+    "keyCharacteristics": [
+      "One accent voice: Muted Sage handles selection, focus, and primary action. Nothing else competes.",
+      "Compact, native-feeling density: 13px body type, tight line heights, small radii, and a 4px spacing base.",
+      "Flat-first elevation: shadows are state feedback, not decoration.",
+      "Honest state visibility: dirty, saving, error, and selection states are readable at a glance through label, icon, and shape as well as color.",
+      "Reduced-motion respect: transitions collapse to near-instant when the user prefers less motion."
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "Muted Sage is the only accent color. Use it for focus, selection, primary actions, and links. No second brand hue, no gradient overlays, no neon highlights.",
+        "section": "colors"
+      },
+      {
+        "name": "The Honest State Rule",
+        "body": "Color never carries meaning alone. A saving state shows the icon and label; an error shows the message; a selected item shows shape and icon alongside the sage fill.",
+        "section": "colors"
+      },
+      {
+        "name": "The Compact Rule",
+        "body": "The UI is set at 13px body. Density is a feature, so keep labels small, line heights tight, and avoid inflating type size for hierarchy when weight and color already do the work.",
+        "section": "typography"
+      },
+      {
+        "name": "The State-Only Shadow Rule",
+        "body": "Surfaces are flat at rest. Shadow is feedback, not scenery. If a component has a shadow when no one is interacting with it, the shadow is too heavy.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Muted Sage as the only accent for focus, selection, primary actions, and active links.",
+      "Do keep the default body size at 13px (0.8125rem) and rely on weight and color for hierarchy.",
+      "Do pair color with an icon or label when showing state (saving, dirty, error, selected).",
+      "Do keep surfaces flat at rest and add shadow only as feedback.",
+      "Do use 6px or 8px radii for controls and cards; avoid anything larger than 12px.",
+      "Do honor prefers-reduced-motion by collapsing motion to instant or near-instant transitions."
+    ],
+    "donts": [
+      "Don't turn the interface into a cluttered note app: dense floating toolbars, competing sidebars, and visual hierarchy that fights for attention are forbidden.",
+      "Don't use over-animated SaaS dashboard patterns: orchestrated page-load choreography, bouncing entrance transitions, and motion that delays the first useful action.",
+      "Don't introduce a second accent hue. If it is not Muted Sage, Caution Red, or a neutral, it does not belong.",
+      "Don't use shadows as decoration. A resting card should not float.",
+      "Don't rely on color alone for state. A red border without an error message is not enough."
+    ]
+  }
+}\n
