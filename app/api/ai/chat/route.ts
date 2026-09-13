@@ -13,12 +13,13 @@ import {
 
 import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 import { clampText } from "@/lib/ai/text-utils";
-import { resolveServerTools, type EnabledTools } from "@/lib/ai/tools";
+import { redactSecrets, sanitizeContext } from "@/lib/ai/redact";
+import { resolveServerTools, type EnabledTools } from "@/lib/ai/resolve-server-tools";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { s3BodyToString } from "@/lib/fs/s3-body";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const MAX_CONTEXT_CHARS = 6_000;
 const MAX_MESSAGES = 24;
@@ -66,11 +67,16 @@ export async function POST(request: NextRequest) {
 
     const fileContext = await resolveFileContext(rawFile);
 
+    const parallelEnabled = Boolean(enabledTools?.["web-search"]?.includes("parallel"));
+    const vaultEnabled = Boolean(enabledTools?.vault?.includes("native"));
+
     const systemPrompt = buildSystemPrompt({
       fileKey: fileContext.key,
       hasContext: Boolean(fileContext.excerpt),
       truncated: fileContext.truncated,
       warning: fileContext.warning,
+      parallelEnabled,
+      vaultEnabled,
     });
 
     const modelName = resolveModel(requestedModel);
@@ -87,7 +93,13 @@ export async function POST(request: NextRequest) {
       ? [contextMessage, ...convertedMessages]
       : convertedMessages;
 
-    const resolvedTools = resolveServerTools(enabledTools);
+    const resolvedTools = resolveServerTools(enabledTools, {
+      authorId:
+        authRes.session?.user && typeof authRes.session.user === "object" && "id" in authRes.session.user
+          && typeof authRes.session.user.id === "string"
+          ? authRes.session.user.id
+          : null,
+    });
     const hasTools = resolvedTools && Object.keys(resolvedTools).length > 0;
 
     const result = await streamText({
@@ -97,7 +109,7 @@ export async function POST(request: NextRequest) {
       temperature: 0.4,
       tools: (resolvedTools ?? {}) as Record<string, Tool>,
       ...(hasTools
-        ? { toolChoice: "auto" as const, stopWhen: stepCountIs(5) }
+        ? { toolChoice: "auto" as const, stopWhen: stepCountIs(12) }
         : {}),
     });
 
@@ -211,11 +223,15 @@ function buildSystemPrompt({
   hasContext,
   truncated,
   warning,
+  parallelEnabled,
+  vaultEnabled,
 }: {
   fileKey: string | null;
   hasContext: boolean;
   truncated: boolean;
   warning?: string;
+  parallelEnabled: boolean;
+  vaultEnabled: boolean;
 }): string {
   const base =
     "You are an expert writing assistant working inside a Markdown knowledge base. Answer as a collaborative teammate: be concise, reference the provided context, and keep formatting clean.";
@@ -224,13 +240,33 @@ function buildSystemPrompt({
     ? `You have access to the current file${fileKey ? ` (${fileKey})` : ""}. Ground your answers in that file. If the excerpt does not contain the answer, say so rather than guessing.`
     : "No file context was provided; ask clarifying questions when needed.";
 
+  const parentFolder = fileKey?.includes("/") ? fileKey.slice(0, fileKey.lastIndexOf("/") + 1) : "";
+  const pathHint = fileKey
+    ? `When creating a new file without a path, put it in ${parentFolder || "the vault root"} and pick a slug filename.`
+    : "When creating a new file without a path, put it in the vault root with a slug filename.";
+
   const truncationLine = truncated
     ? "The file excerpt was truncated to fit the token budget. Avoid speculating beyond the visible content."
     : "";
 
   const warningLine = warning ? `Context warning: ${warning}` : "";
 
-  return [base, contextLine, truncationLine, warningLine].filter(Boolean).join("\n");
+  const parallelLine = parallelEnabled
+    ? "Web tools are enabled. Use web_extract for a known URL. Use web_search for open-ended lookup."
+    : "";
+
+  const vaultLine = vaultEnabled
+    ? [
+        "Vault tools are enabled. You may list, read, create, edit, move, delete, and roll back markdown notes and folders.",
+        "Prefer list_dir or read_file before mutating an unclear path.",
+        "Prefer edit_file for partial changes. Do not write_file a full replacement when read_file returned truncated: true.",
+        "Only delete when the user named the target; set confirm_path equal to path. Never delete the vault root.",
+        "After mutations, tell the user the paths you changed.",
+        pathHint,
+      ].join(" ")
+    : "Vault tools are not enabled. You cannot create, edit, move, or delete vault files. Do not claim you wrote to disk.";
+
+  return [base, contextLine, truncationLine, warningLine, parallelLine, vaultLine].filter(Boolean).join("\n");
 }
 
 function buildContextMessage({
@@ -267,63 +303,6 @@ function buildContextMessage({
     role: "system",
     content,
   };
-}
-
-function sanitizeContext(text: string): string {
-  return text
-    .replace(/\r\n/g, "\n")
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-    .trim();
-}
-
-const SENSITIVE_KEY_PATTERN =
-  /\b(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key|client[_-]?secret|auth(?:orization)?|credential|session|cookie)\b/i;
-
-const SENSITIVE_ASSIGNMENT_PATTERN =
-  /^(\s*["']?[\w.-]*(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key|client[_-]?secret|auth(?:orization)?|credential|session|cookie)[\w.-]*["']?\s*[:=]\s*)(.+)$/i;
-
-const SENSITIVE_VALUE_PATTERNS: RegExp[] = [
-  /\bAKIA[0-9A-Z]{16}\b/g,
-  /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/g,
-  /\bsk-[A-Za-z0-9]{20,}\b/g,
-  /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}\.[A-Za-z0-9._-]{10,}\b/g,
-  /\bBearer\s+[A-Za-z0-9._~+\/-]{12,}\b/gi,
-];
-
-const PRIVATE_KEY_BLOCK_PATTERN =
-  /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----/g;
-
-function redactSecrets(text: string): string {
-  const redactedByLine = text
-    .split("\n")
-    .map((line) => {
-      const assignmentMatch = line.match(SENSITIVE_ASSIGNMENT_PATTERN);
-      if (assignmentMatch) {
-        const [, prefix] = assignmentMatch;
-        return `${prefix}[REDACTED]`;
-      }
-
-      if (!SENSITIVE_KEY_PATTERN.test(line)) {
-        return line;
-      }
-
-      const eqIndex = line.indexOf("=");
-      const colonIndex = line.indexOf(":");
-      const splitIndex = eqIndex >= 0 && (colonIndex === -1 || eqIndex < colonIndex) ? eqIndex : colonIndex;
-      if (splitIndex === -1) {
-        return "[REDACTED]";
-      }
-      const prefix = line.slice(0, splitIndex + 1).trimEnd();
-      return `${prefix} [REDACTED]`;
-    })
-    .join("\n");
-
-  const redactedPrivateKeys = redactedByLine.replace(PRIVATE_KEY_BLOCK_PATTERN, "[REDACTED]");
-  const redactedUrlCreds = redactedPrivateKeys.replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, "//[REDACTED]:[REDACTED]@");
-  return SENSITIVE_VALUE_PATTERNS.reduce(
-    (output, pattern) => output.replace(pattern, "[REDACTED]"),
-    redactedUrlCreds,
-  );
 }
 
 function normalizeError(error: unknown): string {

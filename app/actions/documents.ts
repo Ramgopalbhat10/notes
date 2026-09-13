@@ -1,12 +1,8 @@
 "use server";
 
-import { revalidateTag, updateTag } from "next/cache";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getServerSession, isAllowedUser } from "@/lib/auth";
-import { writeMarkdownFile } from "@/lib/fs/file-writer";
-import { captureFileVersion } from "@/lib/fs/file-versions";
-import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
-import { getFileCacheTag, readFileContent, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
+import { saveMarkdownFile } from "@/lib/fs/save-markdown";
 import { getErrorMessage, getErrorStatus } from "@/lib/http/errors";
 
 export type SaveDocumentInput = {
@@ -34,63 +30,13 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Save
 
   const content = typeof input.content === "string" ? input.content : "";
   const ifMatchEtag = typeof input.ifMatchEtag === "string" ? input.ifMatchEtag : undefined;
-
-  // Read the current (soon-to-be-previous) content for version history.
-  // Done before the write so we capture the state that's about to be replaced.
-  let previousContent: string | null = null;
-  let previousEtag: string | null = null;
-  try {
-    const previous = await readFileContent(key);
-    if (previous) {
-      previousContent = previous.content;
-      previousEtag = previous.etag ?? null;
-    }
-  } catch {
-    // Non-critical: don't block the save if we can't read the previous content
-  }
+  const authorId =
+    session.user && typeof session.user === "object" && "id" in session.user && typeof session.user.id === "string"
+      ? session.user.id
+      : null;
 
   try {
-    const { etag, lastModified } = await writeMarkdownFile({ key, content, ifMatchEtag });
-
-    await revalidateFileTags([key]);
-    await setFileCacheRecord(key, {
-      key,
-      content,
-      etag,
-      lastModified,
-      fetchedAt: new Date().toISOString(),
-    });
-
-    updateTag(getFileCacheTag(key));
-    try {
-      const { addOrUpdateFile } = await import("@/lib/manifest-updater");
-      await addOrUpdateFile({
-        key,
-        etag,
-        lastModified,
-        size: Buffer.byteLength(content, "utf-8"),
-      });
-    } catch (error) {
-      console.error("Failed to hot-update manifest after save", error);
-      revalidateTag(MANIFEST_CACHE_TAG, "max");
-    }
-
-    // Capture a version snapshot of the previous state (after successful save).
-    // The live S3 object is now the new content; versions store what it was before.
-    if (previousContent !== null && previousContent !== content) {
-      const authorId = (session?.user as { id?: string } | null)?.id ?? null;
-      try {
-        await captureFileVersion({
-          fileKey: key,
-          content: previousContent,
-          etag: previousEtag,
-          authorId,
-        });
-      } catch (error) {
-        console.error("Failed to capture file version", error);
-      }
-    }
-
+    const { etag, lastModified } = await saveMarkdownFile({ key, content, ifMatchEtag, authorId });
     return { ok: true, etag, lastModified };
   } catch (error) {
     const status = getErrorStatus(error);

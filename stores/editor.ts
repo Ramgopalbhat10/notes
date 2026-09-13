@@ -71,6 +71,8 @@ type EditorState = {
     etag: string | null;
     lastModified: string;
   }) => Promise<void>;
+  forgetCachedDocument: (key: string) => void;
+  retargetFileKey: (nextKey: string) => void;
   loadFile: (key: string | null) => Promise<void>;
   setMode: (mode: EditorMode) => void;
   setContent: (value: string) => void;
@@ -91,7 +93,7 @@ type EditorState = {
 
 const initialState: Omit<
   EditorState,
-  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "setSelectedBlockIds" | "setViewingVersion" | "applyRollbackResult" | "registerEditorView" | "applyAiResult"
+  "loadFile" | "setMode" | "setContent" | "reset" | "save" | "setSelection" | "setSelectedText" | "setSelectedBlockIds" | "setViewingVersion" | "applyRollbackResult" | "forgetCachedDocument" | "retargetFileKey" | "registerEditorView" | "applyAiResult"
 > = {
   fileKey: null,
   content: "",
@@ -530,6 +532,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           },
         },
       };
+    });
+  },
+
+  forgetCachedDocument(key) {
+    documentCache.delete(key);
+    firstOpenValidatedKeys.delete(key);
+  },
+
+  retargetFileKey(nextKey) {
+    const state = get();
+    if (!state.fileKey || state.fileKey === nextKey) {
+      return;
+    }
+    const previousKey = state.fileKey;
+    documentCache.delete(previousKey);
+    firstOpenValidatedKeys.delete(previousKey);
+    set({
+      fileKey: nextKey,
+      etag: null,
     });
   },
 

@@ -12,6 +12,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useToast } from "@/hooks/use-toast";
 import { useEditorStore } from "@/stores/editor";
+import { useTreeStore } from "@/stores/tree";
 import { ChatErrorBanner } from "./chat-error-banner";
 import { ChatEmptyState } from "./chat-empty-state";
 import { ChatMessageRow } from "./chat-message";
@@ -125,6 +126,18 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
     [applyAiResult, toast],
   );
 
+  const handleOpenPath = useCallback(
+    (path: string) => {
+      const tree = useTreeStore.getState();
+      if (tree.nodes[path]) {
+        tree.select(path);
+        return;
+      }
+      tree.selectByPath(path);
+    },
+    [],
+  );
+
   const handleRemoveContext = useCallback(() => {
     setContextFile(null);
   }, [setContextFile]);
@@ -150,6 +163,7 @@ export function SidebarChat({ onNewChatRef }: SidebarChatProps) {
                   onCopy={handleCopy}
                   onRegenerate={handleRegenerate}
                   canRegenerate={!isStreaming}
+                  onOpenPath={handleOpenPath}
                 />
               ))
             ) : (

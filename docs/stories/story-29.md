@@ -9,7 +9,7 @@ Goal: Let chat, when the user opts in, do the same vault work they can do in the
 ## Deliverables
 - Design spec: `docs/superpowers/specs/2026-09-13-chat-vault-write-tools-design.md`
 - Implementation (after spec approval): tool registry + vault tools, shared FS helpers, chat route budget/prompt, tools popover inline toggle, tool activity UI, tree/editor sync
-- ADR during implementation: `docs/decisions/ADR-chat-vault-write-tools.md`
+- ADR during implementation: `docs/decisions/ADR-chat-vault-tools.md`
 
 ## Acceptance Criteria
 - With Vault off, chat cannot mutate or list/read other vault paths via tools; existing chat and Web Search behavior is unchanged.
@@ -28,6 +28,8 @@ Goal: Let chat, when the user opts in, do the same vault work they can do in the
 |---|---|---|
 | 2026-09-13 | docs | Opened Story 29, wrote the vault-write chat tools design spec, and parked implementation until spec approval. |
 | 2026-09-13 | docs | Expanded the spec from create-only to full vault parity (read, write, edit, move, delete, versions) per user feedback. |
+| 2026-09-13 | feat | Extracted shared vault mutation helpers, added Parallel extract + vault chat tools, inline Vault toggle, tool activity rows, and editor/tree sync. |
+| 2026-09-13 | quality | Split client tool registry from server resolver so vault FS code stays off the client bundle; `pnpm lint` and `pnpm build` passed. |
 
 ## Issues
 
@@ -69,10 +71,10 @@ Test Plan
   - Raise duration and step budget when tools are on; extend the system prompt.
 
 Sub-tasks
-- [ ] Extract shared helpers from file save/delete, mkdir, folder delete, move, and version list/rollback.
-- [ ] Add vault tool factories with validation, structured results, size caps, and `confirm_path` on delete.
-- [ ] Wire Parallel extract + vault tools in `resolveServerTools()`.
-- [ ] Update chat route system prompt, `maxDuration`, and `stepCountIs`.
+- [x] Extract shared helpers from file save/delete, mkdir, folder delete, move, and version list/rollback.
+- [x] Add vault tool factories with validation, structured results, size caps, and `confirm_path` on delete.
+- [x] Wire Parallel extract + vault tools in `resolveServerTools()`.
+- [x] Update chat route system prompt, `maxDuration`, and `stepCountIs`.
 
 Test Plan
 - Manual: create, nested path, snippet edit, full write, move, delete file/folder, rollback, invalid path, Parallel URL extract without Vault.
@@ -91,10 +93,10 @@ Test Plan
   - Successful mutations refresh the tree, toast, and sync the open editor per the spec.
 
 Sub-tasks
-- [ ] Add Vault to `CHAT_TOOLS` with an inline toggle (no provider submenu).
-- [ ] Render tool activity rows from UIMessage parts.
-- [ ] On successful vault mutations, `refreshTree({ silent: true })`, toast, and apply editor sync rules.
-- [ ] Open-path action that respects dirty editor navigation.
+- [x] Add Vault to `CHAT_TOOLS` with an inline toggle (no provider submenu).
+- [x] Render tool activity rows from UIMessage parts.
+- [x] On successful vault mutations, `refreshTree({ silent: true })`, toast, and apply editor sync rules.
+- [x] Open-path action that respects dirty editor navigation.
 
 Test Plan
 - Toggle Vault on/off; create/edit/delete/move from chat; dirty vs clean editor; Open from an activity row.
@@ -108,8 +110,8 @@ Test Plan
   - Validate the Humble Bundle-style flow and the mutation suite; ensure chat-without-tools still matches current behavior.
 
 Sub-tasks
-- [ ] Run `pnpm lint`.
-- [ ] Run `pnpm build`.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm build`.
 - [ ] Manual smoke: no tools, Parallel only, Vault only, Parallel + Vault URL-to-file, edit/move/delete/rollback.
 
 Test Plan

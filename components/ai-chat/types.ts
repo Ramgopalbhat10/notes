@@ -24,4 +24,5 @@ export type ChatMessageRowProps = {
   onInsert: (message: UIMessage) => void;
   onRegenerate: (messageId: string | undefined) => void;
   canRegenerate: boolean;
+  onOpenPath?: (path: string) => void;
 };

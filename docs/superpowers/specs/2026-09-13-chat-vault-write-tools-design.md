@@ -1,7 +1,7 @@
 # Chat Vault Tools
 
 Date: 2026-09-13
-Status: Proposed
+Status: Accepted
 Story: `docs/stories/story-29.md`
 
 ## Problem
@@ -317,20 +317,9 @@ No test files.
 11. Invalid paths (`../secret.md`, `note.txt`) rejected. Root delete rejected. Delete without matching `confirm_path` rejected.
 12. `pnpm lint` and `pnpm build`.
 
-## Implementation notes (not this PR)
+## Implementation notes
 
-This document is the design. Implementation belongs to Story 29 after spec approval and an implementation plan.
-
-Likely touch list:
-
-- `lib/ai/tools.ts` — types, registry, resolver
-- new `lib/ai/vault-tools.ts`
-- extract shared helpers from `app/api/fs/file/route.ts`, `mkdir/route.ts`, `folder/route.ts`, `move/route.ts`, and `app/actions/file-versions.ts`
-- `app/api/ai/chat/route.ts` — duration, steps, system prompt
-- `components/ai-chat/tools-selector/*`
-- `components/ai-chat/chat-message.tsx` + utils for tool parts
-- `components/ai-chat/hooks/use-chat-session.ts` — refresh + editor sync
-- `docs/decisions/ADR-chat-vault-write-tools.md` during implementation
+Implemented in Story 29. Shared helpers live under `lib/fs/`; vault tools in `lib/ai/vault-tools.ts`; ADR: `docs/decisions/ADR-chat-vault-tools.md`.
 
 ## Open follow-ups (explicitly later)
 
