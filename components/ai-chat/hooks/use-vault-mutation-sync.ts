@@ -21,6 +21,29 @@ function pathWasDeleted(fileKey: string, deletes: string[]): boolean {
   });
 }
 
+function relocatedPath(fileKey: string, from: string, to: string): string | null {
+  if (fileKey === from) {
+    return to;
+  }
+  if (from.endsWith("/") && fileKey.startsWith(from)) {
+    return `${to}${fileKey.slice(from.length)}`;
+  }
+  return null;
+}
+
+function applyMoves(fileKey: string, moves: Array<{ from: string; to: string }>): string | null {
+  let current = fileKey;
+  let changed = false;
+  for (const move of moves) {
+    const next = relocatedPath(current, move.from, move.to);
+    if (next) {
+      current = next;
+      changed = true;
+    }
+  }
+  return changed ? current : null;
+}
+
 export function useVaultMutationSync(messages: UIMessage[], isStreaming: boolean): void {
   const { toast } = useToast();
   const previousStreaming = useRef(false);
@@ -60,15 +83,15 @@ export function useVaultMutationSync(messages: UIMessage[], isStreaming: boolean
           useTreeStore.setState({ selectedId: null, selectionOrigin: "user", routeTarget: null });
         }
       } else if (fileKey) {
-        const move = summary.moves.find((item) => item.from === fileKey);
-        if (move) {
+        const movedTo = applyMoves(fileKey, summary.moves);
+        if (movedTo) {
           if (dirty) {
-            editor.retargetFileKey(move.to);
-            useTreeStore.setState({ selectedId: move.to, selectionOrigin: "user", routeTarget: null });
+            editor.retargetFileKey(movedTo);
+            useTreeStore.setState({ selectedId: movedTo, selectionOrigin: "user", routeTarget: null });
           } else {
             editor.forgetCachedDocument(fileKey);
-            editor.forgetCachedDocument(move.to);
-            useTreeStore.getState().select(move.to);
+            editor.forgetCachedDocument(movedTo);
+            useTreeStore.getState().select(movedTo);
           }
         } else {
           const touched =

@@ -30,3 +30,4 @@ Filename: `YYYY-MM-DD-short-title.md`
 | 2026-03-30-preview-selection-apply-needs-stable-context | `docs/learnings/2026-03-30-preview-selection-apply-needs-stable-context.md` |
 | 2026-07-13-turbopack-native-package-bundling | `docs/learnings/2026-07-13-turbopack-native-package-bundling.md` |
 | 2026-09-13-chat-tools-registry-must-stay-client-safe | `docs/learnings/2026-09-13-chat-tools-registry-must-stay-client-safe.md` |
+| 2026-09-13-ensure-ancestor-folders-must-skip-target | `docs/learnings/2026-09-13-ensure-ancestor-folders-must-skip-target.md` |

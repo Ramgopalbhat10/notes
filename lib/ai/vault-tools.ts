@@ -4,7 +4,7 @@ import { clampText } from "@/lib/ai/text-utils";
 import { redactSecrets, sanitizeContext } from "@/lib/ai/redact";
 import { coerceFileKey, coerceFolderPrefix, isFilePathHint, isVaultRoot, utf8Bytes } from "@/lib/ai/vault-path";
 import { loadLatestManifest } from "@/lib/cache/manifest-store";
-import { isFolderNode } from "@/lib/file-tree-manifest";
+import { isFileNode, isFolderNode, type FileTreeManifest } from "@/lib/file-tree-manifest";
 import { createVaultFolder, ensureAncestorFolders } from "@/lib/fs/create-folder";
 import { deleteMarkdownFile } from "@/lib/fs/delete-file";
 import { deleteVaultFolder } from "@/lib/fs/delete-folder";
@@ -68,6 +68,65 @@ function countOccurrences(haystack: string, needle: string): number {
     index = found + needle.length;
   }
   return count;
+}
+
+function replaceOnce(haystack: string, needle: string, replacement: string): string {
+  const index = haystack.indexOf(needle);
+  if (index === -1) {
+    return haystack;
+  }
+  return haystack.slice(0, index) + replacement + haystack.slice(index + needle.length);
+}
+
+type ResolvedVaultNode =
+  | { kind: "file"; path: string }
+  | { kind: "folder"; path: string };
+
+function nodeByIdMap(manifest: FileTreeManifest): Map<string, FileTreeManifest["nodes"][number]> {
+  return new Map(manifest.nodes.map((node) => [node.id, node]));
+}
+
+async function loadManifestOrFail(): Promise<{ ok: true; manifest: FileTreeManifest } | ToolFailure> {
+  const manifestRecord = await loadLatestManifest();
+  if (!manifestRecord) {
+    return fail("write_failed", "Vault file tree is unavailable");
+  }
+  return { ok: true, manifest: manifestRecord.manifest };
+}
+
+function resolveExistingNode(raw: string, manifest: FileTreeManifest): ResolvedVaultNode | ToolFailure {
+  const nodeById = nodeByIdMap(manifest);
+
+  if (isFilePathHint(raw)) {
+    const key = coerceFileKey(raw);
+    const node = nodeById.get(key);
+    if (!node || !isFileNode(node)) {
+      return fail("not_found", "File not found", { path: key });
+    }
+    return { kind: "file", path: key };
+  }
+
+  const folderId = coerceFolderPrefix(raw);
+  const fileId = coerceFileKey(raw);
+  const folderNode = nodeById.get(folderId);
+  const fileNode = nodeById.get(fileId);
+  const folderOk = folderNode ? isFolderNode(folderNode) : false;
+  const fileOk = fileNode ? isFileNode(fileNode) : false;
+
+  if (folderOk && fileOk) {
+    return fail(
+      "invalid_path",
+      "Ambiguous path; use a .md suffix for files or a trailing slash for folders",
+      { path: raw },
+    );
+  }
+  if (folderOk) {
+    return { kind: "folder", path: folderId };
+  }
+  if (fileOk) {
+    return { kind: "file", path: fileId };
+  }
+  return fail("not_found", "Path not found", { path: raw });
 }
 
 export function createVaultTools(context: VaultToolContext): Record<string, Tool> {
@@ -205,7 +264,7 @@ export function createVaultTools(context: VaultToolContext): Record<string, Tool
           if (matches !== 1) {
             return fail("edit_mismatch", "old_text must match exactly once", { path: key, matches });
           }
-          const next = record.content.replace(old_text, new_text);
+          const next = replaceOnce(record.content, old_text, new_text);
           if (utf8Bytes(next) > MAX_WRITE_BYTES) {
             return fail("too_large", "Edited file would exceed 256 KiB", { path: key });
           }
@@ -261,14 +320,20 @@ export function createVaultTools(context: VaultToolContext): Record<string, Tool
           if (isVaultRoot(path)) {
             return fail("not_confirmed", "Refusing to delete the vault root");
           }
-          if (isFilePathHint(path)) {
-            const key = coerceFileKey(path);
-            await deleteMarkdownFile({ key });
-            return { ok: true as const, path: key, type: "file" as const };
+          const loaded = await loadManifestOrFail();
+          if (!loaded.ok) {
+            return loaded;
           }
-          const prefix = coerceFolderPrefix(path);
-          await deleteVaultFolder({ prefix, recursive: true });
-          return { ok: true as const, path: prefix, type: "folder" as const };
+          const target = resolveExistingNode(path, loaded.manifest);
+          if ("error" in target) {
+            return target;
+          }
+          if (target.kind === "file") {
+            await deleteMarkdownFile({ key: target.path });
+            return { ok: true as const, path: target.path, type: "file" as const };
+          }
+          await deleteVaultFolder({ prefix: target.path, recursive: true });
+          return { ok: true as const, path: target.path, type: "folder" as const };
         } catch (error) {
           return mapCaughtError(error, path);
         }
@@ -287,9 +352,16 @@ export function createVaultTools(context: VaultToolContext): Record<string, Tool
       }),
       execute: async ({ from, to }) => {
         try {
-          const folder = !isFilePathHint(from);
-          const fromRaw = folder ? coerceFolderPrefix(from) : coerceFileKey(from);
-          const toRaw = folder ? coerceFolderPrefix(to) : coerceFileKey(to);
+          const loaded = await loadManifestOrFail();
+          if (!loaded.ok) {
+            return loaded;
+          }
+          const source = resolveExistingNode(from, loaded.manifest);
+          if ("error" in source) {
+            return source;
+          }
+          const fromRaw = source.path;
+          const toRaw = source.kind === "folder" ? coerceFolderPrefix(to) : coerceFileKey(to);
           const result = await moveVaultNode({ fromRaw, toRaw, overwrite: false });
           return { ok: true as const, from: fromRaw, to: toRaw, etag: result.etag ?? null };
         } catch (error) {

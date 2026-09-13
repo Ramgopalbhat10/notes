@@ -30,6 +30,7 @@ Goal: Let chat, when the user opts in, do the same vault work they can do in the
 | 2026-09-13 | docs | Expanded the spec from create-only to full vault parity (read, write, edit, move, delete, versions) per user feedback. |
 | 2026-09-13 | feat | Extracted shared vault mutation helpers, added Parallel extract + vault chat tools, inline Vault toggle, tool activity rows, and editor/tree sync. |
 | 2026-09-13 | quality | Split client tool registry from server resolver so vault FS code stays off the client bundle; `pnpm lint` and `pnpm build` passed. |
+| 2026-09-13 | fix | Stopped `create_folder` from 409ing on new folders; literal `edit_file` replace; manifest-based delete/move; parent-folder editor retarget. |
 
 ## Issues
 
@@ -112,6 +113,7 @@ Test Plan
 Sub-tasks
 - [x] Run `pnpm lint`.
 - [x] Run `pnpm build`.
+- [x] Fix `create_folder` ancestor mkdir 409, `$` snippet replace, and delete/move path resolution.
 - [ ] Manual smoke: no tools, Parallel only, Vault only, Parallel + Vault URL-to-file, edit/move/delete/rollback.
 
 Test Plan

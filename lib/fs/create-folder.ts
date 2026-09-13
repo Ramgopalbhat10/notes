@@ -43,7 +43,10 @@ export async function createVaultFolder({
 }
 
 export async function ensureAncestorFolders(childPath: string): Promise<void> {
-  const folderPath = childPath.endsWith("/") ? childPath : getParentPath(childPath);
+  // Always walk parents only. Passing a folder prefix through as-is would
+  // create the target itself (existOk), so a later create_folder with
+  // existOk:false would 409 on a brand-new folder.
+  const folderPath = getParentPath(childPath);
   if (!folderPath) {
     return;
   }

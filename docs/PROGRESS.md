@@ -5,8 +5,7 @@ Current story: `docs/stories/story-29.md`
 Current section: Story 29.4 — Verification and Regression Checks
 
 Previous tasks (latest completed batch only):
-- [x] Run `pnpm lint`.
-- [x] Run `pnpm build`.
+- [x] Fix `create_folder` ancestor mkdir 409, `$` snippet replace, and delete/move path resolution.
 
 Next tasks:
 - [ ] Manual smoke: no tools, Parallel only, Vault only, Parallel + Vault URL-to-file, edit/move/delete/rollback.
@@ -16,4 +15,5 @@ Notes:
 - PR: https://github.com/Ramgopalbhat10/notes/pull/123
 - Spec: `docs/superpowers/specs/2026-09-13-chat-vault-write-tools-design.md`
 - ADR: `docs/decisions/ADR-chat-vault-tools.md`
-- `pnpm lint` and `pnpm build` passed. End-to-end vault writes were not smoked here because this environment has no live S3/Parallel credentials.
+- `ensureAncestorFolders` must walk parents only; a folder prefix used as the walk root created the target before `existOk: false`.
+- End-to-end vault writes still need a live app with S3 + Parallel credentials.
