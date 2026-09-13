@@ -13,5 +13,6 @@ Next tasks:
 
 Notes:
 - Branch: `cursor/chat-vault-write-tools-a751`
+- PR: https://github.com/Ramgopalbhat10/notes/pull/123
 - Spec: `docs/superpowers/specs/2026-09-13-chat-vault-write-tools-design.md`
 - Implementation is gated on spec approval (brainstorming). No application code in this unit.
