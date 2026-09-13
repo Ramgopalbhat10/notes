@@ -1,20 +1,17 @@
 # Progress
 
-Current issue: `docs/issues/issue-45.md`
+Current story: `docs/stories/story-29.md`
 
-Current section: Issue 45 — Install Impeccable design skill and run init
+Current section: Story 29.1 — Design spec
 
 Previous tasks (latest completed batch only):
-- [x] Create issue-45, update index, and switch to `chore/impeccable` branch
-- [x] Run `npx impeccable install` and keep only the `.agents/skills/impeccable/` copy
-- [x] Run `/impeccable init`, write `PRODUCT.md`, configure live mode
-- [x] Run `pnpm lint` and `pnpm build`; both passed
-- [x] Commit, push, and open PR #121; all checks green
+- [x] Write the design spec with approaches, recommendation, and resolved assumptions.
+- [x] Index the spec from this story and `docs/PROGRESS.md`.
 
 Next tasks:
-- [ ] None - all tasks completed. Waiting on user to merge or request follow-up.
+- [ ] Await spec approval, then write the implementation plan and start Story 29.2.
 
 Notes:
-- Branch: `chore/impeccable`
-- PR: https://github.com/Ramgopalbhat10/notes/pull/121
-- `DESIGN.md` was not generated; run `/impeccable document` when you want to capture the existing visual system.
+- Branch: `cursor/chat-vault-write-tools-a751`
+- Spec: `docs/superpowers/specs/2026-09-13-chat-vault-write-tools-design.md`
+- Implementation is gated on spec approval (brainstorming). No application code in this unit.
