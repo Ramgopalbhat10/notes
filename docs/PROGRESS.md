@@ -12,6 +12,7 @@ Next tasks:
 
 Notes:
 - Branch: `cursor/chat-incomplete-tool-results-a751`
+- Issue 48 PR: https://github.com/Ramgopalbhat10/notes/pull/124
 - Story 29 PR (merged): https://github.com/Ramgopalbhat10/notes/pull/123
 - Issue 48: `docs/issues/issue-48.md` (resolved) — hung `web_extract` left `input-available` parts; follow-up send failed with missing tool result.
 - Parallel extract can fetch many JS-rendered public pages (`full_content`); login walls and some SPAs can still be empty. Extract execute is hard-capped at 35s.
