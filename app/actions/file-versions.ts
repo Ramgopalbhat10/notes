@@ -1,22 +1,11 @@
 "use server";
 
-import { revalidateTag, updateTag } from "next/cache";
-
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getServerSession, isAllowedUser } from "@/lib/auth";
-import { writeMarkdownFile } from "@/lib/fs/file-writer";
-import {
-  captureFileVersion,
-  getFileVersionContent,
-  getFileVersions,
-} from "@/lib/fs/file-versions";
-import {
-  getFileCacheTag,
-  readFileContent,
-  revalidateFileTags,
-  setFileCacheRecord,
-} from "@/lib/fs/file-cache";
-import { MANIFEST_CACHE_TAG } from "@/lib/cache/manifest-store";
+import { getFileVersionContent } from "@/lib/fs/file-versions";
+import { listFileVersionSnapshots, rollbackFileToVersion } from "@/lib/fs/rollback-file";
+import { updateSavedFileTag } from "@/lib/fs/save-markdown";
+import { getErrorStatus } from "@/lib/http/errors";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,7 +77,7 @@ export async function getFileVersionsAction(input: {
   }
 
   try {
-    const versions = await getFileVersions(key);
+    const versions = await listFileVersionSnapshots(key);
     return {
       ok: true,
       versions: versions.map((v) => ({
@@ -181,55 +170,14 @@ export async function rollbackToVersionAction(input: {
   const authorId = getSessionUserId(session);
 
   try {
-    // 1. Read the target version content
-    const targetVersion = await getFileVersionContent(key, versionId);
-    if (!targetVersion) {
+    const result = await rollbackFileToVersion({ key, versionId, authorId });
+    updateSavedFileTag(key);
+    return { ok: true, content: result.content, etag: result.etag, lastModified: result.lastModified };
+  } catch (error) {
+    const status = getErrorStatus(error);
+    if (status === 404) {
       return { ok: false, reason: "not_found", message: "Version not found" };
     }
-
-    // 2. Capture the current live content before overwriting (reversible)
-    const current = await readFileContent(key);
-    if (current && current.content !== targetVersion.content) {
-      await captureFileVersion({
-        fileKey: key,
-        content: current.content,
-        etag: current.etag ?? null,
-        authorId,
-      });
-    }
-
-    // 3. Overwrite S3 with the target version's content (forced, no IfMatch)
-    const { etag, lastModified } = await writeMarkdownFile({
-      key,
-      content: targetVersion.content,
-    });
-
-    // 4. Revalidate caches + update manifest (same as saveDocumentAction)
-    await revalidateFileTags([key]);
-    await setFileCacheRecord(key, {
-      key,
-      content: targetVersion.content,
-      etag,
-      lastModified,
-      fetchedAt: new Date().toISOString(),
-    });
-
-    updateTag(getFileCacheTag(key));
-    try {
-      const { addOrUpdateFile } = await import("@/lib/manifest-updater");
-      await addOrUpdateFile({
-        key,
-        etag,
-        lastModified,
-        size: Buffer.byteLength(targetVersion.content, "utf-8"),
-      });
-    } catch (error) {
-      console.error("Failed to hot-update manifest after rollback", error);
-      revalidateTag(MANIFEST_CACHE_TAG, "max");
-    }
-
-    return { ok: true, content: targetVersion.content, etag, lastModified };
-  } catch {
     return { ok: false, reason: "unknown", message: "Failed to rollback to version" };
   }
 }

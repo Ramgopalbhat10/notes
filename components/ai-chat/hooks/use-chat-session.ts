@@ -11,6 +11,7 @@ import { useChatStore } from "@/stores/chat";
 import type { ConversationHandle } from "@/components/ai-elements/conversation";
 import { getDocumentSummary } from "../utils";
 import type { FilePayload } from "../types";
+import { useVaultMutationSync } from "./use-vault-mutation-sync";
 
 // Module-level singletons — persist across component remounts
 
@@ -145,6 +146,8 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
   }, [clearError, setDraft, setMessages, stop, conversationRef]);
 
   const isStreaming = status === "submitted" || status === "streaming";
+
+  useVaultMutationSync(messages, isStreaming);
 
   const visibleMessages = useMemo(
     () => messages.filter((message) => message.role === "assistant" || message.role === "user"),

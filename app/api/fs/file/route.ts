@@ -1,39 +1,13 @@
-import { DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
-import { getCachedFile, readFileContent, revalidateFileTags, setFileCacheRecord } from "@/lib/fs/file-cache";
-import { deleteFileMeta } from "@/lib/fs/file-meta";
+import { getCachedFile } from "@/lib/fs/file-cache";
 import { parseIfNoneMatch } from "@/lib/etag";
-import { writeMarkdownFile } from "@/lib/fs/file-writer";
-import { captureFileVersion, deleteFileVersions } from "@/lib/fs/file-versions";
-import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
+import { saveMarkdownFile } from "@/lib/fs/save-markdown";
+import { deleteMarkdownFile } from "@/lib/fs/delete-file";
+import { getErrorMessage, getErrorStatus } from "@/lib/http/errors";
 
 const CACHE_CONTROL_HEADER = "private, no-cache, must-revalidate";
-
-async function ensureMatchingEtag({
-  bucket,
-  key,
-  expectedEtag,
-}: {
-  bucket: string;
-  key: string;
-  expectedEtag: string;
-}): Promise<void> {
-  const client = getS3Client();
-  const head = await client.send(
-    new HeadObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    }),
-  );
-  const currentEtag = head.ETag;
-  if (!currentEtag || currentEtag.replace(/"/g, "") !== expectedEtag.replace(/"/g, "")) {
-    const error: StatusError = Object.assign(new Error("ETag mismatch"), { status: 409 });
-    throw error;
-  }
-}
 
 function handleS3Error(error: unknown) {
   const status = getErrorStatus(error);
@@ -53,6 +27,14 @@ function handleS3Error(error: unknown) {
   }
   console.error("S3 operation failed", error);
   return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+}
+
+function sessionUserId(session: unknown): string | null {
+  if (!session || typeof session !== "object" || !("user" in session)) {
+    return null;
+  }
+  const user = (session as { user?: { id?: unknown } }).user;
+  return typeof user?.id === "string" ? user.id : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -128,54 +110,12 @@ export async function PUT(request: NextRequest) {
     const content = typeof body?.content === "string" ? body.content : "";
     const ifMatchEtag = typeof body?.ifMatchEtag === "string" ? body.ifMatchEtag : undefined;
 
-    // Read the current (soon-to-be-previous) content for version history.
-    let previousContent: string | null = null;
-    let previousEtag: string | null = null;
-    try {
-      const previous = await readFileContent(key);
-      if (previous) {
-        previousContent = previous.content;
-        previousEtag = previous.etag ?? null;
-      }
-    } catch {
-      // Non-critical: don't block the save if we can't read the previous content
-    }
-
-    const { etag: newEtag, lastModified } = await writeMarkdownFile({ key, content, ifMatchEtag });
-
-    await revalidateFileTags([key]);
-
-    await setFileCacheRecord(key, {
+    const { etag: newEtag } = await saveMarkdownFile({
       key,
       content,
-      etag: newEtag,
-      lastModified,
-      fetchedAt: new Date().toISOString(),
+      ifMatchEtag,
+      authorId: sessionUserId(authRes.session),
     });
-
-    // Incrementally update manifest instead of invalidating
-    const { addOrUpdateFile } = await import("@/lib/manifest-updater");
-    await addOrUpdateFile({
-      key,
-      etag: newEtag,
-      lastModified,
-      size: Buffer.byteLength(content, "utf-8"),
-    });
-
-    // Capture a version snapshot of the previous state (after successful save).
-    if (previousContent !== null && previousContent !== content) {
-      const authorId = (authRes.session?.user as { id?: string } | null)?.id ?? null;
-      try {
-        await captureFileVersion({
-          fileKey: key,
-          content: previousContent,
-          etag: previousEtag,
-          authorId,
-        });
-      } catch (error) {
-        console.error("Failed to capture file version", error);
-      }
-    }
 
     return NextResponse.json({
       etag: newEtag,
@@ -195,28 +135,7 @@ export async function DELETE(request: NextRequest) {
     const key = normalizeFileKey(body?.key);
     const ifMatchEtag = typeof body?.ifMatchEtag === "string" ? body.ifMatchEtag : undefined;
 
-    const bucket = getBucket();
-    const client = getS3Client();
-    const fullKey = applyVaultPrefix(key);
-
-    if (ifMatchEtag) {
-      await ensureMatchingEtag({ bucket, key: fullKey, expectedEtag: ifMatchEtag });
-    }
-
-    await client.send(
-      new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: fullKey,
-      }),
-    );
-
-    await revalidateFileTags([key]);
-    void deleteFileMeta(key);
-    void deleteFileVersions(key);
-
-    // Incrementally update manifest instead of invalidating
-    const { deleteFile } = await import("@/lib/manifest-updater");
-    await deleteFile({ key });
+    await deleteMarkdownFile({ key, ifMatchEtag });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

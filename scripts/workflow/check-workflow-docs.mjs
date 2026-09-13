@@ -13,7 +13,15 @@ const base = baseArg ? baseArg.slice('--base='.length) : null
 const head = headArg ? headArg.slice('--head='.length) : 'HEAD'
 const branchFromArg = branchArg ? branchArg.slice('--branch='.length) : ''
 
-const ALLOWED_BRANCH_PREFIXES = ['feat/', 'feature/', 'fix/', 'refactor/', 'chore/', 'docs/']
+const ALLOWED_BRANCH_PREFIXES = [
+  'feat/',
+  'feature/',
+  'fix/',
+  'refactor/',
+  'chore/',
+  'docs/',
+  'cursor/',
+]
 
 function run(command) {
   return execSync(command, { encoding: 'utf8' }).trim()

@@ -14,7 +14,7 @@ On every request, scan for a `[label]` prefix first — before loading any files
 - **No label, implementation intent** — execute all 9 phases in the repo workflow via `.agents/skills/notes-workflow/SKILL.md`.
 
 ## Constraints (Always Enforced)
-- NEVER commit to `main`. Branch: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`.
+- NEVER commit to `main`. Branch: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, or `cursor/` (Cursor Cloud Agent).
 - NEVER create test files (`*.test.*`, `*.spec.*`, `__tests__/`). Delete any before committing.
 - NEVER create PR if any required phase is incomplete — list missing phases instead.
 

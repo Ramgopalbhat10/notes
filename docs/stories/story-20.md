@@ -32,11 +32,13 @@ Goal: Enforce `docs/WORKFLOW.md` requirements with automated guardrails so undoc
 | 2026-02-24 | fix | Renamed GitHub OAuth env references from `GITHUB_*` to `GH_*` in auth runtime, CI workflow secret wiring, and setup docs. |
 | 2026-02-24 | chore | Added workflow guidance to reuse relevant active branches/issues and made pre-push skip docs-only (markdown-only) pushes. |
 | 2026-02-24 | fix | Handled pre-push delete-ref updates by skipping all-zero local OIDs to prevent invalid diff range construction. |
+| 2026-09-13 | fix | Allowed `cursor/` Cloud Agent branch prefix in `check-workflow-docs.mjs` (Issue 46). |
 
 ## Issues
 
 | Issue | Title | Status | File |
 |---|---|---|---|
+| 46 | workflow-gates rejects Cursor Cloud Agent `cursor/` branches | resolved | `docs/issues/issue-46.md` |
 
 ---
 

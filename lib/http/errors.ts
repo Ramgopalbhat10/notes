@@ -5,6 +5,10 @@ export type StatusError = Error & {
   };
 };
 
+export function statusError(message: string, status: number): StatusError {
+  return Object.assign(new Error(message), { status });
+}
+
 export function getErrorStatus(error: unknown): number | undefined {
   if (error && typeof error === "object") {
     const status = (error as StatusError).status;

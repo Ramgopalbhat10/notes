@@ -94,6 +94,7 @@ type TreeState = {
   selectByPath: (path: string | null) => SelectByPathResult;
   acknowledgeSelectionOrigin: () => void;
   refreshTree: (options?: { silent?: boolean }) => Promise<void>;
+  reloadManifest: () => Promise<void>;
   createFolder: (parentId: NodeId | null, name: string) => Promise<void>;
   createFile: (parentId: NodeId | null, name: string, initialContent?: string) => Promise<void>;
   renameNode: (id: NodeId, newName: string) => Promise<void>;
@@ -419,6 +420,7 @@ export const useTreeStore = create<TreeState>((set, get) => {
 
 
     refreshTree,
+    reloadManifest: reloadManifestOnly,
 
     createFolder: async (parentId, name) => {
       const parentPath = parentId ?? "";

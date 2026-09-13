@@ -1,7 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Globe } from "lucide-react";
-import type { Tool } from "ai";
-import { searchTool } from "@parallel-web/ai-sdk-tools";
+import { FolderPen, Globe } from "lucide-react";
 
 export type SearchProviderId = "parallel";
 
@@ -11,14 +9,23 @@ export type SearchProvider = {
   description: string;
 };
 
-export type ChatToolId = "web-search";
+export type ToolProvider = {
+  id: string;
+  name: string;
+  description: string;
+};
+
+export type ChatToolId = "web-search" | "vault";
+
+export type ChatToolToggle = "submenu" | "inline";
 
 export type ChatToolDefinition = {
   id: ChatToolId;
   name: string;
   description: string;
   icon: LucideIcon;
-  providers: SearchProvider[];
+  providers: ToolProvider[];
+  toggle?: ChatToolToggle;
 };
 
 export const SEARCH_PROVIDERS: SearchProvider[] = [
@@ -29,6 +36,12 @@ export const SEARCH_PROVIDERS: SearchProvider[] = [
   },
 ];
 
+export const VAULT_NATIVE_PROVIDER: ToolProvider = {
+  id: "native",
+  name: "Notes vault",
+  description: "Read, create, edit, move, and delete notes and folders",
+};
+
 export const CHAT_TOOLS: ChatToolDefinition[] = [
   {
     id: "web-search",
@@ -36,27 +49,16 @@ export const CHAT_TOOLS: ChatToolDefinition[] = [
     description: "Search the web for current information",
     icon: Globe,
     providers: SEARCH_PROVIDERS,
+    toggle: "submenu",
+  },
+  {
+    id: "vault",
+    name: "Vault",
+    description: "Read, create, edit, move, and delete notes and folders",
+    icon: FolderPen,
+    providers: [VAULT_NATIVE_PROVIDER],
+    toggle: "inline",
   },
 ];
 
 export type EnabledTools = Record<string, string[]>;
-
-export function resolveServerTools(
-  enabledTools: EnabledTools | undefined | null,
-): Record<string, Tool> | undefined {
-  if (!enabledTools || Object.keys(enabledTools).length === 0) {
-    return undefined;
-  }
-
-  const tools: Record<string, Tool> = {};
-
-  if (enabledTools["web-search"]?.includes("parallel")) {
-    tools.web_search = searchTool;
-  }
-
-  if (Object.keys(tools).length === 0) {
-    return undefined;
-  }
-
-  return tools;
-}

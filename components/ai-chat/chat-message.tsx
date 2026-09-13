@@ -8,6 +8,7 @@ import {
   Copy,
   Loader2,
   RefreshCcw,
+  Wrench,
 } from "lucide-react";
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
@@ -18,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import type { ChatMessageRowProps } from "./types";
 import { messageToPlainText, messageToReasoning } from "./utils";
+import { messageToToolActivities } from "./tool-activity";
 
 function ChatReasoning({
   reasoning,
@@ -68,14 +70,16 @@ function ChatReasoning({
 
 export const ChatMessageRow = forwardRef<HTMLDivElement, ChatMessageRowProps>(
   function ChatMessageRow(
-    { message, streaming, copying, onCopy, onInsert, onRegenerate, canRegenerate },
+    { message, streaming, copying, onCopy, onInsert, onRegenerate, canRegenerate, onOpenPath },
     ref
   ) {
     const isAssistant = message.role === "assistant";
     const text = messageToPlainText(message);
     const reasoning = messageToReasoning(message);
+    const toolActivities = isAssistant ? messageToToolActivities(message) : [];
     const hasContent = Boolean(text.trim());
     const hasReasoning = Boolean(reasoning.trim());
+    const hasTools = toolActivities.length > 0;
 
     const contentClasses = isAssistant ? "w-full" : "ml-auto max-w-[65%]";
 
@@ -91,9 +95,43 @@ export const ChatMessageRow = forwardRef<HTMLDivElement, ChatMessageRowProps>(
                 {hasReasoning ? (
                   <ChatReasoning reasoning={reasoning} streaming={streaming} />
                 ) : null}
+                {hasTools ? (
+                  <div className="mb-2 space-y-1">
+                    {toolActivities.map((activity) => {
+                      const clickable = Boolean(activity.openPath && onOpenPath);
+                      const content = (
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          {activity.state === "running" ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Wrench className="h-3 w-3" />
+                          )}
+                          <span className="min-w-0 break-words">{activity.label}</span>
+                        </span>
+                      );
+                      if (!clickable || !activity.openPath) {
+                        return (
+                          <div key={activity.id} className="px-2 py-1">
+                            {content}
+                          </div>
+                        );
+                      }
+                      return (
+                        <button
+                          key={activity.id}
+                          type="button"
+                          className="flex w-full rounded-md px-2 py-1 text-left transition-colors hover:bg-muted"
+                          onClick={() => onOpenPath?.(activity.openPath!)}
+                        >
+                          {content}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
                 {hasContent ? (
                   <Response compact>{text}</Response>
-                ) : hasReasoning ? null : (
+                ) : hasReasoning || hasTools ? null : (
                   <span className="text-muted-foreground">
                     Waiting for response…
                   </span>

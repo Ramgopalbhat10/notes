@@ -1,9 +1,8 @@
-import { HeadObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
-import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
+import { createVaultFolder } from "@/lib/fs/create-folder";
 import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
-import { getErrorMessage, getErrorStatus, type StatusError } from "@/lib/http/errors";
+import { getErrorMessage, getErrorStatus } from "@/lib/http/errors";
 
 function handleError(error: unknown) {
   const status = getErrorStatus(error);
@@ -26,42 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const prefix = normalizeFolderPrefix(body?.prefix);
-
-    const bucket = getBucket();
-    const client = getS3Client();
-    const fullKey = applyVaultPrefix(prefix);
-
-    // Check if folder already exists by attempting a head on the placeholder object.
-    try {
-      await client.send(
-        new HeadObjectCommand({
-          Bucket: bucket,
-          Key: fullKey,
-        }),
-      );
-      const conflict: StatusError = Object.assign(new Error("Folder already exists"), { status: 409 });
-      throw conflict;
-    } catch (error) {
-      const status = getErrorStatus(error);
-      if (status && status !== 404) {
-        throw error;
-      }
-      // 404 means it doesn't exist yet; continue.
-    }
-
-    await client.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: fullKey,
-        Body: "",
-        ContentType: "application/x-directory",
-      }),
-    );
-
-    // Incrementally update manifest instead of invalidating
-    const { addFolder } = await import("@/lib/manifest-updater");
-    await addFolder({ prefix });
-
+    await createVaultFolder({ prefix, existOk: false });
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     return handleError(error);
