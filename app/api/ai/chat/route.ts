@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
       system: systemPrompt,
       messages: orderedMessages,
       temperature: 0.4,
+      abortSignal: request.signal,
       tools: (resolvedTools ?? {}) as Record<string, Tool>,
       ...(hasTools
         ? { toolChoice: "auto" as const, stopWhen: stepCountIs(12) }

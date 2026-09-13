@@ -26,7 +26,7 @@ const globalTransport = new DefaultChatTransport<UIMessage>({
   prepareSendMessagesRequest: ({ body, messages }) => ({
     body: {
       ...(body ?? {}),
-      messages,
+      messages: completeIncompleteToolParts(messages),
       file: latestContextRef.current.file,
       model: latestContextRef.current.model,
       tools: latestContextRef.current.tools,

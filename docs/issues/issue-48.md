@@ -20,9 +20,9 @@
 - Default `extractTool` does not request full JS-rendered markdown and does not cap Parallel's live fetch.
 
 ## Fix / Approach
-- Complete interrupted tool parts as `output-error` when the stream ends and before send/regenerate.
-- Server: complete incomplete parts and pass `ignoreIncompleteToolCalls: true`.
-- Use `createExtractTool` with `full_content: true` and `fetch_policy.timeout_seconds: 20`.
+- Complete interrupted tool parts as `output-error` when the stream ends, before send/regenerate, and on the outgoing chat request body.
+- Server: complete incomplete parts and pass `ignoreIncompleteToolCalls: true`; abort `streamText` when the client disconnects.
+- Use `createExtractTool` with `full_content` and `fetch_policy.timeout_seconds: 25`, plus a 35s execute deadline so Parallel cannot outlive the chat stream.
 - Prompt: extract can render many JS pages; empty/login-walled results must be reported, not invented.
 
 ## Files Changed
@@ -36,6 +36,7 @@
 | Date | Unit | Summary |
 |---|---|---|
 | 2026-09-13 | fix | Completed interrupted tool parts so follow-up messages can send; bounded Parallel extract and requested full JS-rendered content. |
+| 2026-09-13 | fix | Added a 35s extract execute deadline, default extract objective, and client-disconnect abort so hung JS pages cannot block the next send. |
 
 ## Test Plan
 - Send a follow-up after a hung/failed extract: no "Tool result is missing" banner; activity row shows failed instead of spinning.
