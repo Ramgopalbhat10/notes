@@ -32,12 +32,14 @@ Goal: Let chat, when the user opts in, do the same vault work they can do in the
 | 2026-09-13 | quality | Split client tool registry from server resolver so vault FS code stays off the client bundle; `pnpm lint` and `pnpm build` passed. |
 | 2026-09-13 | fix | Stopped `create_folder` from 409ing on new folders; literal `edit_file` replace; manifest-based delete/move; parent-folder editor retarget. |
 | 2026-09-13 | fix | Allowed `cursor/` Cloud Agent branches in workflow-gates (Issue 46) so PR #123 can pass CI. |
+| 2026-09-13 | fix | Codex review: keep `updateTag` in Server Actions, reject folder-into-self moves, pass If-Match on `edit_file` (Issue 47). |
 
 ## Issues
 
 | Issue | Title | Status | File |
 |---|---|---|---|
 | 46 | workflow-gates rejects Cursor Cloud Agent `cursor/` branches | resolved | `docs/issues/issue-46.md` |
+| 47 | Codex review: updateTag, nested folder moves, edit_file If-Match | resolved | `docs/issues/issue-47.md` |
 
 ---
 

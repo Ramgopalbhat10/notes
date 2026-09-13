@@ -130,6 +130,11 @@ export async function moveVaultNode({
   }
 
   if (isFolder) {
+    const fromPrefix = normalizeFolderPrefix(fromRaw);
+    const toPrefix = normalizeFolderPrefix(toRaw);
+    if (toPrefix === fromPrefix || toPrefix.startsWith(fromPrefix)) {
+      throw statusError("Cannot move a folder into its own subtree", 400);
+    }
     await moveFolderInS3(fromRaw, toRaw, overwrite);
     return { etag: undefined };
   }

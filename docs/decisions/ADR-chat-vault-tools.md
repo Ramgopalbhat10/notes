@@ -25,6 +25,7 @@ The Tools popover toggle is consent UX, not a new authorization boundary. The ch
 - `maxDuration` is 60s and tool loops allow 12 steps when any tool is enabled.
 - The client reloads the manifest after mutating tool results and syncs the open editor (reload if clean; keep a dirty buffer; close on delete; retarget on move).
 - Destructive deletes require `confirm_path` to equal `path` and refuse the vault root.
+- `updateTag` stays on Server Actions (`saveDocumentAction`, `rollbackToVersionAction`). Shared `saveMarkdownFile` used by Route Handlers only calls `revalidateTag`.
 
 ## Rollout/notes
 

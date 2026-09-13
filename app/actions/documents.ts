@@ -2,7 +2,7 @@
 
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getServerSession, isAllowedUser } from "@/lib/auth";
-import { saveMarkdownFile } from "@/lib/fs/save-markdown";
+import { saveMarkdownFile, updateSavedFileTag } from "@/lib/fs/save-markdown";
 import { getErrorMessage, getErrorStatus } from "@/lib/http/errors";
 
 export type SaveDocumentInput = {
@@ -37,6 +37,7 @@ export async function saveDocumentAction(input: SaveDocumentInput): Promise<Save
 
   try {
     const { etag, lastModified } = await saveMarkdownFile({ key, content, ifMatchEtag, authorId });
+    updateSavedFileTag(key);
     return { ok: true, etag, lastModified };
   } catch (error) {
     const status = getErrorStatus(error);

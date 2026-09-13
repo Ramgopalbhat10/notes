@@ -41,11 +41,21 @@ function mapCaughtError(error: unknown, path?: string): ToolFailure {
     return fail("not_found", message, { path });
   }
   if (status === 409) {
+    const lower = message.toLowerCase();
+    if (lower.includes("etag") || lower.includes("mismatch") || lower.includes("precondition")) {
+      return fail("write_failed", message, { path });
+    }
     return fail("exists", message, { path });
   }
   if (status === 400) {
     const lower = message.toLowerCase();
-    if (lower.includes("empty") || lower.includes("relative") || lower.includes("..") || lower.includes("markdown")) {
+    if (
+      lower.includes("empty") ||
+      lower.includes("relative") ||
+      lower.includes("..") ||
+      lower.includes("markdown") ||
+      lower.includes("subtree")
+    ) {
       return fail("invalid_path", message, { path });
     }
     return fail("write_failed", message, { path });
@@ -268,7 +278,12 @@ export function createVaultTools(context: VaultToolContext): Record<string, Tool
           if (utf8Bytes(next) > MAX_WRITE_BYTES) {
             return fail("too_large", "Edited file would exceed 256 KiB", { path: key });
           }
-          const saved = await saveMarkdownFile({ key, content: next, authorId: context.authorId });
+          const saved = await saveMarkdownFile({
+            key,
+            content: next,
+            ifMatchEtag: record.etag ?? undefined,
+            authorId: context.authorId,
+          });
           return {
             ok: true as const,
             path: key,

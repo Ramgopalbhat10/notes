@@ -4,6 +4,7 @@ import { normalizeFileKey } from "@/lib/fs/fs-validation";
 import { getServerSession, isAllowedUser } from "@/lib/auth";
 import { getFileVersionContent } from "@/lib/fs/file-versions";
 import { listFileVersionSnapshots, rollbackFileToVersion } from "@/lib/fs/rollback-file";
+import { updateSavedFileTag } from "@/lib/fs/save-markdown";
 import { getErrorStatus } from "@/lib/http/errors";
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,7 @@ export async function rollbackToVersionAction(input: {
 
   try {
     const result = await rollbackFileToVersion({ key, versionId, authorId });
+    updateSavedFileTag(key);
     return { ok: true, content: result.content, etag: result.etag, lastModified: result.lastModified };
   } catch (error) {
     const status = getErrorStatus(error);

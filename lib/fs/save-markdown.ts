@@ -10,6 +10,11 @@ import {
 import { writeMarkdownFile } from "@/lib/fs/file-writer";
 import { captureFileVersion } from "@/lib/fs/file-versions";
 
+/** Immediate cache expiry for read-your-own-writes. Call only from Server Actions. */
+export function updateSavedFileTag(key: string): void {
+  updateTag(getFileCacheTag(key));
+}
+
 export type SaveMarkdownFileParams = {
   key: string;
   content: string;
@@ -51,7 +56,6 @@ export async function saveMarkdownFile({
     lastModified,
     fetchedAt: new Date().toISOString(),
   });
-  updateTag(getFileCacheTag(key));
 
   try {
     const { addOrUpdateFile } = await import("@/lib/manifest-updater");
