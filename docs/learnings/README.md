@@ -33,3 +33,4 @@ Filename: `YYYY-MM-DD-short-title.md`
 | 2026-09-13-ensure-ancestor-folders-must-skip-target | `docs/learnings/2026-09-13-ensure-ancestor-folders-must-skip-target.md` |
 | 2026-09-13-cursor-branch-prefix-fails-workflow-gates | `docs/learnings/2026-09-13-cursor-branch-prefix-fails-workflow-gates.md` |
 | 2026-09-13-updateTag-is-server-action-only | `docs/learnings/2026-09-13-updateTag-is-server-action-only.md` |
+| 2026-09-13-incomplete-tool-calls-block-chat-follow-up | `docs/learnings/2026-09-13-incomplete-tool-calls-block-chat-follow-up.md` |

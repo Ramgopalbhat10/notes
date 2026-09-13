@@ -9,6 +9,7 @@ import type { EnabledTools } from "@/lib/ai/tools";
 import { useEditorStore } from "@/stores/editor";
 import { useChatStore } from "@/stores/chat";
 import type { ConversationHandle } from "@/components/ai-elements/conversation";
+import { completeIncompleteToolParts } from "@/lib/ai/complete-incomplete-tools";
 import { getDocumentSummary } from "../utils";
 import type { FilePayload } from "../types";
 import { useVaultMutationSync } from "./use-vault-mutation-sync";
@@ -147,6 +148,13 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
 
   const isStreaming = status === "submitted" || status === "streaming";
 
+  useEffect(() => {
+    if (isStreaming) {
+      return;
+    }
+    setMessages((current) => completeIncompleteToolParts(current));
+  }, [isStreaming, setMessages]);
+
   useVaultMutationSync(messages, isStreaming);
 
   const visibleMessages = useMemo(
@@ -222,9 +230,10 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
       }
       clearError();
       setDraft("");
+      setMessages((current) => completeIncompleteToolParts(current));
       await sendMessage({ text });
     },
-    [clearError, draft, sendMessage, setDraft],
+    [clearError, draft, sendMessage, setDraft, setMessages],
   );
 
   const handleStop = useCallback(async () => {
@@ -236,9 +245,10 @@ export function useChatSession(conversationRef: React.RefObject<ConversationHand
       if (!messageId) {
         return;
       }
+      setMessages((current) => completeIncompleteToolParts(current));
       await regenerate({ messageId });
     },
-    [regenerate],
+    [regenerate, setMessages],
   );
 
   return {
