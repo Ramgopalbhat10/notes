@@ -29,7 +29,7 @@ Follow this skill as the primary agent workflow source for this repository. Do n
 ## Non-Negotiables
 
 - Never commit directly to `main`.
-- Use only `feature/`, `fix/`, `refactor/`, `chore/`, or `docs/` branches.
+- Use only `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, or `cursor/` (Cursor Cloud Agent) branches.
 - Never add test files (`*.test.*`, `*.spec.*`, `__tests__/`).
 - Use `pnpm`, not `npm`.
 - Treat manual testing as the project testing policy; lint/build remain required quality gates when applicable.

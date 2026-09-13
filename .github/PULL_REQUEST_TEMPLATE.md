@@ -37,7 +37,7 @@ Refactored the monolithic handleModalSubmit function in FileTree into a focused 
 - [ ] Cross-references added (if issue relates to a story)
 
 ### Branch & Code Quality
-- [ ] Branch follows naming convention (`feature/`, `fix/`, `refactor/`, `chore/`, `docs/`)
+- [ ] Branch follows naming convention (`feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, `cursor/`)
 - [ ] NOT committing directly to `main`
 - [ ] `pnpm lint` passes
 - [ ] `pnpm build` passes

@@ -31,3 +31,4 @@ Filename: `YYYY-MM-DD-short-title.md`
 | 2026-07-13-turbopack-native-package-bundling | `docs/learnings/2026-07-13-turbopack-native-package-bundling.md` |
 | 2026-09-13-chat-tools-registry-must-stay-client-safe | `docs/learnings/2026-09-13-chat-tools-registry-must-stay-client-safe.md` |
 | 2026-09-13-ensure-ancestor-folders-must-skip-target | `docs/learnings/2026-09-13-ensure-ancestor-folders-must-skip-target.md` |
+| 2026-09-13-cursor-branch-prefix-fails-workflow-gates | `docs/learnings/2026-09-13-cursor-branch-prefix-fails-workflow-gates.md` |
