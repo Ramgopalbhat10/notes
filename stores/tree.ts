@@ -57,6 +57,10 @@ import {
   prepareQueuedMoveNode,
   resolveNodeTargetPath,
 } from "@/lib/tree/store-actions";
+import {
+  describeMoveBlockReason,
+  evaluateMoveDestination,
+} from "@/lib/tree/move-destination";
 import { createSnapshot, getEditorStore } from "@/lib/tree/store-runtime";
 import { buildStateFromManifest } from "@/lib/tree/state-from-manifest";
 import { addNodeToState, removeNodeFromState } from "@/lib/tree/state-mutators";
@@ -530,6 +534,13 @@ export const useTreeStore = create<TreeState>((set, get) => {
       const node = get().nodes[id];
       if (!node) {
         return;
+      }
+      const destination = evaluateMoveDestination(id, targetParentId, get().nodes);
+      if (!destination.ok) {
+        if (destination.reason === "current") {
+          return;
+        }
+        throw new Error(describeMoveBlockReason(destination.reason));
       }
       const parentPath = targetParentId ?? "";
       const targetPath = resolveNodeTargetPath(node, parentPath, node.name);

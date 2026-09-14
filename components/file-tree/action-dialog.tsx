@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { evaluateMoveDestination } from "@/lib/tree/move-destination";
+import { useTreeStore, type NodeId } from "@/stores/tree";
+import { FolderPicker } from "./folder-picker";
 import { type ModalState } from "./types";
 
 export type ActionDialogProps = {
@@ -17,7 +21,9 @@ export type ActionDialogProps = {
   input: string;
   error: string | null;
   submitting: boolean;
+  destinationParentId: NodeId | null;
   onInputChange: (value: string) => void;
+  onDestinationParentChange: (value: NodeId | null) => void;
   onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
   formatPathLabel: (path: string | null | undefined) => string;
@@ -28,7 +34,9 @@ export function ActionDialog({
   input,
   error,
   submitting,
+  destinationParentId,
   onInputChange,
+  onDestinationParentChange,
   onSubmit,
   onClose,
   formatPathLabel,
@@ -159,39 +167,18 @@ export function ActionDialog({
       }
       case "move": {
         return (
-          <form onSubmit={onSubmit} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>Move {modal.isFolder ? "Folder" : "File"}</DialogTitle>
-              <DialogDescription>
-                Current path: <span className="font-medium">{formatPathLabel(modal.path)}</span>. Enter a relative folder
-                path (e.g. <code className="rounded bg-muted px-1">projects/client</code>) or leave blank for root.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Input
-                value={input}
-                onChange={(event) => onInputChange(event.target.value)}
-                placeholder="Destination folder"
-                autoFocus
-                className={inputClasses}
-              />
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            </div>
-            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={submitting}
-                className={cancelButtonClasses}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting} className={primaryButtonClasses}>
-                {submitting ? "Moving..." : "Move"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <MoveDialogForm
+            modal={modal}
+            error={error}
+            submitting={submitting}
+            destinationParentId={destinationParentId}
+            onDestinationParentChange={onDestinationParentChange}
+            onSubmit={onSubmit}
+            onClose={onClose}
+            formatPathLabel={formatPathLabel}
+            cancelButtonClasses={cancelButtonClasses}
+            primaryButtonClasses={primaryButtonClasses}
+          />
         );
       }
       case "delete": {
@@ -241,11 +228,87 @@ export function ActionDialog({
     >
       {modal ? (
         <DialogContent
-          className="w-[92vw] max-w-md rounded-lg border border-border/60 bg-card/95 p-6 shadow-2xl backdrop-blur-md transition-all duration-150 sm:w-full animate-in fade-in-0 zoom-in-95"
+          className={cn(
+            "w-[92vw] rounded-lg border border-border/60 bg-card/95 p-6 shadow-2xl backdrop-blur-md transition-all duration-150 sm:w-full animate-in fade-in-0 zoom-in-95",
+            modal.type === "move" ? "max-w-lg" : "max-w-md",
+          )}
         >
           {renderContent()}
         </DialogContent>
       ) : null}
     </Dialog>
+  );
+}
+
+type MoveModal = Extract<ModalState, { type: "move" }>;
+
+type MoveDialogFormProps = {
+  modal: MoveModal;
+  error: string | null;
+  submitting: boolean;
+  destinationParentId: NodeId | null;
+  onDestinationParentChange: (value: NodeId | null) => void;
+  onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+  formatPathLabel: (path: string | null | undefined) => string;
+  cancelButtonClasses: string;
+  primaryButtonClasses: string;
+};
+
+function MoveDialogForm({
+  modal,
+  error,
+  submitting,
+  destinationParentId,
+  onDestinationParentChange,
+  onSubmit,
+  onClose,
+  formatPathLabel,
+  cancelButtonClasses,
+  primaryButtonClasses,
+}: MoveDialogFormProps) {
+  const nodes = useTreeStore((state) => state.nodes);
+  const canMove = evaluateMoveDestination(modal.nodeId, destinationParentId, nodes).ok;
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!canMove || submitting) {
+          return;
+        }
+        onSubmit(event);
+      }}
+      className="space-y-4"
+    >
+      <DialogHeader>
+        <DialogTitle>Move {modal.isFolder ? "Folder" : "File"}</DialogTitle>
+        <DialogDescription>
+          Choose a destination for <span className="font-medium">{formatPathLabel(modal.path)}</span>.
+          You can also drag items onto folders in the sidebar.
+        </DialogDescription>
+      </DialogHeader>
+      <FolderPicker
+        sourceId={modal.nodeId}
+        selectedParentId={destinationParentId}
+        onSelect={onDestinationParentChange}
+        formatPathLabel={formatPathLabel}
+      />
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={submitting}
+          className={cancelButtonClasses}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={submitting || !canMove} className={primaryButtonClasses}>
+          {submitting ? "Moving..." : "Move"}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

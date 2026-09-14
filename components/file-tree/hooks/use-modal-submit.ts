@@ -1,15 +1,16 @@
 "use client";
 
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { normalizeFolderPrefix } from "@/lib/fs/fs-validation";
 import { getErrorMessage } from "@/lib/http/client";
 import { encodePath } from "@/lib/utils";
-import type { NodeId } from "@/stores/tree";
+import { describeMoveBlockReason, evaluateMoveDestination } from "@/lib/tree/move-destination";
+import { useTreeStore, type NodeId } from "@/stores/tree";
 import type { ModalState } from "../types";
 
 export type UseModalSubmitParams = {
   modal: ModalState | null;
   modalInput: string;
+  destinationParentId: NodeId | null;
   setModal: (modal: ModalState | null) => void;
   setModalError: (error: string | null) => void;
   setModalSubmitting: (submitting: boolean) => void;
@@ -31,6 +32,7 @@ export function useModalSubmit(params: UseModalSubmitParams) {
   const {
     modal,
     modalInput,
+    destinationParentId,
     setModal,
     setModalError,
     setModalSubmitting,
@@ -93,20 +95,14 @@ export function useModalSubmit(params: UseModalSubmitParams) {
           break;
         }
         case "move": {
-          const value = modalInput.trim();
-          let destination: NodeId | null = null;
-          if (value) {
-            try {
-              const candidate = value.endsWith("/") ? value : `${value}/`;
-              destination = normalizeFolderPrefix(candidate);
-            } catch (error) {
-              setModalError(getErrorMessage(error, "Invalid destination path."));
-              setModalSubmitting(false);
-              return;
-            }
+          const result = evaluateMoveDestination(modal.nodeId, destinationParentId, useTreeStore.getState().nodes);
+          if (!result.ok) {
+            setModalError(describeMoveBlockReason(result.reason));
+            setModalSubmitting(false);
+            return;
           }
-          await moveNodeAction(modal.nodeId, destination);
-          const destLabel = formatPathLabel(destination);
+          await moveNodeAction(modal.nodeId, destinationParentId);
+          const destLabel = formatPathLabel(destinationParentId);
           toast({ title: "Moved", description: `Moved to ${destLabel}` });
           break;
         }
