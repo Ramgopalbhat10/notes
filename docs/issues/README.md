@@ -53,3 +53,4 @@ Issue template: `docs/issues/template.md`
 | 45 | Install Impeccable design skill and run init | in-progress | None | `.agents/skills/impeccable/`, `PRODUCT.md`, `DESIGN.md` |
 | 46 | workflow-gates rejects Cursor Cloud Agent `cursor/` branches | resolved | Story 20, Story 29 | `scripts/workflow/check-workflow-docs.mjs` |
 | 47 | Codex review: updateTag, nested folder moves, edit_file If-Match | resolved | Story 29 | `lib/fs/save-markdown.ts`, `lib/fs/move-node.ts`, `lib/ai/vault-tools.ts` |
+| 48 | Incomplete chat tool calls block follow-up messages | resolved | Story 26, Story 29 | `lib/ai/complete-incomplete-tools.ts`, `app/api/ai/chat/route.ts` |

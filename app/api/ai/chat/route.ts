@@ -15,6 +15,7 @@ import { DEFAULT_CHAT_MODEL, parseModelId } from "@/lib/ai/models";
 import { clampText } from "@/lib/ai/text-utils";
 import { redactSecrets, sanitizeContext } from "@/lib/ai/redact";
 import { resolveServerTools, type EnabledTools } from "@/lib/ai/resolve-server-tools";
+import { completeIncompleteToolParts } from "@/lib/ai/complete-incomplete-tools";
 import { applyVaultPrefix, getBucket, getS3Client } from "@/lib/fs/s3";
 import { s3BodyToString } from "@/lib/fs/s3-body";
 import { normalizeFileKey } from "@/lib/fs/fs-validation";
@@ -81,7 +82,9 @@ export async function POST(request: NextRequest) {
 
     const modelName = resolveModel(requestedModel);
 
-    const convertedMessages = await convertToModelMessages(messages);
+    const convertedMessages = await convertToModelMessages(completeIncompleteToolParts(messages), {
+      ignoreIncompleteToolCalls: true,
+    });
     const contextMessage = buildContextMessage({
       fileKey: fileContext.key,
       excerpt: fileContext.excerpt,
@@ -107,6 +110,7 @@ export async function POST(request: NextRequest) {
       system: systemPrompt,
       messages: orderedMessages,
       temperature: 0.4,
+      abortSignal: request.signal,
       tools: (resolvedTools ?? {}) as Record<string, Tool>,
       ...(hasTools
         ? { toolChoice: "auto" as const, stopWhen: stepCountIs(12) }
@@ -252,7 +256,12 @@ function buildSystemPrompt({
   const warningLine = warning ? `Context warning: ${warning}` : "";
 
   const parallelLine = parallelEnabled
-    ? "Web tools are enabled. Use web_extract for a known URL. Use web_search for open-ended lookup."
+    ? [
+        "Web tools are enabled. Use web_extract for a known URL. Use web_search for open-ended lookup.",
+        "Always pass an objective to web_extract describing what to pull (titles, links, prices).",
+        "Extract can render many JavaScript pages, but login walls, bot blocks, and some SPAs still return empty results.",
+        "If extract results or errors are empty, say so and try web_search or ask for a static/export URL. Do not invent a book list you did not receive.",
+      ].join(" ")
     : "";
 
   const vaultLine = vaultEnabled
