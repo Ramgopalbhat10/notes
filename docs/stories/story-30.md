@@ -24,6 +24,7 @@ Goal: Let users move files and folders by picking a destination folder in a tree
 | Date | Unit | Summary |
 |---|---|---|
 | 2026-09-14 | feat | Replaced the Move path input with a searchable folder tree, added sidebar drag-and-drop onto folders/Vault root, and shared destination validation (self, subtree, collision). |
+| 2026-09-14 | fix | Root drops highlight the existing tree instead of inserting a Vault row that shifted items under the cursor. |
 
 ## Issues
 

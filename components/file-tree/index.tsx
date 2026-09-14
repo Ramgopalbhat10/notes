@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FilePlus2, Folder, FolderPlus, RefreshCw, Search, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
+import { FilePlus2, FolderPlus, RefreshCw, Search, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,7 @@ import { useTreeDragDrop } from "./hooks/use-tree-drag-drop";
 import { TreeDragContext } from "./drag-context";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import {
-  describeMoveBlockReason,
-  evaluateMoveDestination,
-} from "@/lib/tree/move-destination";
+import { evaluateMoveDestination } from "@/lib/tree/move-destination";
 
 function buildIndexedMatchMap(
   nodes: Record<NodeId, Node>,
@@ -429,7 +426,11 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
 
         <div
           ref={containerRef}
-          className="space-y-1"
+          className={cn(
+            "space-y-1 rounded-md transition-colors",
+            treeDrag.draggedId && isRootDropTarget && rootDropResult?.ok && "bg-primary/10 ring-1 ring-primary/40",
+            treeDrag.draggedId && isRootDropTarget && rootDropResult && !rootDropResult.ok && "bg-destructive/10 ring-1 ring-destructive/40",
+          )}
           role="tree"
           tabIndex={0}
           onKeyDown={handleKeyDown}
@@ -455,40 +456,6 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
             treeDrag.clearHover();
           }}
         >
-          {treeDrag.draggedId ? (
-            <div
-              className={cn(
-                "flex items-center gap-2 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors",
-                isRootDropTarget && rootDropResult?.ok && "border-primary/50 bg-primary/10 text-foreground",
-                isRootDropTarget && rootDropResult && !rootDropResult.ok && "border-destructive/40 bg-destructive/10 text-muted-foreground",
-                !isRootDropTarget && "border-border/70 text-muted-foreground",
-              )}
-              onDragOver={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                if (!treeDrag.draggedId) {
-                  return;
-                }
-                const result = evaluateMoveDestination(treeDrag.draggedId, null, nodes);
-                event.dataTransfer.dropEffect = result.ok ? "move" : "none";
-                treeDrag.hoverDestination(null);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                treeDrag.dropOn(null);
-              }}
-              title={rootDropResult && !rootDropResult.ok ? describeMoveBlockReason(rootDropResult.reason) : "Move to Vault root"}
-            >
-              <Folder className="h-3.5 w-3.5 shrink-0" />
-              <span className="font-medium">Vault</span>
-              <span className="truncate">
-                {rootDropResult && !rootDropResult.ok
-                  ? describeMoveBlockReason(rootDropResult.reason)
-                  : "Drop here to move to the top level"}
-              </span>
-            </div>
-          ) : null}
           {rootError ? (
             <div className="flex flex-col gap-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
               <span>Failed to load files: {rootError}</span>
