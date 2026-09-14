@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FilePlus2, FolderPlus, RefreshCw, Search, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
+import { FilePlus2, Folder, FolderPlus, RefreshCw, Search, ChevronsUpDown, ChevronsDownUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,14 @@ import { type ExternalTreeActionRequest, type MatchMeta, type ModalState } from 
 import { useDebouncedValue as useDebouncedValueHook } from "./hooks/use-debounced-value";
 import { useTreeKeyboardNavigation as useTreeKeyboardNavigationHook } from "./hooks/use-tree-keyboard-navigation";
 import { useModalSubmit } from "./hooks/use-modal-submit";
+import { useTreeDragDrop } from "./hooks/use-tree-drag-drop";
+import { TreeDragContext } from "./drag-context";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import {
+  describeMoveBlockReason,
+  evaluateMoveDestination,
+} from "@/lib/tree/move-destination";
 
 function buildIndexedMatchMap(
   nodes: Record<NodeId, Node>,
@@ -108,6 +115,7 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
   const refreshErrorRef = useRef<string | null>(null);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [modalInput, setModalInput] = useState("");
+  const [destinationParentId, setDestinationParentId] = useState<NodeId | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSubmitting, setModalSubmitting] = useState(false);
 
@@ -183,7 +191,8 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
         setModalInput(modal.initialName);
         break;
       case "move":
-        setModalInput(modal.currentParentId ?? "");
+        setModalInput("");
+        setDestinationParentId(modal.currentParentId);
         break;
       case "delete":
         setModalInput("");
@@ -211,15 +220,30 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
 
   const formatPathLabel = (path: string | null | undefined) => {
     if (!path || path.length === 0) {
-      return "root";
+      return "Vault";
     }
     const trimmed = path.endsWith("/") ? path.slice(0, -1) : path;
-    return trimmed.length > 0 ? trimmed : "root";
+    return trimmed.length > 0 ? trimmed : "Vault";
   };
+
+  const treeDrag = useTreeDragDrop({
+    nodes,
+    openFolders,
+    toggleFolder,
+    moveNode: moveNodeAction,
+    toast,
+    formatPathLabel,
+  });
+
+  const rootDropResult = treeDrag.draggedId
+    ? evaluateMoveDestination(treeDrag.draggedId, null, nodes)
+    : null;
+  const isRootDropTarget = treeDrag.draggedId !== null && treeDrag.dropParentId === null;
 
   const { handleModalSubmit } = useModalSubmit({
     modal,
     modalInput,
+    destinationParentId,
     setModal,
     setModalError,
     setModalSubmitting,
@@ -315,7 +339,7 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
   };
 
   return (
-    <>
+    <TreeDragContext.Provider value={treeDrag}>
       <div className="space-y-3">
         <div className="relative mb-2">
           <Input
@@ -410,7 +434,61 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
           tabIndex={0}
           onKeyDown={handleKeyDown}
           aria-label="File tree"
+          onDragOver={(event) => {
+            if (!treeDrag.draggedId) {
+              return;
+            }
+            event.preventDefault();
+            const result = evaluateMoveDestination(treeDrag.draggedId, null, nodes);
+            event.dataTransfer.dropEffect = result.ok ? "move" : "none";
+            treeDrag.hoverDestination(null);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            treeDrag.dropOn(null);
+          }}
+          onDragLeave={(event) => {
+            const nextTarget = event.relatedTarget;
+            if (nextTarget instanceof Element && event.currentTarget.contains(nextTarget)) {
+              return;
+            }
+            treeDrag.clearHover();
+          }}
         >
+          {treeDrag.draggedId ? (
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors",
+                isRootDropTarget && rootDropResult?.ok && "border-primary/50 bg-primary/10 text-foreground",
+                isRootDropTarget && rootDropResult && !rootDropResult.ok && "border-destructive/40 bg-destructive/10 text-muted-foreground",
+                !isRootDropTarget && "border-border/70 text-muted-foreground",
+              )}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!treeDrag.draggedId) {
+                  return;
+                }
+                const result = evaluateMoveDestination(treeDrag.draggedId, null, nodes);
+                event.dataTransfer.dropEffect = result.ok ? "move" : "none";
+                treeDrag.hoverDestination(null);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                treeDrag.dropOn(null);
+              }}
+              title={rootDropResult && !rootDropResult.ok ? describeMoveBlockReason(rootDropResult.reason) : "Move to Vault root"}
+            >
+              <Folder className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-medium">Vault</span>
+              <span className="truncate">
+                {rootDropResult && !rootDropResult.ok
+                  ? describeMoveBlockReason(rootDropResult.reason)
+                  : "Drop here to move to the top level"}
+              </span>
+            </div>
+          ) : null}
           {rootError ? (
             <div className="flex flex-col gap-1 rounded-md bg-destructive/10 px-2 py-1 text-xs text-destructive">
               <span>Failed to load files: {rootError}</span>
@@ -457,11 +535,13 @@ export function FileTree({ externalActionRequest = null, onExternalActionHandled
         input={modalInput}
         error={modalError}
         submitting={modalSubmitting}
+        destinationParentId={destinationParentId}
         onInputChange={setModalInput}
+        onDestinationParentChange={setDestinationParentId}
         onSubmit={handleModalSubmit}
         onClose={handleCloseModal}
         formatPathLabel={formatPathLabel}
       />
-    </>
+    </TreeDragContext.Provider>
   );
 }

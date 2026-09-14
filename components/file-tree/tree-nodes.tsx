@@ -22,6 +22,7 @@ import { extractResponseError, getErrorMessage, parseJsonOrFallback } from "@/li
 import { useTreeStore, type Node, type NodeId } from "@/stores/tree";
 import { INDENT_SIZE, type MatchMeta, type ModalState } from "./types";
 import { useToast } from "@/hooks/use-toast";
+import { useNodeDragProps } from "./hooks/use-node-drag-props";
 
 function makeNodeActions(
   openModal: (modal: ModalState) => void,
@@ -160,7 +161,12 @@ function FolderNode({
   const showActions = isActive;
   const connectorLeft = depth * INDENT_SIZE + 10;
 
+  const { isDragging, isDropTarget, dropAllowed, shouldSuppressClick, dragProps } = useNodeDragProps(node);
+
   const handleToggle = () => {
+    if (shouldSuppressClick()) {
+      return;
+    }
     onActiveChange(node.id);
     if (filterActive) {
       return;
@@ -177,11 +183,15 @@ function FolderNode({
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
+            {...dragProps}
             className={cn(
               "group/folder relative flex items-center rounded-md px-1 transition-colors min-w-0 overflow-hidden",
               (selectionState === "selected" || isActive)
                 ? "bg-sidebar-accent text-foreground"
                 : "hover:bg-muted/20 focus-within:bg-muted/20",
+              isDragging && "opacity-50",
+              isDropTarget && dropAllowed && "bg-primary/10 ring-1 ring-primary/40",
+              isDropTarget && !dropAllowed && "bg-destructive/10 ring-1 ring-destructive/40",
             )}
             style={{ paddingLeft: depth * INDENT_SIZE }}
           >
@@ -300,7 +310,13 @@ function FolderNode({
       </ContextMenu>
 
       {isOpen ? (
-        <div className="relative" aria-live="polite" role="group">
+        <div
+          className="relative"
+          aria-live="polite"
+          role="group"
+          onDragOver={dragProps.onDragOver}
+          onDrop={dragProps.onDrop}
+        >
           {childIds.length > 0 ? (
             <span
               aria-hidden="true"
@@ -367,6 +383,7 @@ function FileNode({
   const displayName = node.name.replace(/\.md$/i, "");
 
   const { rename: handleRename, remove: handleDelete, move: handleMove } = makeNodeActions(openModal, node, { isFolder: false, displayName });
+  const { isDragging, shouldSuppressClick, dragProps } = useNodeDragProps(node);
 
   const handleDownload = async () => {
     try {
@@ -391,6 +408,9 @@ function FileNode({
   };
 
   const handleOpen = () => {
+    if (shouldSuppressClick()) {
+      return;
+    }
     onActiveChange(node.id);
     select(node.id);
   };
@@ -401,12 +421,14 @@ function FileNode({
         <button
           type="button"
           data-node-id={node.id}
+          {...dragProps}
           onClick={handleOpen}
           className={cn(
             "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
             isSelected
               ? "bg-muted text-foreground font-medium"
               : "hover:bg-muted/20 text-muted-foreground/60",
+            isDragging && "opacity-50",
           )}
           style={{ paddingLeft: depth * INDENT_SIZE + INDENT_SIZE }}
           role="treeitem"

@@ -1,20 +1,21 @@
 # Progress
 
-Current story: `docs/stories/story-29.md`
+Current story: `docs/stories/story-30.md`
 
-Current section: Story 29.4 — Verification and Regression Checks
+Current section: Story 30.3 — Verification and Regression Checks
 
 Previous tasks (latest completed batch only):
-- [x] Complete interrupted chat tool calls and bound Parallel extract (Issue 48).
+- [x] Add shared move-destination helpers and store-side validation.
+- [x] Render a folder picker in the Move dialog and submit the selected parent id.
+- [x] Wire HTML5 drag-and-drop on sidebar rows with destination highlighting.
+- [x] Auto-expand a closed folder after hovering it during a drag.
+- [x] Run `pnpm lint`.
+- [x] Run `pnpm build`.
 
 Next tasks:
-- [ ] Manual smoke: no tools, Parallel only, Vault only, Parallel + Vault URL-to-file, edit/move/delete/rollback.
+- [ ] Manually verify dialog picker, sidebar drag-and-drop, and existing tree actions.
 
 Notes:
-- Branch: `cursor/chat-incomplete-tool-results-a751`
-- Issue 48 PR: https://github.com/Ramgopalbhat10/notes/pull/124
-- Story 29 PR (merged): https://github.com/Ramgopalbhat10/notes/pull/123
-- Issue 48: `docs/issues/issue-48.md` (resolved) — hung `web_extract` left `input-available` parts; follow-up send failed with missing tool result.
-- Parallel extract can fetch many JS-rendered public pages (`full_content`); login walls and some SPAs can still be empty. Extract execute is hard-capped at 35s.
-- Spec: `docs/superpowers/specs/2026-09-13-chat-vault-write-tools-design.md`
-- ADR: `docs/decisions/ADR-chat-vault-tools.md`
+- Branch: `cursor/move-folder-tree-dnd-a9b0`
+- `pnpm lint` passed. `pnpm build` compiled and typechecked; page-data collection needs vault env secrets in this agent VM.
+- Drag-and-drop uses HTML5 (no new dependency). Nested drop targets must `stopPropagation` or drops fall through to Vault root.
