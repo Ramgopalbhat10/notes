@@ -35,3 +35,4 @@ Filename: `YYYY-MM-DD-short-title.md`
 | 2026-09-13-updateTag-is-server-action-only | `docs/learnings/2026-09-13-updateTag-is-server-action-only.md` |
 | 2026-09-13-incomplete-tool-calls-block-chat-follow-up | `docs/learnings/2026-09-13-incomplete-tool-calls-block-chat-follow-up.md` |
 | 2026-09-14-nested-tree-html5-drop-targets | `docs/learnings/2026-09-14-nested-tree-html5-drop-targets.md` |
+| 2026-10-19-anton-pr-branch-workflow-gate | `docs/learnings/2026-10-19-anton-pr-branch-workflow-gate.md` |

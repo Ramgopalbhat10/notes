@@ -54,3 +54,4 @@ Issue template: `docs/issues/template.md`
 | 46 | workflow-gates rejects Cursor Cloud Agent `cursor/` branches | resolved | Story 20, Story 29 | `scripts/workflow/check-workflow-docs.mjs` |
 | 47 | Codex review: updateTag, nested folder moves, edit_file If-Match | resolved | Story 29 | `lib/fs/save-markdown.ts`, `lib/fs/move-node.ts`, `lib/ai/vault-tools.ts` |
 | 48 | Incomplete chat tool calls block follow-up messages | resolved | Story 26, Story 29 | `lib/ai/complete-incomplete-tools.ts`, `app/api/ai/chat/route.ts` |
+| 49 | API-key comparison and PR workflow failures | resolved | Story 31 | `lib/auth/api-key.ts`, `scripts/workflow/check-workflow-docs.mjs` |

@@ -25,6 +25,7 @@ Goal: Let the owner's other server-side applications use the existing filesystem
 
 | Date | Unit | Summary |
 |---|---|---|
+| 2026-10-19 | fix | Addressed PR #126 checks in Issue 49: removed unnecessary SHA-256 key hashing and recognized the actual tool-managed Anton PR branch. Lint/build, auth/CRUD regression fixtures, and the CI branch command passed; GitHub CodeQL rerun remains external. |
 | 2026-10-19 | verify | Lint/build passed with fixture env; all nine key route/method pairs, session fallback, mocked note CRUD/settings, 13 real HTTP auth checks, and desktop/mobile sign-in smoke checks passed. Added explicit session guards for personal settings. Live OAuth/Tigris/Turso checks require owner credentials and were not performed. |
 | 2026-10-19 | feat | Added exact filesystem route/method key validation to both auth gates, retained session fallback and nullable author attribution, and documented setup/rotation/CRUD examples. |
 | 2026-10-19 | plan | Reduced the feature to one environment-configured key on existing CRUD endpoints; excluded managed keys and new API infrastructure. |
@@ -33,6 +34,7 @@ Goal: Let the owner's other server-side applications use the existing filesystem
 
 | Issue | Title | Status | File |
 |---|---|---|---|
+| 49 | API-key comparison and PR workflow failures | resolved | `docs/issues/issue-49.md` |
 
 ## Story 31.1 — Minimal alternative authentication
 

@@ -6,7 +6,7 @@ This is a single-owner notes application protected by GitHub login and a configu
 
 ## Decision
 
-Use one optional server-side `NOTES_API_KEY` as an alternative credential on the existing filesystem APIs. Clients send `Authorization: Bearer <key>` over HTTPS. The shared `hasValidFsApiKey` helper validates both the exact pathname/method allowlist and the credential, using fixed-length SHA-256 digests with `timingSafeEqual`. Unset/blank configuration disables key access.
+Use one optional server-side `NOTES_API_KEY` as an alternative credential on the existing filesystem APIs. Clients send `Authorization: Bearer <key>` over HTTPS. The shared `hasValidFsApiKey` helper validates both the exact pathname/method allowlist and the credential, using direct UTF-8 buffers with `timingSafeEqual` after rejecting unequal byte lengths. No password hash or persisted key verifier is created; the configured random key is compared directly. Unset/blank configuration disables key access.
 
 Both the Next.js proxy and `requireApiUser` use the same helper. Accepted routes/methods are file GET/PUT/DELETE, list GET, mkdir POST, folder DELETE, move POST, and metadata GET/PUT. All other routes retain their existing auth. Invalid keys grant nothing but do not prevent ordinary authorized cookie-session authentication.
 

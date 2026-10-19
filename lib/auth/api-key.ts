@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
 import type { NextRequest } from "next/server";
 
 // Keep key access limited to existing filesystem operations, never browser sessions.
@@ -26,8 +26,8 @@ export function hasValidFsApiKey(request: NextRequest): boolean {
     return false;
   }
 
-  // Fixed-length digests make timingSafeEqual safe even for different key lengths.
-  const suppliedHash = createHash("sha256").update(bearer[1]).digest();
-  const configuredHash = createHash("sha256").update(configuredKey).digest();
-  return timingSafeEqual(suppliedHash, configuredHash);
+  const suppliedBytes = Buffer.from(bearer[1], "utf8");
+  const configuredBytes = Buffer.from(configuredKey, "utf8");
+  // timingSafeEqual requires equal byte lengths; a different length cannot match.
+  return suppliedBytes.length === configuredBytes.length && timingSafeEqual(suppliedBytes, configuredBytes);
 }
