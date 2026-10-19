@@ -1,17 +1,19 @@
 # Progress
 
-Current story: `docs/stories/story-30.md`
+Current story: `docs/stories/story-31.md`
 
-Current section: Story 30.3 — Verification and Regression Checks
+Current section: Story 31.3 — Portable API client skill (complete)
 
 Previous tasks (latest completed batch only):
-- [x] Highlight Vault root as a drop target without inserting a layout-shifting row.
+- [x] Validate skill metadata, links, all nine method/path pairs, JSON/Python examples, and detached-copy portability.
+- [x] Verify mocked request/edit flows, redirect refusal, error/secret safety, and origin validation; lint passed.
+- [x] Package the complete skill for reuse and prepare the update to PR #126.
 
 Next tasks:
-- [ ] Manually verify dialog picker, sidebar drag-and-drop, and existing tree actions.
+- None - all tasks completed.
 
 Notes:
-- Branch: `cursor/move-folder-tree-dnd-a9b0`
-- PR: https://github.com/Ramgopalbhat10/notes/pull/125
-- `pnpm lint` passed. `pnpm build` compiled and typechecked with dummy env in this agent VM.
-- Nested drop targets must `stopPropagation` or drops fall through to Vault root.
+- Local branch: `feature/personal-vault-api-key`
+- PR head: `anton/i-want-to-make-the-repo-api-ready-so-tha-5bc4da`
+- Skill: `.agents/skills/personal-notes-api/`; caller supplies `NOTES_BASE_URL` and secret `NOTES_API_KEY`.
+- Markdown-only addition; no application/runtime changes. Previous runtime build passed; skill examples used local mocks, not live credentials/vault data.

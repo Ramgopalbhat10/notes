@@ -36,3 +36,4 @@ Story template: `docs/stories/template.md`
 | 28 | Markdown File Version History & Rollback | `docs/stories/story-28.md` |
 | 29 | Chat Vault Tools | `docs/stories/story-29.md` |
 | 30 | Move via Folder Tree and Sidebar Drag-and-Drop | `docs/stories/story-30.md` |
+| 31 | Single API Key for Vault CRUD | `docs/stories/story-31.md` |

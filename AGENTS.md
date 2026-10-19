@@ -14,7 +14,7 @@ On every request, scan for a `[label]` prefix first — before loading any files
 - **No label, implementation intent** — execute all 9 phases in the repo workflow via `.agents/skills/notes-workflow/SKILL.md`.
 
 ## Constraints (Always Enforced)
-- NEVER commit to `main`. Branch: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, or `cursor/` (Cursor Cloud Agent).
+- NEVER commit to `main`. Branch: `feature/`, `fix/`, `refactor/`, `chore/`, `docs/`, `cursor/` (Cursor Cloud Agent), or `anton/` (tool-managed Anton task/PR branches).
 - NEVER create test files (`*.test.*`, `*.spec.*`, `__tests__/`). Delete any before committing.
 - NEVER create PR if any required phase is incomplete — list missing phases instead.
 
@@ -54,6 +54,7 @@ On every request, scan for a `[label]` prefix first — before loading any files
 - `/code-health` — duplication, dead code, naming, deprecated usage, complexity.
 - `/security` — weak validation, secret exposure, injection risks, auth bypass.
 - `/performance` — slow queries, re-renders, bundle bloat, inefficient algorithms.
+- `/personal-notes-api` — portable client instructions for reading/managing personal notes via `NOTES_BASE_URL` and secret `NOTES_API_KEY`; copy the whole skill folder to other agents. API use alone is not repo development work.
 
 ## Context Pointers
 - Setup, env, scripts: `README.md`

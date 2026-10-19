@@ -56,6 +56,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: authRes.error }, { status: authRes.status });
   }
 
+  // Personal settings require a browser session, never an API-key-only caller.
+  if (!authRes.session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const userId = authRes.session.user.id;
 
   try {
@@ -84,6 +89,11 @@ export async function PUT(request: NextRequest) {
   const authRes = await requireApiUser(request);
   if (!authRes.ok) {
     return NextResponse.json({ error: authRes.error }, { status: authRes.status });
+  }
+
+  // Personal settings require a browser session, never an API-key-only caller.
+  if (!authRes.session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const userId = authRes.session.user.id;

@@ -21,6 +21,7 @@ const ALLOWED_BRANCH_PREFIXES = [
   'chore/',
   'docs/',
   'cursor/',
+  'anton/', // Tool-managed task/PR branches, like Cursor Cloud Agent branches.
 ]
 
 function run(command) {

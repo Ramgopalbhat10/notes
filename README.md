@@ -23,6 +23,9 @@ GH_CLIENT_SECRET=
 GH_ALLOWED_LOGIN=
 BETTER_AUTH_SECRET=
 
+# Optional: one server-side key for third-party filesystem CRUD access
+NOTES_API_KEY=
+
 # Turso (LibSQL) persistence
 TURSO_DATABASE_URL=
 TURSO_AUTH_TOKEN=
@@ -105,6 +108,77 @@ pnpm db:migrate
 ```
 
 If `pnpm db:migrate` fails with a 401, double-check the `TURSO_AUTH_TOKEN`/`TURSO_DB_TOKEN` value or regenerate a fresh auth token from the Turso dashboard.
+
+## API Access From Other Applications
+
+Set `NOTES_API_KEY` in the server environment to a strong random secret (generate one with `openssl rand -hex 32`), then restart/redeploy the app. Your other applications can send it as `Authorization: Bearer <key>` without a browser session. GitHub login and the configured email/login allowlist continue working as before; the key is an additional credential, not a replacement for the existing auth configuration.
+
+Leaving `NOTES_API_KEY` unset or blank disables key authentication. Missing, malformed, or incorrect keys do not grant access; an existing authorized browser session can still authenticate normally. Keep `AUTH_BYPASS` and `AUTH_INSECURE_ALLOW_ALL` disabled in production.
+
+The key grants full access to these existing operations in your shared vault, with no folder restrictions:
+
+| Endpoint | Methods | Input |
+|---|---|---|
+| `/api/fs/file` | `GET`, `PUT`, `DELETE` | GET: `?key=note.md`; PUT: JSON `key`, `content`, optional `ifMatchEtag`; DELETE: JSON `key`, optional `ifMatchEtag` |
+| `/api/fs/list` | `GET` | `?prefix=folder/`, optional `continuationToken`; omit prefix for the vault root |
+| `/api/fs/mkdir` | `POST` | JSON `prefix` |
+| `/api/fs/folder` | `DELETE` | JSON `prefix`, optional `recursive` (default false) |
+| `/api/fs/move` | `POST` | JSON `fromKey`, `toKey`, optional `overwrite`, `ifMatchEtag`; folder paths end in `/` |
+| `/api/fs/meta` | `GET`, `PUT` | GET: `?key=note.md`; PUT: JSON `key`, boolean `public` |
+
+File paths are relative to the configured vault prefix, and files must be Markdown (`.md`). `PUT /api/fs/file` creates or replaces a note. Reads return JSON including `content` and `etag`; writes return the new `etag`. For optional optimistic concurrency, pass that ETag as the JSON field `ifMatchEtag` on a subsequent update/delete/move. Listing returns `nextContinuationToken` when more results are available. Existing response formats and error statuses are unchanged. API-key saves do not impersonate a user; history author IDs are nullable.
+
+### curl Examples
+
+Set `NOTES_API_KEY` in the calling application's secret environment as well; do not commit it. Replace the example URL with your deployment. Use a disposable note for these examples—the final command deletes it.
+
+```bash
+export NOTES_BASE_URL="https://notes.example.com"
+# NOTES_API_KEY is already set securely in this shell's environment.
+
+# List notes and folders at the vault root.
+curl --fail-with-body "$NOTES_BASE_URL/api/fs/list" \
+  -H "Authorization: Bearer $NOTES_API_KEY"
+
+# Create a note, or replace its content if it already exists.
+curl --fail-with-body -X PUT "$NOTES_BASE_URL/api/fs/file" \
+  -H "Authorization: Bearer $NOTES_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"key":"api-example.md","content":"# Hello\nCreated by another application."}'
+
+# Read the note (curl URL-encodes the key).
+curl --fail-with-body --get "$NOTES_BASE_URL/api/fs/file" \
+  -H "Authorization: Bearer $NOTES_API_KEY" \
+  --data-urlencode 'key=api-example.md'
+
+# Edit the same note.
+curl --fail-with-body -X PUT "$NOTES_BASE_URL/api/fs/file" \
+  -H "Authorization: Bearer $NOTES_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"key":"api-example.md","content":"# Hello\nUpdated by another application."}'
+
+# Delete the disposable note.
+curl --fail-with-body -X DELETE "$NOTES_BASE_URL/api/fs/file" \
+  -H "Authorization: Bearer $NOTES_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data '{"key":"api-example.md"}'
+```
+
+Treat the key like a password: use HTTPS and keep it in server-side secret storage, never in query strings, logs, a `NEXT_PUBLIC_*` variable, frontend JavaScript, or a distributed mobile app. Rotate/revoke it by replacing/removing `NOTES_API_KEY` on all server instances and restarting/redeploying; replacement invalidates the old key.
+
+The key does **not** authenticate browser pages, server actions, AI APIs, personal settings, or tree/refresh endpoints. Existing public-file routes remain independently anonymous for explicitly published notes. Setting `public: true` through the metadata API publishes a note for anonymous reads. There is no key-management UI, database migration, or additional API-key dependency.
+
+### Reusable Agent Skill
+
+The portable [`personal-notes-api` skill](.agents/skills/personal-notes-api/SKILL.md) teaches other agents how to use these APIs without this repository, a GitHub session, or application dependencies. It includes note discovery, pagination, create/edit/delete, folders/moves, visibility, ETags, and safe failure handling.
+
+Copy the **entire** `.agents/skills/personal-notes-api/` folder (including `references/`) into your agent's supported skill directory. For example, use `.agents/skills/personal-notes-api/` in another project for agents supporting that convention, or `.claude/skills/personal-notes-api/` for Claude Code. Follow your agent's installation instructions for user-wide skills.
+
+Configure `NOTES_BASE_URL` as your deployment origin (for example `https://notes.example.com`) and provide `NOTES_API_KEY` through that agent's private environment/secret manager. Do not put the key in the skill, prompts, or committed config. Then ask the agent, for example:
+
+> Use the personal-notes-api skill to read `Projects/Plan.md` and append the following update, preserving the rest of the note.
+
+The skill is an API client guide, not the repository's development workflow. It does not deploy the application, provision keys, change authentication, or require `notes-workflow`. Its [API reference](.agents/skills/personal-notes-api/references/api.md) includes an optional Python standard-library request example.
 
 ## Working With the Cached File Tree
 The app never walks S3 directly on boot. Instead it expects a manifest JSON at the bucket root:

@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import * as schema from "../../drizzle/schema";
 import { db } from "../platform/db";
 import { AUTH_BYPASS_ENABLED, createAuthBypassSession } from "./config";
+import { hasValidFsApiKey } from "./api-key";
 
 const secretEnv = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || "";
 const githubClientId = process.env.GH_CLIENT_ID || "";
@@ -137,6 +138,10 @@ export function isAllowedUser(session: SessionLike): boolean {
 }
 
 export async function requireApiUser(request: NextRequest) {
+  if (hasValidFsApiKey(request)) {
+    return { ok: true as const, session: null };
+  }
+
   const session = await getApiSession(request);
   if (!session) {
     return { ok: false as const, status: 401 as const, error: "Unauthorized" };
