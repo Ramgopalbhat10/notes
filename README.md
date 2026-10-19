@@ -168,6 +168,18 @@ Treat the key like a password: use HTTPS and keep it in server-side secret stora
 
 The key does **not** authenticate browser pages, server actions, AI APIs, personal settings, or tree/refresh endpoints. Existing public-file routes remain independently anonymous for explicitly published notes. Setting `public: true` through the metadata API publishes a note for anonymous reads. There is no key-management UI, database migration, or additional API-key dependency.
 
+### Reusable Agent Skill
+
+The portable [`personal-notes-api` skill](.agents/skills/personal-notes-api/SKILL.md) teaches other agents how to use these APIs without this repository, a GitHub session, or application dependencies. It includes note discovery, pagination, create/edit/delete, folders/moves, visibility, ETags, and safe failure handling.
+
+Copy the **entire** `.agents/skills/personal-notes-api/` folder (including `references/`) into your agent's supported skill directory. For example, use `.agents/skills/personal-notes-api/` in another project for agents supporting that convention, or `.claude/skills/personal-notes-api/` for Claude Code. Follow your agent's installation instructions for user-wide skills.
+
+Configure `NOTES_BASE_URL` as your deployment origin (for example `https://notes.example.com`) and provide `NOTES_API_KEY` through that agent's private environment/secret manager. Do not put the key in the skill, prompts, or committed config. Then ask the agent, for example:
+
+> Use the personal-notes-api skill to read `Projects/Plan.md` and append the following update, preserving the rest of the note.
+
+The skill is an API client guide, not the repository's development workflow. It does not deploy the application, provision keys, change authentication, or require `notes-workflow`. Its [API reference](.agents/skills/personal-notes-api/references/api.md) includes an optional Python standard-library request example.
+
 ## Working With the Cached File Tree
 The app never walks S3 directly on boot. Instead it expects a manifest JSON at the bucket root:
 

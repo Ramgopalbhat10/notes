@@ -54,6 +54,7 @@ On every request, scan for a `[label]` prefix first — before loading any files
 - `/code-health` — duplication, dead code, naming, deprecated usage, complexity.
 - `/security` — weak validation, secret exposure, injection risks, auth bypass.
 - `/performance` — slow queries, re-renders, bundle bloat, inefficient algorithms.
+- `/personal-notes-api` — portable client instructions for reading/managing personal notes via `NOTES_BASE_URL` and secret `NOTES_API_KEY`; copy the whole skill folder to other agents. API use alone is not repo development work.
 
 ## Context Pointers
 - Setup, env, scripts: `README.md`

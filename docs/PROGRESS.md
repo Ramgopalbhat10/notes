@@ -1,18 +1,19 @@
 # Progress
 
-Current issue: `docs/issues/issue-49.md`
+Current story: `docs/stories/story-31.md`
 
-Current section: Issue 49 — Verification and PR update (complete)
+Current section: Story 31.3 — Portable API client skill (complete)
 
 Previous tasks (latest completed batch only):
-- [x] Run lint/build, key/session/CRUD regression fixtures, and the exact CI documentation command with the actual remote head_ref.
-- [x] Verify main/unknown prefix rejection, no forbidden test files, and the final diff.
+- [x] Validate skill metadata, links, all nine method/path pairs, JSON/Python examples, and detached-copy portability.
+- [x] Verify mocked request/edit flows, redirect refusal, error/secret safety, and origin validation; lint passed.
+- [x] Package the complete skill for reuse and prepare the update to PR #126.
 
 Next tasks:
 - None - all tasks completed.
 
 Notes:
 - Local branch: `feature/personal-vault-api-key`
-- PR #126 head: `anton/i-want-to-make-the-repo-api-ready-so-tha-5bc4da`
-- Compared UTF-8 key buffers directly with a byte-length guard; no key hashing, KDF, suppression, or new dependency.
-- CodeQL CLI is unavailable locally; GitHub analysis will rerun after push. Provider checks used local fixtures, not live owner credentials.
+- PR head: `anton/i-want-to-make-the-repo-api-ready-so-tha-5bc4da`
+- Skill: `.agents/skills/personal-notes-api/`; caller supplies `NOTES_BASE_URL` and secret `NOTES_API_KEY`.
+- Markdown-only addition; no application/runtime changes. Previous runtime build passed; skill examples used local mocks, not live credentials/vault data.

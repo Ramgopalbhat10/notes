@@ -3,7 +3,7 @@
 Goal: Let the owner's other server-side applications use the existing filesystem CRUD APIs with one configured API key, without changing GitHub/email login.
 
 ## Scope
-- In: Optional server-side `NOTES_API_KEY`, bearer authentication on the six existing filesystem routes, shared proxy/handler validation, and usage documentation.
+- In: Optional server-side `NOTES_API_KEY`, bearer authentication on the six existing filesystem routes, shared proxy/handler validation, usage documentation, and a portable client skill for other agents.
 - Out: New routes, API-key plugins, dependencies, database changes, key-management UI, per-app keys, scopes, folder restrictions, and storage redesign.
 
 ## Deliverables
@@ -12,6 +12,7 @@ Goal: Let the owner's other server-side applications use the existing filesystem
 - `app/api/settings/route.ts` — explicitly require a non-null session for per-user settings.
 - `README.md` — setup, security boundaries, rotation, and curl CRUD examples.
 - `docs/decisions/ADR-vault-api-key.md` — authentication decision and limitations.
+- `.agents/skills/personal-notes-api/` — portable API usage instructions and endpoint/examples reference; README installation guidance.
 
 ## Acceptance Criteria
 - A configured key authenticates cookie-free requests only to the existing filesystem route/method combinations.
@@ -25,6 +26,8 @@ Goal: Let the owner's other server-side applications use the existing filesystem
 
 | Date | Unit | Summary |
 |---|---|---|
+| 2026-10-19 | verify-skill | Validated skill metadata/links, all nine API pairs, JSON/Python examples, detached-copy portability, and mocked transport/edit flows including redirect refusal, origin validation, status handling, safe ETags, and no secret leakage. Lint passed; no runtime changes or live vault requests. Packaged a standalone ZIP. |
+| 2026-10-19 | docs | Added a portable `personal-notes-api` client skill with a self-contained API reference, safe JSON/ETag workflows, credential and note-injection boundaries, installation guidance, and an optional dependency-free Python transport example. |
 | 2026-10-19 | fix | Addressed PR #126 checks in Issue 49: removed unnecessary SHA-256 key hashing and recognized the actual tool-managed Anton PR branch. Lint/build, auth/CRUD regression fixtures, and the CI branch command passed; GitHub CodeQL rerun remains external. |
 | 2026-10-19 | verify | Lint/build passed with fixture env; all nine key route/method pairs, session fallback, mocked note CRUD/settings, 13 real HTTP auth checks, and desktop/mobile sign-in smoke checks passed. Added explicit session guards for personal settings. Live OAuth/Tigris/Turso checks require owner credentials and were not performed. |
 | 2026-10-19 | feat | Added exact filesystem route/method key validation to both auth gates, retained session fallback and nullable author attribution, and documented setup/rotation/CRUD examples. |
@@ -56,6 +59,19 @@ Test Plan
 - Exercise all permitted route/method combinations and reject near-match routes and unsupported methods.
 - Verify both proxy and handler guards, allowed/disallowed sessions, no synthetic API session, and unchanged save author handling.
 - Use temporary scripts and fixtures outside the repository; report separately any live-provider/OAuth checks that require owner credentials.
+
+## Story 31.3 — Portable API client skill
+
+Sub-tasks
+- [x] Write a self-contained `personal-notes-api` skill with setup, scoped discovery, safe CRUD, error/retry handling, and secret/content safety.
+- [x] Add a relative API reference and installation/discovery instructions for other agents.
+- [x] Validate frontmatter, links, endpoint coverage, and example requests against disposable local fixtures; package a downloadable copy.
+
+Test Plan
+- Copy the entire skill folder without repository source dependencies; use only `NOTES_BASE_URL` and secret `NOTES_API_KEY`.
+- Cross-check all nine method/path combinations, request fields and response shapes against current handlers.
+- Ensure note text is treated as untrusted data, no credential leaks/redirect following, no accidental overwrite, and explicit intent for destructive/publication actions.
+- No live vault mutations or real credentials; all check scripts outside the repo.
 
 ## Definition of Done
 - Acceptance criteria met and verification limitations reported honestly.
