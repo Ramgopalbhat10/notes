@@ -22,3 +22,4 @@ Suggested structure:
 | File version history storage | `docs/decisions/ADR-file-version-history-storage.md` |
 | Chat vault tools | `docs/decisions/ADR-chat-vault-tools.md` |
 
+| Single API key for existing vault CRUD | `docs/decisions/ADR-vault-api-key.md` |

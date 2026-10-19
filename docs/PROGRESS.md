@@ -1,17 +1,19 @@
 # Progress
 
-Current story: `docs/stories/story-30.md`
+Current story: `docs/stories/story-31.md`
 
-Current section: Story 30.3 — Verification and Regression Checks
+Current section: Story 31.2 — Verification and Regression Checks (complete)
 
 Previous tasks (latest completed batch only):
-- [x] Highlight Vault root as a drop target without inserting a layout-shifting row.
+- [x] Run `pnpm lint` and `pnpm build`.
+- [x] Verify key authentication, session fallback, restricted surfaces, and CRUD wiring.
+- [x] Review the diff and run the workflow documentation gate; no forbidden test files added.
 
 Next tasks:
-- [ ] Manually verify dialog picker, sidebar drag-and-drop, and existing tree actions.
+- None - all tasks completed.
 
 Notes:
-- Branch: `cursor/move-folder-tree-dnd-a9b0`
-- PR: https://github.com/Ramgopalbhat10/notes/pull/125
-- `pnpm lint` passed. `pnpm build` compiled and typechecked with dummy env in this agent VM.
-- Nested drop targets must `stopPropagation` or drops fall through to Vault root.
+- Branch: `feature/personal-vault-api-key`
+- Nine allowed route/method pairs, mocked note CRUD/settings, 13 real HTTP checks, and desktop/mobile sign-in smoke checks passed.
+- Build used dummy auth/Turso environment values with auth bypass disabled. Live OAuth/provider checks were not performed; no owner credentials supplied.
+- No plugins, database changes, UI, new endpoints, scopes, or folder restrictions.

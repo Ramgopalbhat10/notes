@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSession, isAllowedUser } from "@/lib/auth";
 import { AUTH_BYPASS_ENABLED } from "@/lib/auth/config";
+import { hasValidFsApiKey } from "@/lib/auth/api-key";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -42,7 +43,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (AUTH_BYPASS_ENABLED) {
+  if (AUTH_BYPASS_ENABLED || hasValidFsApiKey(request)) {
     return NextResponse.next();
   }
 
